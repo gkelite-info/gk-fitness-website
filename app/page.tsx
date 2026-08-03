@@ -1,9 +1,5 @@
-import PrivacyPolicy from "./privacy-policy/page";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return (
-    <>
-      <PrivacyPolicy />
-    </>
-  );
+  redirect("/privacy-policy");
 }
