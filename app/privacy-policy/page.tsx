@@ -130,6 +130,12 @@ export default function PrivacyPolicy() {
                     <li className="text-sm mt-1">
                         Payment information is handled securely through trusted payment partners.
                     </li>
+                    <li className="text-sm mt-1">
+                        If you are registered under a local gym, GK-GYMLIFE is not responsible for your payments or refunds. Please coordinate directly with your gym owner.
+                    </li>
+                    <li className="text-sm mt-1">
+                        If you are a global customer purchasing platform-direct services, GK-GYMLIFE handles your payments and associated responsibilities.
+                    </li>
                 </ul>
 
                 <h4 className="text-base font-semibold mt-3 text-[#C3F400]">7. Cookies & Analytics</h4>
@@ -189,6 +195,9 @@ export default function PrivacyPolicy() {
                     </li>
                     <p className="text-sm text-white mt-2">
                         This information is used only to improve recommendations and platform functionality.
+                    </p>
+                    <p className="text-sm text-[#A1A1AA] mt-3 leading-5 italic font-medium">
+                        Disclaimer: GK-GYMLIFE is not responsible for any adverse health issues or reactions resulting from diet or workout recommendations. Every body reacts differently to nutritional and physical changes. Please consult a healthcare professional before starting any new diet or fitness program.
                     </p>
                 </ul>
 
