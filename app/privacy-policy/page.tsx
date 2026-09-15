@@ -7,7 +7,31 @@ export default function PrivacyPolicy() {
                     GK-GYMLIFE is committed to protecting the privacy, security, and confidentiality of every member, trainer, gym owner, and platform user. This Privacy Policy explains how information is collected, used, stored, and protected while using the GK-GYMLIFE platform and its associated services.
                 </p>
                 <h4 className="text-base font-semibold mt-3 text-[#C3F400]">1. Information We Collect</h4>
-                <p className="text-sm text-white mt-3">GK-GYMLIFE is committed to protecting the privacy, security, and confidentiality of every member, trainer, gym owner, and platform user. This Privacy Policy explains how information is collected, used, stored, and protected while using the GK-GYMLIFE platform and its associated services.</p>
+                <p className="text-sm text-white mt-3">GK-GYMLIFE collects only the information required to provide fitness, wellness, membership, and gym management services.</p>
+
+                <ul className="list-disc pl-5 text-sm mt-1 text-white">
+                    <li className="text-sm mt-1">
+                        Personal information including your name, email address, mobile number and date of birth.
+                    </li>
+                    <li className="text-sm mt-1">
+                        Fitness information such as height, weight, fitness goals, workout preferences, activity level, dietary preferences, and water intake goals.
+                    </li>
+                    <li className="text-sm mt-1">
+                        Membership information including selected plans, renewal history, payment records, and membership status.
+                    </li>
+                    <li className="text-sm mt-1">
+                        Workout information including workout plans, completed workouts, attendance, daily challenges, trainer assignments, and progress history.
+                    </li>
+                    <li className="text-sm mt-1">
+                        Trainer and gym owner information related to member management, schedules, inventory, memberships, and operational activities.
+                    </li>
+                    <li className="text-sm mt-1">
+                        Authentication and account information including login activity, device information, and security logs.
+                    </li>
+                    <li className="text-sm mt-1">
+                        Technical information such as browser type, operating system, device information, IP address, and usage analytics.
+                    </li>
+                </ul>
 
                 <h4 className="text-base font-semibold mt-3 text-[#C3F400]">2. How We Use Your Information</h4>
                 <p className="text-sm text-white mt-3">The information collected through GK-GYMLIFE is used to deliver a personalized and secure fitness experience.</p>
