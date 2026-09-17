@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import PortalLayout from "@/app/(screens)/components/layout/PortalLayout";
 
-export default function OwnerLayout({
+export default function GlobalTrainerLayout({
   children,
 }: {
   children: ReactNode;
