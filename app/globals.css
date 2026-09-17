@@ -34,3 +34,50 @@ input:-webkit-autofill:active {
     -webkit-text-fill-color: white !important;
     transition: background-color 5000s ease-in-out 0s;
 }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #262936 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #262936;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #3a3e4f;
+}
+
+.scrollbar-themed {
+  scrollbar-width: thin;
+  scrollbar-color: #D4FF32 #14151A;
+}
+
+.scrollbar-themed::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-themed::-webkit-scrollbar-track {
+  background: #14151A;
+  border-radius: 999px;
+}
+
+.scrollbar-themed::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #D4FF32 0%, #a3cc1a 100%);
+  border-radius: 999px;
+}
+
+.scrollbar-themed::-webkit-scrollbar-thumb:hover {
+  background: #D4FF32;
+}

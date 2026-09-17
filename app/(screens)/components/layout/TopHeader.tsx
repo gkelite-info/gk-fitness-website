@@ -1,49 +1,97 @@
 "use client";
 
-import { MagnifyingGlass, Users, Bell, Gear } from "@phosphor-icons/react";
+import { MagnifyingGlass, UsersThree, Bell, Gear, List } from "@phosphor-icons/react";
+import { useUser } from "@/app/context/UserContext";
+import Avatar from "../reusable/Avatar";
 
-export default function TopHeader() {
+interface TopHeaderProps {
+  onOpenSidebar?: () => void;
+}
+
+export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
+  const { profile, roleData, loading } = useUser();
+
+  const formattedRole = profile?.role
+    ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
+    : "Gym Owner";
+
+  const displayName = profile?.name || formattedRole;
+  const gender = roleData && roleData.length > 0 ? roleData[0].gender : null;
+
+  const formattedDate = new Intl.DateTimeFormat('en-GB', { 
+    weekday: 'long', 
+    day: 'numeric', 
+    month: 'long' 
+  }).format(new Date());
+
+  const currentHour = new Date().getHours();
+  let greeting = "Good Evening";
+  if (currentHour < 12) {
+    greeting = "Good Morning";
+  } else if (currentHour < 18) {
+    greeting = "Good Afternoon";
+  }
+
   return (
-    <header className="sticky top-0 z-50 flex flex-col sm:flex-row justify-between items-center px-4 sm:px-8 py-4 sm:py-5 w-full bg-[#0C0D10]/95 border-b border-[#181A22] backdrop-blur-md gap-4 sm:gap-0">
+    <header className="sticky top-0 z-40 flex flex-col sm:flex-row justify-between items-center px-4 sm:px-8 py-4 sm:py-5 w-full bg-[rgba(12,13,16,0.95)] border-b border-[#181A22] backdrop-blur-[6px] gap-4 sm:gap-0 h-auto sm:h-[101px]">
       <div className="flex items-center gap-4 w-full sm:w-auto">
-        <div className="relative w-12 h-12 rounded-full shadow-[0_0_0_2px_#222530] overflow-hidden flex-shrink-0 bg-gray-800">
-          <div className="w-full h-full bg-gradient-to-tr from-gray-700 to-gray-900" />
-        </div>
+        <button 
+          onClick={onOpenSidebar}
+          className="lg:hidden flex items-center justify-center p-2 rounded-lg bg-[#15161C] border border-[#232631] text-white hover:bg-[#1f212a] transition-colors"
+        >
+          <List size={24} weight="bold" />
+        </button>
+
+        {loading ? (
+          <div className="w-12 h-12 rounded-full bg-[#232631] animate-pulse flex-shrink-0 shadow-[0_0_0_2px_#222530]" />
+        ) : (
+          <Avatar 
+            src={profile?.profilePhoto} 
+            gender={gender} 
+            className="w-12 h-12 shadow-[0_0_0_2px_#222530]" 
+          />
+        )}
         <div className="flex flex-col">
-          <span className="font-semibold text-xs text-[#94A3B8] tracking-wider uppercase">
-            Alex - Gym Owner
+          <span className="font-['Nimbus_Sans'] font-semibold text-[12px] leading-4 tracking-[0.6px] uppercase text-[#94A3B8]">
+            WELCOME BACK
           </span>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-            <h1 className="font-bold text-lg text-white">Good Morning, Alex</h1>
-            <span className="text-[#94A3B8] text-xs font-medium hidden sm:inline-block">Welcome back</span>
-          </div>
+          {loading ? (
+            <div className="h-6 w-40 sm:w-56 bg-[#232631] animate-pulse rounded my-0.5" />
+          ) : (
+            <h1 className="font-['Nimbus_Sans'] font-bold text-[18px] leading-[28px] text-white m-0">
+              {greeting}, {displayName}
+            </h1>
+          )}
+          <span className="font-['Nimbus_Sans'] font-medium text-[12px] leading-4 text-[#94A3B8]">
+            {formattedDate}
+          </span>
         </div>
       </div>
 
       <div className="flex items-center gap-4 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
-        <div className="relative flex-grow sm:flex-grow-0 sm:w-80">
+        <div className="relative flex-grow sm:flex-grow-0 w-full sm:w-[320px]">
           <MagnifyingGlass
-            size={16}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]"
+            size={14}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]"
             weight="bold"
           />
           <input
             type="text"
             placeholder="Search members, payments, etc..."
-            className="w-full h-10 bg-[#15161C] border border-[#232631] rounded-xl pl-10 pr-4 text-xs text-white placeholder:text-[#94A3B8] focus:outline-none focus:border-[#D4FF32] transition-colors"
+            className="w-full h-[38px] bg-[#15161C] border border-[#232631] rounded-xl pl-10 pr-4 font-['Nimbus_Sans'] text-[12px] text-white placeholder:text-[#94A3B8] focus:outline-none focus:border-[#D4FF32] transition-colors"
           />
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
           <button className="cursor-pointer w-10 h-10 flex items-center justify-center bg-[#15161C] border border-[#232631] rounded-xl hover:bg-[#1f212a] transition-colors">
-            <Users size={20} className="text-[#CBD5E1]" weight="fill" />
+            <UsersThree size={16} className="text-[#CBD5E1]" weight="regular" />
           </button>
           <button className="cursor-pointer relative w-10 h-10 flex items-center justify-center bg-[#15161C] border border-[#232631] rounded-xl hover:bg-[#1f212a] transition-colors">
-            <Bell size={20} className="text-[#CBD5E1]" weight="fill" />
-            <div className="absolute top-2 right-2 w-2 h-2 bg-[#F43F5E] rounded-full shadow-[0_0_0_2px_#15161C]" />
+            <Bell size={16} className="text-[#CBD5E1]" weight="regular" />
+            <div className="absolute right-[9px] top-[9px] w-2 h-2 bg-[#F43F5E] rounded-full shadow-[0_0_0_2px_#15161C]" />
           </button>
           <button className="cursor-pointer w-10 h-10 flex items-center justify-center bg-[#15161C] border border-[#232631] rounded-xl hover:bg-[#1f212a] transition-colors">
-            <Gear size={20} className="text-[#CBD5E1]" weight="fill" />
+            <Gear size={16} className="text-[#CBD5E1]" weight="regular" />
           </button>
         </div>
       </div>

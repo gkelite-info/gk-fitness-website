@@ -10,4 +10,5 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **No Unnecessary React Imports**: Do not add `import React from 'react';` or `import { ReactNode } from 'react';` unless explicitly required. Rely on the new JSX transform.
 - **Use Client Wisely**: Do not add `"use client";` to every component. Only use it when the component strictly requires client-side features (hooks, event listeners, etc.).
 - **No Direct Supabase in UI**: Frontend `.tsx` files (components/pages) should not directly call the Supabase SDK. Instead, create helper functions or Server Actions in `api` or `actions` folders and call those helpers from the UI.
+- **Reusable Components**: All reusable components (like Avatar, Buttons, Inputs, etc.) MUST be created in the `app/(screens)/components/reusable` folder. Do not create reusable components inline or in ad-hoc locations.
 - Follow these rules strictly for all future development.
