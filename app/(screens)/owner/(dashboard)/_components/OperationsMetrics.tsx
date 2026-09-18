@@ -18,7 +18,11 @@ const OPERATIONS = [
   },
 ];
 
-export default function OperationsMetrics() {
+interface OperationsMetricsProps {
+  ptSessionsCount: number;
+}
+
+export default function OperationsMetrics({ ptSessionsCount }: OperationsMetricsProps) {
   return (
     <div className="w-full bg-[#14151A] border border-[rgba(255,255,255,0.06)] rounded-[16px] p-4 sm:p-6 flex flex-col gap-4">
       <div className="flex flex-row justify-between items-center w-full">
@@ -33,22 +37,41 @@ export default function OperationsMetrics() {
         </button>
       </div>
       <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
-        {OPERATIONS.map((op, index) => (
-          <div
-            key={index}
-            className="w-full bg-[#191B22] border border-[#222530] rounded-[12px] p-2 sm:p-[14px] flex flex-col items-center justify-center min-h-[80px]"
-          >
-            <div className="flex-shrink-0">
-              {op.icon}
-            </div>
-            <span className="font-sans font-bold text-[20px] leading-[28px] text-white mt-1.5">
-              {op.value}
-            </span>
-            <span className="font-sans font-semibold text-[9px] sm:text-[10px] leading-[13px] sm:leading-[15px] tracking-[0.5px] uppercase text-[#94A3B8] text-center mt-0.5 break-words">
-              {op.title}
-            </span>
+        <div className="w-full bg-[#191B22] border border-[#222530] rounded-[12px] p-2 sm:p-[14px] flex flex-col items-center justify-center min-h-[80px]">
+          <div className="flex-shrink-0">
+            <Barbell size={20} color="#D4FF32" weight="regular" />
           </div>
-        ))}
+          <span className="font-sans font-bold text-[20px] leading-[28px] text-white mt-1.5">
+            {ptSessionsCount}
+          </span>
+          <span className="font-sans font-semibold text-[9px] sm:text-[10px] leading-[13px] sm:leading-[15px] tracking-[0.5px] uppercase text-[#94A3B8] text-center mt-0.5 break-words">
+            PT SESSIONS
+          </span>
+        </div>
+
+        <div className="w-full bg-[#191B22] border border-[#222530] rounded-[12px] p-2 sm:p-[14px] flex flex-col items-center justify-center min-h-[80px]">
+          <div className="flex-shrink-0">
+            <UsersThree size={20} color="#D4FF32" weight="regular" />
+          </div>
+          <span className="font-sans font-bold text-[20px] leading-[28px] text-white mt-1.5">
+            0
+          </span>
+          <span className="font-sans font-semibold text-[9px] sm:text-[10px] leading-[13px] sm:leading-[15px] tracking-[0.5px] uppercase text-[#94A3B8] text-center mt-0.5 break-words">
+            GROUP CLASSES
+          </span>
+        </div>
+
+        <div className="w-full bg-[#191B22] border border-[#222530] rounded-[12px] p-2 sm:p-[14px] flex flex-col items-center justify-center min-h-[80px]">
+          <div className="flex-shrink-0">
+            <CalendarCheck size={20} color="#D4FF32" weight="regular" />
+          </div>
+          <span className="font-sans font-bold text-[20px] leading-[28px] text-white mt-1.5">
+            0
+          </span>
+          <span className="font-sans font-semibold text-[9px] sm:text-[10px] leading-[13px] sm:leading-[15px] tracking-[0.5px] uppercase text-[#94A3B8] text-center mt-0.5 break-words">
+            RENEWALS
+          </span>
+        </div>
       </div>
     </div>
   );

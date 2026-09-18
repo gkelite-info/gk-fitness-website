@@ -1,0 +1,98 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchCustomerTrainersByGym, fetchAssignedTrainersByCustomer, fetchAssignedCustomersByTrainer, fetchAssignedCustomersByTrainerPaginated, fetchCustomerTrainerById, saveCustomerTrainer, deleteCustomerTrainer, toggleCustomerTrainerActiveStatus, SaveCustomerTrainerParams } from '@/lib/helpers/customerTrainers/customerTrainersHelper';
+
+export function useCustomerTrainersByGym(gymId?: string) {
+  return useQuery({
+    queryKey: ['customerTrainers', 'gym', gymId],
+    queryFn: async () => {
+      if (!gymId) return [];
+      const data = await fetchCustomerTrainersByGym(gymId);
+      return data;
+    },
+    enabled: !!gymId,
+  });
+}
+
+export function useAssignedTrainersByCustomer(customerId?: string) {
+  return useQuery({
+    queryKey: ['customerTrainers', 'customer', customerId],
+    queryFn: async () => {
+      if (!customerId) return [];
+      const data = await fetchAssignedTrainersByCustomer(customerId);
+      return data;
+    },
+    enabled: !!customerId,
+  });
+}
+
+export function useAssignedCustomersByTrainer(gymTrainerId?: string) {
+  return useQuery({
+    queryKey: ['customerTrainers', 'trainer', gymTrainerId],
+    queryFn: async () => {
+      if (!gymTrainerId) return [];
+      const data = await fetchAssignedCustomersByTrainer(gymTrainerId);
+      return data;
+    },
+    enabled: !!gymTrainerId,
+  });
+}
+
+export function usePaginatedAssignedCustomersByTrainer(gymTrainerId?: string, page = 1, limit = 10, searchQuery?: string) {
+  return useQuery({
+    queryKey: ['customerTrainers', 'trainer', gymTrainerId, page, limit, searchQuery],
+    queryFn: async () => {
+      if (!gymTrainerId) return { data: [], total: 0 };
+      const res = await fetchAssignedCustomersByTrainerPaginated(gymTrainerId, page, limit, searchQuery);
+      return res;
+    },
+    enabled: !!gymTrainerId,
+  });
+}
+
+export function useCustomerTrainerById(customerTrainerId?: string) {
+  return useQuery({
+    queryKey: ['customerTrainers', customerTrainerId],
+    queryFn: async () => {
+      if (!customerTrainerId) return null;
+      const data = await fetchCustomerTrainerById(customerTrainerId);
+      return data;
+    },
+    enabled: !!customerTrainerId,
+  });
+}
+
+export function useSaveCustomerTrainer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: SaveCustomerTrainerParams) => {
+      return await saveCustomerTrainer(params);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customerTrainers'] });
+    },
+  });
+}
+
+export function useDeleteCustomerTrainer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (customerTrainerId: string) => {
+      return await deleteCustomerTrainer(customerTrainerId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customerTrainers'] });
+    },
+  });
+}
+
+export function useToggleCustomerTrainerStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ customerTrainerId, currentStatus }: { customerTrainerId: string; currentStatus: boolean }) => {
+      return await toggleCustomerTrainerActiveStatus(customerTrainerId, currentStatus);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customerTrainers'] });
+    },
+  });
+}

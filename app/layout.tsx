@@ -3,6 +3,7 @@ import { Sora, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { UserProvider } from "@/app/context/UserContext";
 import { Toaster } from "react-hot-toast";
+import { Providers } from "./providers";
 
 const sora = Sora({
   variable: "--font-sora",
@@ -33,22 +34,24 @@ export default function RootLayout({
       className={`${sora.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <UserProvider>
-          <Toaster 
-            position="top-right" 
-            toastOptions={{
-              style: {
-                background: '#14151A',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.05)'
-              },
-              success: {
-                iconTheme: { primary: '#D4FF32', secondary: '#000' }
-              }
-            }} 
-          />
-          {children}
-        </UserProvider>
+        <Providers>
+          <UserProvider>
+            <Toaster 
+              position="top-right" 
+              toastOptions={{
+                style: {
+                  background: '#14151A',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.05)'
+                },
+                success: {
+                  iconTheme: { primary: '#D4FF32', secondary: '#000' }
+                }
+              }} 
+            />
+            {children}
+          </UserProvider>
+        </Providers>
       </body>
     </html>
   );

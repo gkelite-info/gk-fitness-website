@@ -1,29 +1,25 @@
 import { Warning, UserCircleMinus, ChatCircleDots, CaretRight } from "@phosphor-icons/react/dist/ssr";
 
-const ALERTS = [
-  {
-    title: "8 Memberships expiring tomorrow",
-    icon: <Warning size={16} color="#F43F5E" weight="bold" />,
-  },
-  {
-    title: "Trainer leave pending approval",
-    icon: <UserCircleMinus size={16} color="#FBBF24" weight="bold" />,
-  },
-  {
-    title: "8 Memberships expiring tomorrow",
-    icon: <Warning size={16} color="#F43F5E" weight="bold" />,
-  },
-  {
-    title: "Trainer leave pending approval",
-    icon: <UserCircleMinus size={16} color="#FBBF24" weight="bold" />,
-  },
-  {
-    title: "New support ticket received",
-    icon: <ChatCircleDots size={16} color="#34D399" weight="bold" />,
-  },
-];
+interface AlertsRemindersCardProps {
+  expiringCount?: number;
+}
 
-export default function AlertsRemindersCard() {
+export default function AlertsRemindersCard({ expiringCount = 0 }: AlertsRemindersCardProps) {
+  const ALERTS = [
+    {
+      title: `${expiringCount} Customership${expiringCount === 1 ? '' : 's'} expiring tomorrow`,
+      icon: <Warning size={16} color="#F43F5E" weight="bold" />,
+    },
+    {
+      title: "Trainer leave pending approval",
+      icon: <UserCircleMinus size={16} color="#FBBF24" weight="bold" />,
+    },
+    {
+      title: "New support ticket received",
+      icon: <ChatCircleDots size={16} color="#34D399" weight="bold" />,
+    },
+  ];
+
   return (
     <div className="w-full bg-[#14151A] border border-[rgba(255,255,255,0.06)] rounded-[16px] p-4 flex flex-col gap-3">
       <div className="flex flex-row justify-between items-center w-full">
