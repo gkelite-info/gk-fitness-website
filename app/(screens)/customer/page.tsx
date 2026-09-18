@@ -1,10 +1,36 @@
-export default function CustomerDashboard() {
+import { getMembership } from "@/app/actions/customer/getMembership";
+import MembershipCard from "./components/MembershipCard";
+import TodayWorkoutCard from "./components/TodayWorkoutCard";
+import StatsGrid from "./components/StatsGrid";
+import WeeklyProgressCard from "./components/WeeklyProgressCard";
+import MealPlanCard from "./components/MealPlanCard";
+
+export default async function CustomerDashboard() {
+  const membership = await getMembership();
+
   return (
-    <div className="min-h-screen bg-[#0C0D10] text-white p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-[#D4FF32] mb-4">Customer Portal</h1>
-        <p className="text-[#94A3B8]">Welcome to the customer dashboard. View your memberships, workouts, and more.</p>
+    <div className="flex flex-col pb-24">
+      <div className="mb-5">
+        <h1 className="text-white text-lg font-semibold mt-1">
+          Every rep. Every step. <span className="text-[#D7FF00]">Better than yesterday.</span>
+        </h1>
       </div>
+
+      <MembershipCard 
+        planName={membership?.planName || "NO PLAN"} 
+        daysLeft={membership?.daysLeft || 0}
+        progressPercentage={membership?.progressPercentage || 0}
+        status={(membership?.status as "active" | "expired" | "none") || "none"}
+        gymId={membership?.gymId || ""}
+      />
+
+      <TodayWorkoutCard />
+      
+      <StatsGrid />
+      
+      <WeeklyProgressCard />
+      
+      <MealPlanCard />
     </div>
   );
 }

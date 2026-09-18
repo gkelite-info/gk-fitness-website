@@ -22,3 +22,14 @@ export async function loginUser(email: string, password: string) {
 
   return { success: true, role: userData?.role };
 }
+
+export async function logoutUser() {
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.error("Error signing out on server:", err);
+  }
+  return { success: true };
+}
+

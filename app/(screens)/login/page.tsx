@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { EnvelopeSimple, LockKey, CircleNotch, ArrowRight, Eye, EyeSlash, CaretLeft } from "@phosphor-icons/react";
 import { loginUser } from "@/app/api/auth/actions";
 import { useRouter } from "next/navigation";
@@ -13,29 +13,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  
-  // Mobile UI state
   const [showMobileForm, setShowMobileForm] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  
+
   const passwordRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    
+
     if (!email.trim()) {
       toast.error("Please enter your email address", { id: "login-email-empty" });
       return;
     }
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       toast.error("Please enter a valid email address", { id: "login-email-invalid" });
@@ -58,8 +48,7 @@ export default function LoginPage() {
     }
 
     toast.success("Successfully logged in!", { id: "login-success" });
-    
-    // Redirect based on role
+
     if (role === "superadmin") {
       router.push("/superadmin");
     } else if (role === "owner") {
@@ -73,7 +62,7 @@ export default function LoginPage() {
     } else {
       router.push("/");
     }
-    
+
     router.refresh();
   };
 
@@ -84,57 +73,70 @@ export default function LoginPage() {
     }
   };
 
+  const openMobileForm = (e?: React.SyntheticEvent) => {
+    if (e) e.stopPropagation();
+    setShowMobileForm(true);
+  };
+
+  const closeMobileForm = (e?: React.SyntheticEvent) => {
+    if (e) e.stopPropagation();
+    setShowMobileForm(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#0C0D10] text-white overflow-hidden relative">
-      <motion.div 
-        className="flex flex-row w-[200vw] lg:w-full h-[100dvh] lg:h-screen"
-        animate={{ x: isMobile && showMobileForm ? "-100vw" : "0vw" }}
-        transition={{ type: "spring", bounce: 0.15, duration: 0.6 }}
+      <motion.div
+        className="flex flex-row w-[200vw] lg:w-full h-[100dvh] lg:h-screen lg:!transform-none"
+        animate={{ x: showMobileForm ? "-100vw" : "0vw" }}
+        transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
         initial={false}
       >
-        {/* LEFT SIDE / MOBILE HERO - The Image Panel */}
         <div className="w-[100vw] lg:w-1/2 h-full relative flex flex-col justify-end p-8 sm:p-12">
-          <Image 
-            src="/images/gym-hero.jpg" 
+          <Image
+            src="/images/gym-hero.jpg"
             alt="GK-Fitness Interior"
             fill
             priority
             className="object-cover absolute inset-0 z-0"
           />
-          {/* Gradients to make text pop */}
-          <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0C0D10] via-[#0C0D10]/40 to-transparent" />
-          <div className="absolute inset-0 z-10 bg-black/20" />
+          <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0C0D10] via-[#0C0D10]/40 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 z-10 bg-black/20 pointer-events-none" />
 
           <div className="relative z-20 flex flex-col gap-4">
             <div className="w-16 h-1 bg-[#D4FF32] rounded-full mb-2" />
             <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-              Elevate Your <br/> <span className="text-[#D4FF32]">Fitness.</span>
+              Elevate Your <br /> <span className="text-[#D4FF32]">Fitness.</span>
             </h1>
             <p className="text-[#94A3B8] max-w-md font-medium text-sm sm:text-base">
               The premium management portal for GK-Fitness. Streamline your operations, track your athletes, and conquer your goals.
             </p>
-            
-            {/* Mobile Login Button (Hidden on Desktop) */}
-            <button 
-              onClick={() => setShowMobileForm(true)}
-              className="cursor-pointer lg:hidden mt-8 w-full h-14 bg-[#D4FF32] hover:bg-[#c2ef2b] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-[0_10px_20px_-10px_rgba(212,255,50,0.5)]"
+
+            <button
+              type="button"
+              onClick={openMobileForm}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                openMobileForm(e);
+              }}
+              className="cursor-pointer lg:hidden mt-8 w-full h-14 bg-[#D4FF32] hover:bg-[#c2ef2b] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-[0_10px_20px_-10px_rgba(212,255,50,0.5)] touch-manipulation z-30"
             >
               Access Portal <ArrowRight size={20} weight="bold" />
             </button>
           </div>
         </div>
 
-        {/* RIGHT SIDE / MOBILE FORM - The Login Form */}
         <div className="w-[100vw] lg:w-1/2 h-full flex items-center justify-center p-4 sm:p-8 relative bg-[#0C0D10]">
-          {/* Background glow effects for the right side */}
           <div className="hidden lg:block absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-[#D4FF32]/10 rounded-full blur-[120px] pointer-events-none" />
 
           <div className="w-full max-w-sm sm:max-w-md relative z-10">
-            
-            {/* Mobile Back Button */}
-            <button 
-              onClick={() => setShowMobileForm(false)}
-              className="cursor-pointer lg:hidden flex items-center gap-2 text-[#94A3B8] hover:text-white mb-4 sm:mb-8 transition-colors font-semibold text-sm"
+            <button
+              type="button"
+              onClick={closeMobileForm}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                closeMobileForm(e);
+              }}
+              className="cursor-pointer lg:hidden flex items-center gap-2 text-[#94A3B8] hover:text-white mb-4 sm:mb-8 transition-colors font-semibold text-sm touch-manipulation"
             >
               <CaretLeft size={20} weight="bold" /> Back to Home
             </button>
@@ -194,7 +196,7 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     className="w-full h-12 sm:h-14 bg-[#15161C] border border-[#232631] rounded-xl pl-12 pr-12 text-sm text-white placeholder:text-[#64748B] focus:outline-none focus:border-[#D4FF32] focus:bg-[#1A1C23] transition-all"
                   />
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="cursor-pointer absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-white transition-colors flex items-center justify-center p-1"
@@ -207,7 +209,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="cursor-pointer w-full h-12 sm:h-14 mt-2 sm:mt-4 bg-[#D4FF32] hover:bg-[#c2ef2b] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-[0_10px_20px_-10px_rgba(212,255,50,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="cursor-pointer w-full h-12 sm:h-14 mt-2 sm:mt-4 bg-[#D4FF32] hover:bg-[#c2ef2b] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-[0_10px_20px_-10px_rgba(212,255,50,0.5)] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
               >
                 {loading ? (
                   <CircleNotch size={24} weight="bold" className="animate-spin" />
