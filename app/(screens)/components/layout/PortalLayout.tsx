@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "@phosphor-icons/react";
 import TopHeader from "./TopHeader";
@@ -21,9 +21,13 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { profile, loading } = useUser();
+  const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setIsSidebarOpen(false);
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
   }, [pathname]);
 
   const renderSidebar = () => {
@@ -85,7 +89,7 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
 
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <TopHeader onOpenSidebar={() => setIsSidebarOpen(true)} />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-themed">
+        <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-themed">
           <div className="min-h-full">
             {children}
           </div>

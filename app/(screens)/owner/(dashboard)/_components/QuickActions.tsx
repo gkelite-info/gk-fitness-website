@@ -1,10 +1,12 @@
 import { UserPlus, Megaphone, QrCode, Cube, CreditCard, Fingerprint, Barbell, CaretRight } from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
+import Link from "next/link";
 
 const ACTIONS = [
   {
     title: "Add Member",
     icon: <UserPlus size={24} color="#34D399" weight="regular" />,
+    href: "/owner/users/add",
     baseBg: "bg-[rgba(20,27,22,0.9)]",
     baseBorder: "border-[rgba(16,185,129,0.3)]",
     baseShadow: "shadow-[0_10px_24px_-8px_rgba(34,197,94,0.28)]",
@@ -99,21 +101,36 @@ export default function QuickActions() {
         </button>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full h-full">
-        {ACTIONS.map((action, index) => (
-          <button
-            key={index}
-            className={`w-full min-h-[114px] flex flex-col justify-center items-center px-2 py-4 rounded-[12px] border ${action.baseBg} ${action.baseBorder} ${action.baseShadow} hover:scale-[1.02] hover:brightness-110 transition-all duration-200 isolate relative group cursor-pointer`}
-          >
+        {ACTIONS.map((action, index) => {
+          const Content = (
             <div
-              className={`w-11 h-11 flex justify-center items-center rounded-xl border ${action.iconGradient} ${action.iconBorder} ${action.iconShadow} mb-2.5 transition-transform group-hover:scale-105`}
+              className={`w-full min-h-[114px] flex flex-col justify-center items-center px-2 py-4 rounded-[12px] border ${action.baseBg} ${action.baseBorder} ${action.baseShadow} hover:scale-[1.02] hover:brightness-110 transition-all duration-200 isolate relative group cursor-pointer`}
             >
-              {action.icon}
+              <div
+                className={`w-11 h-11 flex justify-center items-center rounded-xl border ${action.iconGradient} ${action.iconBorder} ${action.iconShadow} mb-2.5 transition-transform group-hover:scale-105`}
+              >
+                {action.icon}
+              </div>
+              <span className="font-sans font-medium text-[11px] sm:text-[12px] leading-[14px] sm:leading-[15px] text-center text-[#E2E8F0] w-full">
+                {action.title}
+              </span>
             </div>
-            <span className="font-sans font-medium text-[11px] sm:text-[12px] leading-[14px] sm:leading-[15px] text-center text-[#E2E8F0] w-full">
-              {action.title}
-            </span>
-          </button>
-        ))}
+          );
+
+          if (action.href) {
+            return (
+              <Link href={action.href} key={index} className="w-full">
+                {Content}
+              </Link>
+            );
+          }
+
+          return (
+            <button key={index} className="w-full text-left">
+              {Content}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
