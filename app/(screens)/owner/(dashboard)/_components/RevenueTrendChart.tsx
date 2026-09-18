@@ -1,25 +1,28 @@
 "use client";
 
 import { CaretDown } from "@phosphor-icons/react";
+import { useState } from "react";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const DATA_POINTS = [0, 2000, 5000, 6500, 7000, 6000, 8450, 7500, 6500, 7000, 12000, 18000];
+const PRECISE_DATA = [1500, 3500, 4500, 5000, 4000, 4500, 8450, 4200, 5000, 13000, 19000, 20000]; // Example data fitting the curve
 const MAX_VALUE = 30000;
-const Y_LABELS = ["₹0", "₹10K", "₹20K", "₹30K"];
-const ACTIVE_INDEX = 6;
+const Y_LABELS = [
+  { label: "₹30K", value: 30000 },
+  { label: "₹20K", value: 20000 },
+  { label: "₹10K", value: 10000 },
+  { label: "₹0", value: 0 },
+];
 
 export default function RevenueTrendChart() {
-  const chartWidth = 100;
-  const chartHeight = 100;
-  const paddingX = 2;
-  const paddingY = 5;
-
-  const points = DATA_POINTS.map((val, i) => {
-    const x = paddingX + (i / (DATA_POINTS.length - 1)) * (chartWidth - paddingX * 2);
-    const y = chartHeight - paddingY - (val / MAX_VALUE) * (chartHeight - paddingY * 2);
+  const [activeIndex, setActiveIndex] = useState(6);
+  const paddingY = 5; // % padding top/bottom
+  const points = PRECISE_DATA.map((val, i) => {
+    const x = (i / (PRECISE_DATA.length - 1)) * 100;
+    const y = 100 - paddingY - (val / MAX_VALUE) * (100 - paddingY * 2);
     return { x, y, value: val };
   });
 
+  const activePoint = points[activeIndex];
   const linePath = points.map((p, i) => {
     if (i === 0) return `M ${p.x} ${p.y}`;
     const prev = points[i - 1];
@@ -28,92 +31,133 @@ export default function RevenueTrendChart() {
     return `C ${cpx1} ${prev.y}, ${cpx2} ${p.y}, ${p.x} ${p.y}`;
   }).join(" ");
 
-  const areaPath = `${linePath} L ${points[points.length - 1].x} ${chartHeight} L ${points[0].x} ${chartHeight} Z`;
-
-  const activePoint = points[ACTIVE_INDEX];
+  const areaPath = `${linePath} L ${points[points.length - 1].x} 100 L ${points[0].x} 100 Z`;
 
   return (
-    <div className="w-full bg-[#14151A] border border-white/[0.06] rounded-2xl p-6 flex flex-col gap-4">
+    <div className="w-full bg-[#14151A] border border-[rgba(255,255,255,0.06)] rounded-[16px] p-6 flex flex-col gap-6">
       <div className="flex flex-row justify-between items-center w-full">
-        <h3 className="font-['Nimbus_Sans'] font-bold text-[16px] leading-[24px] tracking-[0.4px] text-white">
+        <h3 className="font-sans font-bold text-[18px] leading-[24px] tracking-[0.4px] text-white">
           Revenue Trend
         </h3>
-        <button className="flex flex-row items-center px-3 py-[6px] gap-2 bg-[#16171E] border border-[#262936] rounded-lg cursor-pointer">
-          <span className="font-['Nimbus_Sans'] font-semibold text-[12px] leading-4 text-[#E2E8F0]">
+        <button className="flex flex-row items-center px-3 py-1.5 gap-1.5 bg-[#16171E] border border-[rgba(255,255,255,0.06)] rounded-lg cursor-pointer hover:bg-white/[0.05] transition-colors">
+          <span className="font-sans font-medium text-[12px] leading-[18px] text-[#E2E8F0]">
             Monthly Chart
           </span>
-          <CaretDown size={12} color="#94A3B8" weight="bold" />
+          <CaretDown size={14} color="#94A3B8" weight="bold" />
         </button>
       </div>
-
-      <div className="w-full flex flex-row gap-4">
-        <div className="flex flex-col justify-between items-end h-[200px] py-1 flex-shrink-0">
-          {Y_LABELS.slice().reverse().map((label) => (
-            <span key={label} className="font-['Nimbus_Sans'] font-medium text-[10px] leading-3 text-[#94A3B8]">
-              {label}
-            </span>
-          ))}
+      <div className="w-full flex flex-row gap-4 mt-2">
+        <div className="relative w-[32px] h-[220px] flex-shrink-0">
+          {Y_LABELS.map((item) => {
+            const y = 100 - paddingY - (item.value / MAX_VALUE) * (100 - paddingY * 2);
+            return (
+              <span
+                key={item.label}
+                className="absolute w-full text-right transform -translate-y-1/2 font-sans font-medium text-[11px] leading-[16px] text-[#64748B]"
+                style={{ top: `${y}%` }}
+              >
+                {item.label}
+              </span>
+            );
+          })}
         </div>
-
-        <div className="flex-1 flex flex-col gap-2 min-w-0">
-          <div className="relative w-full h-[200px]">
+        <div className="flex-1 flex flex-col gap-3 min-w-0">
+          <div className="relative w-full h-[220px] overflow-visible group">
+            {points.map((p, i) => {
+              const leftBound = i === 0 ? 0 : (points[i - 1].x + p.x) / 2;
+              const rightBound = i === points.length - 1 ? 100 : (p.x + points[i + 1].x) / 2;
+              return (
+                <div
+                  key={i}
+                  className="absolute top-0 bottom-0 cursor-crosshair z-20"
+                  style={{
+                    left: `${leftBound}%`,
+                    width: `${rightBound - leftBound}%`,
+                  }}
+                  onMouseEnter={() => setActiveIndex(i)}
+                />
+              );
+            })}
             <svg
-              viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+              viewBox="0 0 100 100"
               preserveAspectRatio="none"
-              className="w-full h-full"
+              className="w-full h-full overflow-visible"
             >
               <defs>
                 <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#D4FF32" stopOpacity="0.25" />
+                  <stop offset="0%" stopColor="#D4FF32" stopOpacity="0.3" />
                   <stop offset="100%" stopColor="#D4FF32" stopOpacity="0" />
                 </linearGradient>
               </defs>
+              {Y_LABELS.map((item) => {
+                const y = 100 - paddingY - (item.value / MAX_VALUE) * (100 - paddingY * 2);
+                return (
+                  <line
+                    key={item.label}
+                    x1="0"
+                    y1={y}
+                    x2="100"
+                    y2={y}
+                    stroke="#ffffff"
+                    strokeOpacity="0.04"
+                    strokeWidth="1"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                );
+              })}
+
               <path d={areaPath} fill="url(#areaGradient)" />
-              <path d={linePath} fill="none" stroke="#D4FF32" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-              {points.map((p, i) => (
-                <circle
-                  key={i}
-                  cx={p.x}
-                  cy={p.y}
-                  r={i === ACTIVE_INDEX ? "3" : "1.5"}
-                  fill={i === ACTIVE_INDEX ? "#D4FF32" : "#D4FF32"}
-                  stroke={i === ACTIVE_INDEX ? "#0C0D10" : "none"}
-                  strokeWidth={i === ACTIVE_INDEX ? "1.5" : "0"}
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
-              <line
-                x1={activePoint.x}
-                y1={activePoint.y + 3}
-                x2={activePoint.x}
-                y2={chartHeight}
-                stroke="#94A3B8"
-                strokeWidth="0.5"
-                strokeDasharray="2 2"
-                vectorEffect="non-scaling-stroke"
-              />
+              <path d={linePath} fill="none" stroke="#D4FF32" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
             </svg>
+            {points.map((p, i) => {
+              if (i === activeIndex) return null;
+              return (
+                <div
+                  key={i}
+                  className="absolute rounded-full bg-[#D4FF32] transform -translate-x-1/2 -translate-y-1/2 w-[5px] h-[5px] pointer-events-none"
+                  style={{ left: `${p.x}%`, top: `${p.y}%` }}
+                />
+              );
+            })}
             <div
-              className="absolute bg-[#1E2027] border border-[#3a3e4f] rounded-md px-2 py-1 pointer-events-none"
+              className="absolute w-[1px] border-l-[1.5px] border-dashed border-[#D4FF32] opacity-70 pointer-events-none transition-all duration-300 ease-out"
               style={{
-                left: `${(ACTIVE_INDEX / (DATA_POINTS.length - 1)) * 100}%`,
-                top: `${(activePoint.y / chartHeight) * 100 - 12}%`,
-                transform: "translateX(-50%)",
+                left: `${activePoint.x}%`,
+                top: `${Math.max(activePoint.y - 45, 0)}%`,
+                bottom: `${100 - activePoint.y}%`,
+                transform: 'translateX(-50%)',
+              }}
+            />
+            <div
+              className="absolute bg-[#1D1E25] border border-[#2A2D3A] rounded-[6px] px-2.5 py-1 pointer-events-none z-10 shadow-lg transition-all duration-300 ease-out"
+              style={{
+                left: `${activePoint.x}%`,
+                top: `${Math.max(activePoint.y - 45, 0)}%`,
+                transform: 'translate(-50%, -100%)',
+                marginTop: '-4px',
               }}
             >
-              <span className="font-['Nimbus_Sans'] font-bold text-[11px] leading-[14px] text-white">
-                ₹8,450
+              <span className="font-sans font-bold text-[12px] leading-[18px] text-white">
+                ₹{activePoint.value.toLocaleString("en-IN")}
               </span>
             </div>
+            <div
+              className="absolute rounded-full bg-[#D4FF32] opacity-30 transform -translate-x-1/2 -translate-y-1/2 w-[20px] h-[20px] pointer-events-none transition-all duration-300 ease-out"
+              style={{ left: `${activePoint.x}%`, top: `${activePoint.y}%` }}
+            />
+            <div
+              className="absolute rounded-full bg-[#D4FF32] border-[3px] border-[#14151A] transform -translate-x-1/2 -translate-y-1/2 w-[14px] h-[14px] shadow-[0_0_10px_rgba(212,255,50,0.6)] pointer-events-none transition-all duration-300 ease-out"
+              style={{ left: `${activePoint.x}%`, top: `${activePoint.y}%` }}
+            />
           </div>
-
-          <div className="flex flex-row justify-between w-full px-1">
+          <div className="relative w-full h-[20px]">
             {MONTHS.map((month, i) => (
               <span
                 key={month}
-                className={`font-['Nimbus_Sans'] text-[10px] leading-3 ${
-                  i === ACTIVE_INDEX ? "font-bold text-white" : "font-medium text-[#94A3B8]"
+                className={`absolute top-0 transform -translate-x-1/2 font-sans text-[11px] leading-[16px] transition-colors duration-300 ${
+                  i === activeIndex ? "font-bold text-[#D4FF32]" : "font-medium text-[#64748B]"
                 }`}
+                style={{ left: `${(i / (MONTHS.length - 1)) * 100}%` }}
               >
                 {month}
               </span>

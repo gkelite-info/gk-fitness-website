@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { EnvelopeSimple, LockKey, CircleNotch, ArrowRight, Eye, EyeSlash, CaretLeft } from "@phosphor-icons/react";
+import { useState, useRef, useEffect } from "react";
+import { EnvelopeSimple, LockKey, CircleNotch, ArrowRight, Eye, EyeSlash, CaretLeft, Barbell } from "@phosphor-icons/react";
 import { loginUser } from "@/app/api/auth/actions";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -50,20 +50,18 @@ export default function LoginPage() {
     toast.success("Successfully logged in!", { id: "login-success" });
 
     if (role === "superadmin") {
-      router.push("/superadmin");
+      window.location.href = "/superadmin";
     } else if (role === "owner") {
-      router.push("/owner");
+      window.location.href = "/owner";
     } else if (role === "trainer") {
-      router.push("/trainer");
+      window.location.href = "/trainer";
     } else if (role === "globaltrainer") {
-      router.push("/globaltrainer");
+      window.location.href = "/globaltrainer";
     } else if (role === "customer") {
-      router.push("/customer");
+      window.location.href = "/customer";
     } else {
-      router.push("/");
+      window.location.href = "/";
     }
-
-    router.refresh();
   };
 
   const handleEmailKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -143,7 +141,7 @@ export default function LoginPage() {
 
             <div className="flex flex-col items-center text-center mb-6 sm:mb-10">
               <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#1D2218] border border-[#D4FF32]/30 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-[0_0_20px_rgba(212,255,50,0.15)]">
-                <LockKey size={28} weight="duotone" className="text-[#D4FF32]" />
+                <Barbell size={28} weight="duotone" className="text-[#D4FF32]" />
               </div>
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white mb-2">Welcome Back</h2>
               <p className="text-xs sm:text-sm font-medium text-[#94A3B8] max-w-[280px] sm:max-w-full">
@@ -212,10 +210,12 @@ export default function LoginPage() {
                 className="cursor-pointer w-full h-12 sm:h-14 mt-2 sm:mt-4 bg-[#D4FF32] hover:bg-[#c2ef2b] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-[0_10px_20px_-10px_rgba(212,255,50,0.5)] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
               >
                 {loading ? (
-                  <CircleNotch size={24} weight="bold" className="animate-spin" />
+                  <>
+                    <CircleNotch size={20} weight="bold" className="animate-spin" /> Logging..
+                  </>
                 ) : (
                   <>
-                    Sign In <ArrowRight size={20} weight="bold" />
+                    Login <ArrowRight size={20} weight="bold" />
                   </>
                 )}
               </button>

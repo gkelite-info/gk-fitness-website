@@ -39,7 +39,6 @@ export default function MealPlanCard() {
       </div>
 
       <div className="absolute -right-20 top-0 bottom-0 flex justify-center items-center opacity-50 sm:opacity-100 hidden sm:flex">
-        {/* Placeholder for the image. Normally we'd use Image component pointing to public/home_diet_image.png */}
         <div className="w-48 h-48 bg-gradient-to-l from-[#C0F905]/10 to-transparent rounded-full blur-2xl absolute"></div>
         <BowlFood size={140} className="text-[#222] absolute -right-4" weight="fill" />
       </div>

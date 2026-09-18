@@ -60,12 +60,9 @@ interface MetricCardProps {
 function MetricCard({ icon, label, value, trend, subtext }: MetricCardProps) {
   return (
     <div className="flex flex-row items-center p-3 sm:p-4 xl:p-5 bg-[#14151A] border border-white/[0.06] rounded-2xl w-full h-[116px] gap-2 sm:gap-3 xl:gap-4 overflow-hidden">
-      {/* Icon Wrapper */}
       <div className="w-10 h-10 sm:w-12 sm:h-12 xl:w-14 xl:h-14 bg-[#141812] border border-[#D4FF32]/30 rounded-[10px] sm:rounded-[12px] xl:rounded-[14px] flex justify-center items-center flex-shrink-0">
         {icon}
       </div>
-      
-      {/* Text Content */}
       <div className="flex flex-col min-w-0">
         <span className="font-['Nimbus_Sans'] font-bold text-[8px] lg:text-[9px] xl:text-[11px] leading-3 xl:leading-4 tracking-[0.55px] text-[#94A3B8] whitespace-nowrap">
           {label}

@@ -47,12 +47,34 @@ export async function fetchUserProfile() {
 }
 
 export function subscribeToAuthChanges(
-  callback: (user: User | null, profile: any | null, roleData: any[]) => void
+  callback: (user: User | null, profile: any | null, roleData: any[]) => void,
+  onLoading?: () => void
 ) {
   const supabase = createClient();
+  let currentUserId: string | null = null;
+  let isFirstEvent = true;
+
   const { data: authListener } = supabase.auth.onAuthStateChange(
     async (event, session) => {
+      if (isFirstEvent) {
+        isFirstEvent = false;
+        currentUserId = session?.user?.id || null;
+        return;
+      }
+
+      if (event === "SIGNED_OUT") {
+        currentUserId = null;
+        if (onLoading) onLoading();
+        callback(null, null, []);
+        return;
+      }
+
       if (session?.user) {
+        if (currentUserId === session.user.id) return;
+
+        currentUserId = session.user.id;
+        if (onLoading) onLoading();
+
         const { data: userProfile } = await supabase
           .from("users")
           .select("*")
@@ -65,11 +87,17 @@ export function subscribeToAuthChanges(
         } else {
            callback(session.user, null, []);
         }
-      } else {
-        callback(null, null, []);
       }
     }
   );
 
   return authListener;
+}
+
+export async function logoutUser() {
+  const supabase = createClient();
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    throw error;
+  }
 }
