@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
-import PortalLayout from "@/app/(screens)/components/layout/PortalLayout";
+import CustomerHeader from "./components/CustomerHeader";
+import AppDeepLinkBanner from "./components/AppDeepLinkBanner";
 
 export default function CustomerLayout({
   children,
@@ -7,12 +8,12 @@ export default function CustomerLayout({
   children: ReactNode;
 }) {
   return (
-    <PortalLayout>
-      <div className="w-full h-full flex justify-center">
-        <div className="w-full max-w-[1600px]">
-          {children}
-        </div>
-      </div>
-    </PortalLayout>
+    <div className="min-h-screen bg-[#000000] flex flex-col font-['Nimbus_Sans']">
+      <AppDeepLinkBanner />
+      <CustomerHeader />
+      <main className="flex-1 w-full max-w-[600px] mx-auto px-5 pt-6 pb-24">
+        {children}
+      </main>
+    </div>
   );
 }
