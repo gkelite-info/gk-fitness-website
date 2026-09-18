@@ -30,25 +30,33 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadUser() {
-      const { user, profile, roleData } = await fetchUserProfile();
-      setUser(user);
-      setProfile(profile);
-      setRoleData(roleData || []);
-      setLoading(false);
-    }
+    let isMounted = true;
 
-    loadUser();
-
-    const authListener = subscribeToAuthChanges((newUser, newProfile, newRoleData) => {
-      setLoading(true);
-      setUser(newUser);
-      setProfile(newProfile);
-      setRoleData(newRoleData || []);
-      setLoading(false);
+    fetchUserProfile().then(({ user, profile, roleData }) => {
+      if (isMounted) {
+        setUser(user);
+        setProfile(profile);
+        setRoleData(roleData || []);
+        setLoading(false);
+      }
     });
 
+    const authListener = subscribeToAuthChanges(
+      (newUser, newProfile, newRoleData) => {
+        if (isMounted) {
+          setUser(newUser);
+          setProfile(newProfile);
+          setRoleData(newRoleData || []);
+          setLoading(false);
+        }
+      },
+      () => {
+        if (isMounted) setLoading(true);
+      }
+    );
+
     return () => {
+      isMounted = false;
       authListener?.subscription.unsubscribe();
     };
   }, []);

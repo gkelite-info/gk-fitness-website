@@ -33,7 +33,7 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 flex flex-col sm:flex-row justify-between items-center px-4 sm:px-8 py-4 sm:py-5 w-full bg-[rgba(12,13,16,0.95)] border-b border-[#181A22] backdrop-blur-[6px] gap-4 sm:gap-0 h-auto sm:h-[101px]">
+    <header className="sticky top-0 z-30 flex flex-col sm:flex-row justify-between items-center px-4 sm:px-8 py-4 sm:py-5 w-full bg-[rgba(12,13,16,0.95)] border-b-[2px] border-[#232631] backdrop-blur-[6px] gap-4 sm:gap-0 h-auto sm:h-[101px]">
       <div className="flex items-center gap-4 w-full sm:w-auto">
         <button 
           onClick={onOpenSidebar}
@@ -68,8 +68,8 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-4 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
-        <div className="relative flex-grow sm:flex-grow-0 w-full sm:w-[320px]">
+      <div className="flex items-center gap-4 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
+        <div className="relative flex-grow sm:flex-grow-0 w-full sm:w-[200px] md:w-[280px] lg:w-[320px]">
           <MagnifyingGlass
             size={14}
             className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]"

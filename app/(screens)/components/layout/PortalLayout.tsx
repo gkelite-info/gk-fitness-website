@@ -26,14 +26,12 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
     setIsSidebarOpen(false);
   }, [pathname]);
 
-  const role = profile?.role || "customer";
-
   const renderSidebar = () => {
-    if (loading) {
+    if (loading || !profile) {
       return <SidebarShimmer />;
     }
 
-    switch (role) {
+    switch (profile.role) {
       case "superadmin":
         return <SuperAdminSidebar />;
       case "owner":
@@ -43,8 +41,9 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
       case "globaltrainer":
         return <GlobalTrainerSidebar />;
       case "customer":
-      default:
         return <CustomerSidebar />;
+      default:
+        return <SidebarShimmer />;
     }
   };
 
@@ -70,7 +69,7 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="fixed top-0 left-0 h-full z-50 lg:hidden shadow-2xl relative"
+              className="fixed top-0 left-0 h-full z-50 lg:hidden shadow-2xl"
             >
               {renderSidebar()}
               <button

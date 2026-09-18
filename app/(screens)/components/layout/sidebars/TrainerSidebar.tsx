@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Users, CalendarCheck, Barbell } from "@phosphor-icons/react";
+import { House, CalendarCheck, Users, Compass, User, Barbell } from "@phosphor-icons/react";
+import LogoutButton from "../../reusable/LogoutButton";
 
 const navLinks = [
   { name: "Dashboard", href: "/trainer", icon: House },
@@ -14,9 +15,8 @@ export default function TrainerSidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="w-[256px] h-full bg-[#0E0F13] border-r border-[#1E2027] flex flex-col justify-between items-start px-4 py-6">
+    <div className="w-[256px] h-full bg-[#0E0F13] border-r-[2px] border-[#232631] flex flex-col justify-between items-start px-4 py-6">
       <div className="flex flex-col items-start gap-8 w-full">
-        {/* Logo Header */}
         <div className="flex flex-row items-center gap-3 px-3 w-full">
           <div className="w-10 h-10 bg-[#D4FF32] rounded-xl flex items-center justify-center relative z-10 shadow-[0_10px_15px_-3px_rgba(212,255,50,0.2),0_4px_6px_-4px_rgba(212,255,50,0.2)]">
             <div className="absolute inset-0 bg-white/5 rounded-xl z-0 pointer-events-none" />
@@ -31,8 +31,6 @@ export default function TrainerSidebar() {
             </span>
           </div>
         </div>
-
-        {/* Navigation Links */}
         <div className="flex flex-col items-start gap-2 w-full">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
@@ -60,6 +58,12 @@ export default function TrainerSidebar() {
           })}
         </div>
       </div>
+
+      <div className="w-full mt-6">
+        <LogoutButton />
+      </div>
     </div>
   );
 }
+
+

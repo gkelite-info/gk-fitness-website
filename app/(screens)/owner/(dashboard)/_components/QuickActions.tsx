@@ -1,9 +1,10 @@
-import { UserPlus, Megaphone, QrCode, Package, CreditCard, Fingerprint, FilePlus, Barbell, CaretRight } from "@phosphor-icons/react/dist/ssr";
+import { UserPlus, Megaphone, QrCode, Cube, CreditCard, Fingerprint, Barbell, CaretRight } from "@phosphor-icons/react/dist/ssr";
+import Image from "next/image";
 
 const ACTIONS = [
   {
     title: "Add Member",
-    icon: <UserPlus size={20} color="#34D399" weight="regular" />,
+    icon: <UserPlus size={24} color="#34D399" weight="regular" />,
     baseBg: "bg-[rgba(20,27,22,0.9)]",
     baseBorder: "border-[rgba(16,185,129,0.3)]",
     baseShadow: "shadow-[0_10px_24px_-8px_rgba(34,197,94,0.28)]",
@@ -13,7 +14,7 @@ const ACTIONS = [
   },
   {
     title: "Announcement",
-    icon: <Megaphone size={20} color="#C084FC" weight="regular" />,
+    icon: <Megaphone size={24} color="#C084FC" weight="regular" className="scale-x-[-1]" />,
     baseBg: "bg-[rgba(26,20,36,0.9)]",
     baseBorder: "border-[rgba(168,85,247,0.3)]",
     baseShadow: "shadow-[0_10px_24px_-8px_rgba(168,85,247,0.28)]",
@@ -23,7 +24,7 @@ const ACTIONS = [
   },
   {
     title: "Open Check-in QR",
-    icon: <QrCode size={20} color="#22D3EE" weight="regular" />,
+    icon: <QrCode size={24} color="#22D3EE" weight="regular" />,
     baseBg: "bg-[rgba(17,28,36,0.9)]",
     baseBorder: "border-[rgba(6,182,212,0.3)]",
     baseShadow: "shadow-[0_10px_24px_-8px_rgba(6,182,212,0.28)]",
@@ -33,7 +34,7 @@ const ACTIONS = [
   },
   {
     title: "Manage Inventory",
-    icon: <Package size={20} color="#FB923C" weight="regular" />,
+    icon: <Cube size={24} color="#FB923C" weight="regular" />,
     baseBg: "bg-[rgba(34,23,17,0.9)]",
     baseBorder: "border-[rgba(249,115,22,0.3)]",
     baseShadow: "shadow-[0_10px_24px_-8px_rgba(249,115,22,0.28)]",
@@ -43,7 +44,7 @@ const ACTIONS = [
   },
   {
     title: "Record Payment",
-    icon: <CreditCard size={20} color="#FACC15" weight="regular" />,
+    icon: <CreditCard size={24} color="#FACC15" weight="regular" />,
     baseBg: "bg-[rgba(32,28,16,0.9)]",
     baseBorder: "border-[rgba(245,158,11,0.3)]",
     baseShadow: "shadow-[0_10px_24px_-8px_rgba(234,179,8,0.28)]",
@@ -53,7 +54,7 @@ const ACTIONS = [
   },
   {
     title: "Manage Biometric",
-    icon: <Fingerprint size={20} color="#FB7185" weight="regular" />,
+    icon: <Fingerprint size={24} color="#FB7185" weight="regular" />,
     baseBg: "bg-[rgba(34,19,25,0.9)]",
     baseBorder: "border-[rgba(244,63,94,0.3)]",
     baseShadow: "shadow-[0_10px_24px_-8px_rgba(244,63,94,0.28)]",
@@ -63,7 +64,7 @@ const ACTIONS = [
   },
   {
     title: "Create Plan",
-    icon: <FilePlus size={20} color="#818CF8" weight="regular" />,
+    icon: <Image src="/images/Createplan.png" alt="Create Plan" width={24} height={24} quality={100} unoptimized className="object-contain" />,
     baseBg: "bg-[rgba(20,22,40,0.9)]",
     baseBorder: "border-[rgba(99,102,241,0.3)]",
     baseShadow: "shadow-[0_10px_24px_-8px_rgba(99,102,241,0.28)]",
@@ -73,7 +74,7 @@ const ACTIONS = [
   },
   {
     title: "PT Sessions",
-    icon: <Barbell size={20} color="#F87171" weight="regular" />,
+    icon: <Barbell size={24} color="#F87171" weight="regular" className="-rotate-45" />,
     baseBg: "bg-[rgba(35,19,19,0.9)]",
     baseBorder: "border-[rgba(239,68,68,0.3)]",
     baseShadow: "shadow-[0_10px_24px_-8px_rgba(239,68,68,0.28)]",
@@ -85,36 +86,30 @@ const ACTIONS = [
 
 export default function QuickActions() {
   return (
-    <div className="w-full h-auto sm:h-[344px] bg-[#14151A] border border-white/5 rounded-2xl p-6 flex flex-col gap-5">
-      {/* Header */}
+    <div className="w-full h-auto bg-[#14151A] border border-[rgba(255,255,255,0.06)] rounded-[16px] p-4 sm:p-6 flex flex-col gap-5">
       <div className="flex flex-row justify-between items-center w-full">
-        <h3 className="font-['Nimbus_Sans'] font-bold text-[16px] leading-[24px] tracking-[0.4px] text-white">
+        <h3 className="font-sans font-bold text-[16px] leading-[24px] tracking-[0.4px] text-white">
           Quick Actions
         </h3>
         <button className="flex flex-row items-center gap-1 group cursor-pointer">
-          <span className="font-['Nimbus_Sans'] font-semibold text-[12px] leading-4 text-[#D4FF32] group-hover:underline">
+          <span className="font-sans font-semibold text-[12px] leading-4 text-[#D4FF32] group-hover:underline">
             View All
           </span>
           <CaretRight size={12} color="#D4FF32" weight="bold" />
         </button>
       </div>
-
-      {/* Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full h-full">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full h-full">
         {ACTIONS.map((action, index) => (
           <button
             key={index}
-            className={`w-full h-[114px] flex flex-col justify-center items-center p-3 rounded-xl border ${action.baseBg} ${action.baseBorder} ${action.baseShadow} hover:scale-[1.02] transition-transform duration-200 isolate relative group cursor-pointer`}
+            className={`w-full min-h-[114px] flex flex-col justify-center items-center px-2 py-4 rounded-[12px] border ${action.baseBg} ${action.baseBorder} ${action.baseShadow} hover:scale-[1.02] hover:brightness-110 transition-all duration-200 isolate relative group cursor-pointer`}
           >
-            {/* Icon Wrapper */}
             <div
-              className={`w-11 h-11 flex justify-center items-center rounded-xl border ${action.iconGradient} ${action.iconBorder} ${action.iconShadow} mb-2.5 group-hover:shadow-lg transition-shadow`}
+              className={`w-11 h-11 flex justify-center items-center rounded-xl border ${action.iconGradient} ${action.iconBorder} ${action.iconShadow} mb-2.5 transition-transform group-hover:scale-105`}
             >
               {action.icon}
             </div>
-
-            {/* Title */}
-            <span className="font-['Nimbus_Sans'] font-medium text-[12px] leading-[15px] text-center text-[#E2E8F0]">
+            <span className="font-sans font-medium text-[11px] sm:text-[12px] leading-[14px] sm:leading-[15px] text-center text-[#E2E8F0] w-full">
               {action.title}
             </span>
           </button>

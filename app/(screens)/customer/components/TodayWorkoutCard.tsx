@@ -11,8 +11,6 @@ export default function TodayWorkoutCard() {
         <span className="text-[#D7FF00] text-[11px] font-semibold tracking-wider mb-1 block">
           TODAY'S WORKOUT
         </span>
-        
-        {/* For web, since we don't have the active state from RN's context, we show a generic "Tracked in App" state */}
         <h2 className="text-white text-2xl font-semibold mb-2">
           Ready to train?
         </h2>
@@ -41,7 +39,6 @@ export default function TodayWorkoutCard() {
 
       <div className="items-end justify-center hidden sm:flex shrink-0">
         <div className="w-[145px] h-[160px] relative">
-            {/* The image should be in public folder, but let's just use a styled div if image is missing to prevent broken link on web since we don't have fit-1.png in public yet */}
             <div className="absolute inset-0 bg-gradient-to-tr from-[#1A1A1A] to-[#2A2A2A] rounded-2xl flex items-center justify-center border border-[#333]">
                 <Barbell size={64} className="text-[#444] opacity-50" weight="fill" />
             </div>
