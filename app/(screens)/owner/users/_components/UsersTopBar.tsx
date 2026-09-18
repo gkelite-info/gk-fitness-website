@@ -1,18 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import { UserPlus, ArrowsOut, MagnifyingGlass, CaretRight, Users, UserList } from "@phosphor-icons/react";
 
-export default function UsersTopBar() {
-  const [activeTab, setActiveTab] = useState<"customers" | "trainers">("customers");
+export interface UsersTopBarProps {
+  activeTab: "customers" | "trainers";
+  onTabChange: (tab: "customers" | "trainers") => void;
+}
 
+export default function UsersTopBar({ activeTab, onTabChange }: UsersTopBarProps) {
   return (
     <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center w-full gap-4 mt-6">
       {/* Left Group */}
       <div className="flex flex-row flex-nowrap items-center gap-4 w-full xl:w-auto overflow-x-auto scrollbar-hide pb-2 xl:pb-0">
         <div className="flex flex-row items-center p-1 bg-[#1B1F24] border border-[#262B32] rounded-[16px] h-[46px] flex-shrink-0">
           <button
-            onClick={() => setActiveTab("customers")}
+            onClick={() => onTabChange("customers")}
             className={`flex flex-row items-center justify-center px-5 py-2.5 gap-2 h-[36px] rounded-[12px] transition-all cursor-pointer ${
               activeTab === "customers"
                 ? "bg-[#D2F829] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-black"
@@ -26,7 +28,7 @@ export default function UsersTopBar() {
           </button>
           
           <button
-            onClick={() => setActiveTab("trainers")}
+            onClick={() => onTabChange("trainers")}
             className={`flex flex-row items-center justify-center px-5 py-2.5 gap-2 h-[36px] rounded-[12px] transition-all cursor-pointer ${
               activeTab === "trainers"
                 ? "bg-[#D2F829] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-black"

@@ -3,14 +3,17 @@
 import { useState } from "react";
 import { Plus, CaretDown, SquaresFour, List } from "@phosphor-icons/react";
 
+import Link from "next/link";
+
 export interface UsersFilterBarProps {
+  activeTab: "customers" | "trainers";
   viewMode: "grid" | "list";
   onViewModeChange: (mode: "grid" | "list") => void;
   activeFilter: string;
   onFilterChange: (filter: string) => void;
 }
 
-export default function UsersFilterBar({ viewMode, onViewModeChange, activeFilter, onFilterChange }: UsersFilterBarProps) {
+export default function UsersFilterBar({ activeTab, viewMode, onViewModeChange, activeFilter, onFilterChange }: UsersFilterBarProps) {
   const filters = [
     { name: "All", dot: null },
     { name: "Active", dot: "bg-[#22C55E]" },
@@ -20,12 +23,15 @@ export default function UsersFilterBar({ viewMode, onViewModeChange, activeFilte
   return (
     <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center w-full mt-6 gap-4">
       <div className="flex flex-row flex-nowrap items-center gap-4 w-full xl:w-auto overflow-x-auto scrollbar-hide pb-2 xl:pb-0">
-        <button className="flex flex-row items-center justify-center px-5 py-2.5 gap-1.5 h-[36px] bg-[#D2F829] shadow-[0_0_20px_rgba(210,248,41,0.2)] rounded-[12px] hover:bg-[#c2ef2b] transition-all cursor-pointer flex-shrink-0">
+        <Link 
+          href={`/owner/users/add?type=${activeTab}`}
+          className="flex flex-row items-center justify-center px-5 py-2.5 gap-1.5 h-[36px] bg-[#D2F829] shadow-[0_0_20px_rgba(210,248,41,0.2)] rounded-[12px] hover:bg-[#c2ef2b] transition-all cursor-pointer flex-shrink-0"
+        >
           <Plus size={16} weight="bold" className="text-black" />
           <span className="font-sans font-bold text-[12px] leading-4 tracking-[0.3px] text-black">
-            Register Customer
+            Register {activeTab === "trainers" ? "Trainer" : "Customer"}
           </span>
-        </button>
+        </Link>
         <div className="flex flex-row flex-nowrap items-center gap-2 flex-shrink-0">
           {filters.map((filter) => (
             <button

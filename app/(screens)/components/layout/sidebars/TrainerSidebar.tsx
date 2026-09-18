@@ -33,7 +33,7 @@ export default function TrainerSidebar() {
         </div>
         <div className="flex flex-col items-start gap-2 w-full">
           {navLinks.map((link) => {
-            const isActive = pathname === link.href;
+            const isActive = pathname === link.href || (link.href !== "/trainer" && pathname.startsWith(`${link.href}/`));
             const Icon = link.icon;
             return (
               <Link

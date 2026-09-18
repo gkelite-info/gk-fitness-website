@@ -21,6 +21,7 @@ const MOCK_CUSTOMERS: Customer[] = [
 ];
 
 export default function UsersDashboard() {
+  const [activeTab, setActiveTab] = useState<"customers" | "trainers">("customers");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,8 +35,9 @@ export default function UsersDashboard() {
   return (
     <div className="flex flex-col w-full h-full pb-8">
       <UsersHeader />
-      <UsersTopBar />
+      <UsersTopBar activeTab={activeTab} onTabChange={setActiveTab} />
       <UsersFilterBar 
+        activeTab={activeTab}
         viewMode={viewMode} 
         onViewModeChange={setViewMode} 
         activeFilter={activeFilter}
