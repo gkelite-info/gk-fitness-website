@@ -1,0 +1,38 @@
+import { useQuery } from '@tanstack/react-query';
+import { fetchCustomerWorkoutPlans } from '@/lib/helpers/customerWorkoutPlans/customerWorkoutPlans';
+import { fetchWorkoutPlanDays } from '@/lib/helpers/customerWorkoutPlans/workoutPlansDays';
+import { fetchWorkoutPlanDayExercises } from '@/lib/helpers/customerWorkoutPlans/workoutPlanDayExercises';
+
+export function useCustomerWeeklyPlan(userId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['customerWeeklyPlan', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      
+      const plans = await fetchCustomerWorkoutPlans(userId);
+      const activePlan = plans?.find((p: any) => p.isActive);
+      
+      if (!activePlan) return null;
+
+      const days = await fetchWorkoutPlanDays(activePlan.planId);
+      const loadedPlanDays: any = { 1: {}, 2: {}, 3: {}, 4: {} };
+      
+      for (const d of days) {
+        if (d.workoutType && d.workoutType !== 'Rest') {
+          const exs = await fetchWorkoutPlanDayExercises(d.planDayId);
+          const weekNum = d.weekNumber || 1;
+          loadedPlanDays[weekNum][d.dayOfWeek] = {
+            dayOfWeek: d.dayOfWeek,
+            workoutType: d.workoutType,
+            workoutId: d.workoutId || null,
+            durationMinutes: d.durationMinutes,
+            exercises: exs,
+            planDayId: d.planDayId
+          };
+        }
+      }
+      return loadedPlanDays;
+    },
+    enabled: !!userId,
+  });
+}

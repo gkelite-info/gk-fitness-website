@@ -1,0 +1,278 @@
+import { supabase } from '@/lib/supabase';
+
+export interface GymCustomerMembershipPlanAttributes {
+  GymCustomerMembershipPlanId?: string;
+  customerId: string;
+  gymId: string;
+  planId: string;
+  customAmount?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  createdBy: string;
+  is_Active?: boolean;
+  is_deleted?: boolean;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+  deletedAt?: string | Date | null;
+}
+
+export interface SaveGymCustomerMembershipPlanParams {
+  GymCustomerMembershipPlanId?: string;
+  customerId: string;
+  gymId: string;
+  planId: string;
+  customAmount?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  createdBy: string;
+  is_Active?: boolean;
+}
+
+export async function fetchGymCustomerMembershipPlans(gymId?: string, customerId?: string) {
+  let query = supabase
+    .from('gym_customer_membership_plans')
+    .select('*, plan:gym_membership_plans(planName, durationMonths, price), gym_customers(fullName, email, phone, gymId, is_Active, users(profilePhoto, status, createdAt))')
+    .eq('is_deleted', false)
+    .order('createdAt', { ascending: false })
+    .limit(50);
+
+  if (gymId) {
+    query = query.eq('gymId', gymId);
+  }
+
+  if (customerId) {
+    query = query.eq('customerId', customerId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('[gymCustomerMembershipPlansHelper] fetchGymCustomerMembershipPlans Error:', error);
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+export async function fetchGymCustomerMembershipPlanById(id: string) {
+  const { data, error } = await supabase
+    .from('gym_customer_membership_plans')
+    .select('*')
+    .eq('GymCustomerMembershipPlanId', id)
+    .eq('is_deleted', false)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[gymCustomerMembershipPlansHelper] fetchGymCustomerMembershipPlanById Error:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+export async function saveGymCustomerMembershipPlan(planData: SaveGymCustomerMembershipPlanParams) {
+  const now = new Date().toISOString();
+
+  let targetPlanId = planData.GymCustomerMembershipPlanId;
+  let isUpdate = false;
+  let existingPlan = null;
+
+  if (targetPlanId) {
+    const { data } = await supabase
+      .from('gym_customer_membership_plans')
+      .select('*')
+      .eq('GymCustomerMembershipPlanId', targetPlanId)
+      .eq('is_deleted', false)
+      .maybeSingle();
+
+    if (data) {
+      isUpdate = true;
+      existingPlan = data;
+    }
+  }
+
+  if (!isUpdate && planData.customerId) {
+    let query = supabase
+      .from('gym_customer_membership_plans')
+      .select('*')
+      .eq('customerId', planData.customerId)
+      .eq('is_deleted', false);
+    if (planData.gymId) {
+      query = query.eq('gymId', planData.gymId);
+    }
+    const { data } = await query.order('createdAt', { ascending: false }).limit(1).maybeSingle();
+
+    if (data) {
+      targetPlanId = data.GymCustomerMembershipPlanId;
+      isUpdate = true;
+      existingPlan = data;
+    }
+  }
+
+  let finalStartDate = planData.startDate;
+  let finalEndDate = planData.endDate;
+
+  if (!finalStartDate || !finalEndDate) {
+    let durationMonths = 1;
+    if (planData.planId) {
+      const { data: planInfo } = await supabase
+        .from('gym_membership_plans')
+        .select('durationMonths')
+        .eq('planId', planData.planId)
+        .maybeSingle();
+      if (planInfo?.durationMonths) {
+        // durationMonths is VARCHAR — could be "1", "3", "1 month", "1 year", etc.
+        const rawStr = String(planInfo.durationMonths).toLowerCase().trim();
+        if (rawStr.includes('year')) {
+          const yearMatch = rawStr.match(/\d+/);
+          durationMonths = yearMatch ? parseInt(yearMatch[0], 10) * 12 : 12;
+        } else {
+          const numMatch = rawStr.match(/\d+/);
+          durationMonths = numMatch ? parseInt(numMatch[0], 10) : 1;
+        }
+      }
+    }
+
+    const nowDate = new Date();
+    finalStartDate = nowDate.toISOString();
+
+    const calculatedEnd = new Date(nowDate);
+    const targetDay = nowDate.getDate();
+    calculatedEnd.setMonth(calculatedEnd.getMonth() + durationMonths);
+    if (calculatedEnd.getDate() !== targetDay) {
+      calculatedEnd.setDate(0);
+    }
+    finalEndDate = calculatedEnd.toISOString();
+  }
+
+  const finalIsActive = planData.is_Active !== undefined ? planData.is_Active : true;
+
+  if (isUpdate && targetPlanId) {
+    const { data, error } = await supabase
+      .from('gym_customer_membership_plans')
+      .update({
+        customerId: planData.customerId,
+        gymId: planData.gymId,
+        planId: planData.planId,
+        customAmount: planData.customAmount || 0,
+        startDate: finalStartDate,
+        endDate: finalEndDate,
+        is_Active: finalIsActive,
+        updatedAt: now,
+      })
+      .eq('GymCustomerMembershipPlanId', targetPlanId)
+      .select();
+
+    if (error) {
+      throw error;
+    }
+
+    return data ? data[0] : null;
+  } else {
+    const generatedId = targetPlanId || crypto.randomUUID();
+    const insertPayload = {
+      GymCustomerMembershipPlanId: generatedId,
+      customerId: planData.customerId,
+      gymId: planData.gymId,
+      planId: planData.planId,
+      customAmount: planData.customAmount || 0,
+      startDate: finalStartDate,
+      endDate: finalEndDate,
+      createdBy: planData.createdBy,
+      is_Active: finalIsActive,
+      is_deleted: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const { data, error } = await supabase
+      .from('gym_customer_membership_plans')
+      .insert([insertPayload])
+      .select();
+
+    if (error) {
+      throw error;
+    }
+
+    return data ? data[0] : null;
+  }
+}
+
+export async function deleteGymCustomerMembershipPlan(id: string) {
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('gym_customer_membership_plans')
+    .update({
+      is_deleted: true,
+      deletedAt: now,
+      updatedAt: now,
+    })
+    .eq('GymCustomerMembershipPlanId', id)
+    .select();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? data[0] : null;
+}
+
+export async function toggleGymCustomerMembershipPlanActiveStatus(id: string, currentStatus: boolean) {
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('gym_customer_membership_plans')
+    .update({
+      is_Active: !currentStatus,
+      updatedAt: now,
+    })
+    .eq('GymCustomerMembershipPlanId', id)
+    .select();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? data[0] : null;
+}
+
+export async function fetchGymCustomerMembershipPlansPaginated(
+  gymId: string,
+  page: number,
+  limit: number,
+  searchQuery?: string,
+  sortOrder: 'newest' | 'oldest' = 'newest',
+  planId?: string
+) {
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  let query = supabase
+    .from('gym_customer_membership_plans')
+    .select('*, gym_customers!inner(fullName, email, phone, is_Active, users!inner(profilePhoto, status, createdAt)), gym_membership_plans(planName, durationMonths, price)', { count: 'exact' })
+    .eq('gymId', gymId)
+    .eq('is_deleted', false)
+    .eq('gym_customers.is_Active', true)
+    .eq('gym_customers.users.status', 'active')
+    .order('createdAt', { ascending: sortOrder === 'oldest' });
+
+  if (searchQuery) {
+    query = query.ilike('gym_customers.fullName', `%${searchQuery}%`);
+  }
+
+  if (planId) {
+    query = query.eq('planId', planId);
+  }
+
+  const { data, count, error } = await query.range(from, to);
+
+  if (error) {
+    console.error('[gymCustomerMembershipPlansHelper] fetchGymCustomerMembershipPlansPaginated Error:', error);
+    throw error;
+  }
+
+  return {
+    data: data ?? [],
+    total: count ?? 0,
+  };
+}

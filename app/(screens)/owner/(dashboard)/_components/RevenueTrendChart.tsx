@@ -4,7 +4,6 @@ import { CaretDown } from "@phosphor-icons/react";
 import { useState } from "react";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const PRECISE_DATA = [1500, 3500, 4500, 5000, 4000, 4500, 8450, 4200, 5000, 13000, 19000, 20000]; // Example data fitting the curve
 const MAX_VALUE = 30000;
 const Y_LABELS = [
   { label: "₹30K", value: 30000 },
@@ -13,11 +12,19 @@ const Y_LABELS = [
   { label: "₹0", value: 0 },
 ];
 
-export default function RevenueTrendChart() {
+interface RevenueTrendChartProps {
+  data: number[];
+}
+
+export default function RevenueTrendChart({ data }: RevenueTrendChartProps) {
   const [activeIndex, setActiveIndex] = useState(6);
   const paddingY = 5; // % padding top/bottom
-  const points = PRECISE_DATA.map((val, i) => {
-    const x = (i / (PRECISE_DATA.length - 1)) * 100;
+  
+  // Use provided data or fallback to zeroes
+  const chartData = data && data.length === 12 ? data : Array(12).fill(0);
+  
+  const points = chartData.map((val, i) => {
+    const x = (i / (chartData.length - 1)) * 100;
     const y = 100 - paddingY - (val / MAX_VALUE) * (100 - paddingY * 2);
     return { x, y, value: val };
   });

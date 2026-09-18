@@ -1,0 +1,182 @@
+import { supabase } from '@/lib/supabase';
+import { createUser } from '@/lib/helpers/otpHelper';
+
+export interface UserProfile {
+  userId: string | null;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  country?: string | null;
+  state?: string | null;
+  city?: string | null;
+  pincode?: number | null;
+  role: string | null;
+  profilePhoto?: string | null;
+
+  // Role-specific IDs
+  gymOwnerId?: string | null;
+  gymId?: string | null;
+  customerId?: string | null;
+  trainerId?: string | null;
+  doctorId?: string | null;
+  dieticianId?: string | null;
+
+  isGymSuspended?: boolean;
+}
+
+export async function fetchUserAndRoleProfile(
+  authUserId: string,
+  authEmail: string | null
+): Promise<UserProfile> {
+  const defaultProfile: UserProfile = {
+    userId: authUserId,
+    name: 'User',
+    email: authEmail,
+    phone: null,
+    address: null,
+    role: 'customer',
+  };
+
+  try {
+    let { data: userRecord, error } = await supabase
+      .from('users')
+      .select('userId, name, email, phone, address, country, state, city, pincode, role, profilePhoto')
+      .eq('userId', authUserId)
+      .maybeSingle();
+
+    if (!userRecord && authEmail) {
+      const emailRes = await supabase
+        .from('users')
+        .select('userId, name, email, phone, address, country, state, city, pincode, role, profilePhoto')
+        .eq('email', authEmail)
+        .maybeSingle();
+      userRecord = emailRes.data;
+    }
+
+    if (!userRecord && authUserId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const authUser = session?.user;
+
+      if (authUser && authUser.id === authUserId) {
+        const metadata = authUser.user_metadata || {};
+        try {
+          const createdProfile = await createUser({
+            userId: authUserId,
+            name: metadata.name || 'User',
+            email: authUser.email || authEmail || '',
+            phone: metadata.phone || '',
+            address: metadata.address || '',
+            country: metadata.country || null,
+            state: metadata.state || null,
+            city: metadata.city || null,
+            pincode: metadata.pincode || null,
+            role: metadata.role || 'customer',
+          });
+
+          if (createdProfile) {
+            userRecord = createdProfile;
+          }
+        } catch (createError) {
+          console.error('[userProfileHelper] Auto-creation failed:', createError);
+        }
+      }
+    }
+
+    const profile: UserProfile = {
+      ...defaultProfile,
+      ...userRecord,
+    };
+
+    if (userRecord && userRecord.userId) {
+      // Auto-create community profile if missing
+      const { data: commProfile } = await supabase
+        .from('gym_community_profiles')
+        .select('gymCommunityProfileId')
+        .eq('userId', userRecord.userId)
+        .maybeSingle();
+
+      if (!commProfile) {
+        const baseUsername = (userRecord.name || 'user').toLowerCase().replace(/[^a-z0-9._]/g, '');
+        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+        const username = `${baseUsername.slice(0, 20)}_${randomSuffix}`;
+
+        await supabase.from('gym_community_profiles').insert({
+          gymCommunityProfileId: crypto.randomUUID(),
+          userId: userRecord.userId,
+          username,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+    }
+
+    if (!userRecord) {
+      console.warn('[userProfileHelper] Profile missing in DB. Fallback to superadmin.');
+      profile.role = 'superadmin';
+    }
+
+    if (profile.role) {
+      switch (profile.role) {
+        case 'owner': {
+          const { data: ownerData } = await supabase
+            .from('gym_owners')
+            .select('gymOwnerId, gymId')
+            .eq('userId', profile.userId)
+            .maybeSingle();
+          profile.gymOwnerId = ownerData?.gymOwnerId || null;
+          profile.gymId = ownerData?.gymId || null;
+          break;
+        }
+        case 'customer': {
+          const { data: customerData } = await supabase
+            .from('gym_customers')
+            .select('customerId, gymId')
+            .eq('customerId', profile.userId)
+            .maybeSingle();
+          profile.customerId = customerData?.customerId || null;
+          profile.gymId = customerData?.gymId || null;
+          break;
+        }
+        case 'trainer': {
+          // TODO: Implement trainer table fetch when available
+          // const { data } = await supabase.from('trainers').select('trainerId').eq('userId', profile.userId).maybeSingle();
+          // profile.trainerId = data?.trainerId || null;
+          break;
+        }
+        case 'doctor': {
+          // TODO: Implement doctor table fetch when available
+          // const { data } = await supabase.from('doctors').select('doctorId').eq('userId', profile.userId).maybeSingle();
+          // profile.doctorId = data?.doctorId || null;
+          break;
+        }
+        case 'dietician': {
+          // TODO: Implement dietician table fetch when available
+          // const { data } = await supabase.from('dieticians').select('dieticianId').eq('userId', profile.userId).maybeSingle();
+          // profile.dieticianId = data?.dieticianId || null;
+          break;
+        }
+        case 'superadmin':
+        default:
+          // Superadmins do not have a specific dependent table ID attached yet
+          break;
+      }
+    }
+
+    if (profile.gymId) {
+      const { data: gymData } = await supabase.from('gyms').select('isActive').eq('gymId', profile.gymId).maybeSingle();
+      if (gymData && gymData.isActive === false) {
+        profile.role = null;
+        profile.isGymSuspended = true;
+      }
+    }
+
+    return profile;
+  } catch (err) {
+    console.error('[userProfileHelper] Failed to fetch user profile:', err);
+    return {
+      ...defaultProfile,
+      role: 'superadmin',
+    };
+  }
+}

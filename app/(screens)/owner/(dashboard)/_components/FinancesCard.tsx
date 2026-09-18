@@ -1,10 +1,40 @@
 import { ArrowUp } from "@phosphor-icons/react/dist/ssr";
 
-export default function FinancesCard() {
+interface FinancesCardProps {
+  paymentsToday: any[];
+}
+
+export default function FinancesCard({ paymentsToday = [] }: FinancesCardProps) {
+  let upi = 0;
+  let card = 0;
+  let cash = 0;
+  let total = 0;
+  
+  paymentsToday.forEach((p: any) => {
+    const amt = Number(p.amountPaid || 0);
+    total += amt;
+    const method = (p.paymentMethod || "").toLowerCase();
+    if (method.includes("upi") || method.includes("online")) upi += amt;
+    else if (method.includes("card")) card += amt;
+    else cash += amt; // default to cash
+  });
+
+  const transactionsCount = paymentsToday.length;
+  
+  const upiPercent = total > 0 ? (upi / total) * 100 : 0;
+  const cardPercent = total > 0 ? (card / total) * 100 : 0;
+  const cashPercent = total > 0 ? (cash / total) * 100 : 0;
+
+  const formatCurrency = (val: number) => {
+    if (val === 0) return '₹0';
+    if (val >= 1000) return `₹${(val / 1000).toFixed(1)}k`;
+    return `₹${val}`;
+  };
+
   const breakdown = [
-    { label: "UPI", amount: "(₹5.2k)", color: "bg-[#D4FF32]", dotColor: "bg-[#D4FF32]", width: "50%" },
-    { label: "Card", amount: "(₹2.2k)", color: "bg-[#22D3EE]", dotColor: "bg-[#22D3EE]", width: "26%" },
-    { label: "Cash", amount: "(₹1.0k)", color: "bg-[#FBBF24]", dotColor: "bg-[#FBBF24]", width: "24%" },
+    { label: "UPI", amount: `(${formatCurrency(upi)})`, color: "bg-[#D4FF32]", dotColor: "bg-[#D4FF32]", width: `${upiPercent}%` },
+    { label: "Card", amount: `(${formatCurrency(card)})`, color: "bg-[#22D3EE]", dotColor: "bg-[#22D3EE]", width: `${cardPercent}%` },
+    { label: "Cash", amount: `(${formatCurrency(cash)})`, color: "bg-[#FBBF24]", dotColor: "bg-[#FBBF24]", width: `${cashPercent}%` },
   ];
 
   return (
@@ -19,14 +49,14 @@ export default function FinancesCard() {
         </span>
         <div className="flex flex-row items-center gap-2 flex-wrap">
           <span className="font-sans font-black text-[18px] leading-[28px] text-white">
-            ₹8,450
+            ₹{total.toLocaleString('en-IN')}
           </span>
           <span className="font-sans font-bold text-[10px] leading-[14px] text-[#D4FF32] bg-[rgba(212,255,50,0.1)] px-1.5 py-0.5 rounded-[4px] flex items-center gap-0.5">
-            +14%
+            +0%
           </span>
         </div>
         <span className="font-sans font-normal text-[9px] leading-[15px] text-[#94A3B8]">
-          12 transactions completed
+          {transactionsCount} transactions completed
         </span>
       </div>
 

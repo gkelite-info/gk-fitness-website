@@ -1,6 +1,18 @@
 import { Users, CheckCircle, CurrencyInr, TrendUp, ArrowUp } from "@phosphor-icons/react/dist/ssr";
 
-export default function OverviewMetrics() {
+interface OverviewMetricsProps {
+  activeCustomers: number;
+  checkIns: number;
+  revenueToday: string;
+  monthlyGrowth: string;
+}
+
+export default function OverviewMetrics({
+  activeCustomers,
+  checkIns,
+  revenueToday,
+  monthlyGrowth,
+}: OverviewMetricsProps) {
   return (
     <div className="w-full flex flex-col gap-4">
       <div className="flex flex-row justify-between items-center w-full">
@@ -19,30 +31,30 @@ export default function OverviewMetrics() {
         <MetricCard
           icon={<Users size={24} color="#D4FF32" weight="regular" />}
           label="ACTIVE CUSTOMERS"
-          value="1,036"
-          trend="+12%"
-          subtext="vs. yesterday"
+          value={activeCustomers.toLocaleString('en-IN')}
+          trend="+0%"
+          subtext=""
         />
         <MetricCard
           icon={<CheckCircle size={24} color="#D4FF32" weight="regular" />}
           label="CHECK-INS"
-          value="286"
-          trend="+8%"
-          subtext="vs. yesterday"
+          value={checkIns.toLocaleString('en-IN')}
+          trend="+0%"
+          subtext=""
         />
         <MetricCard
           icon={<CurrencyInr size={24} color="#D4FF32" weight="regular" />}
           label="REVENUE TODAY"
-          value="₹8,450"
-          trend="+14%"
-          subtext="vs. yesterday"
+          value={revenueToday}
+          trend="+0%"
+          subtext=""
         />
         <MetricCard
           icon={<TrendUp size={24} color="#D4FF32" weight="regular" />}
           label="MONTHLY GROWTH"
-          value="+8.4%"
-          trend="+2.1%"
-          subtext="vs. last month"
+          value={monthlyGrowth}
+          trend="+0%"
+          subtext=""
         />
       </div>
     </div>
