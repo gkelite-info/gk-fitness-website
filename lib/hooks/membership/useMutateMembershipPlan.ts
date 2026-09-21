@@ -1,7 +1,6 @@
 // @ts-nocheck
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { upsertMembershipPlans, deleteMembershipPlan } from '@/lib/helpers/membershipHelper';
-import { DraftPlan } from '@/constants/membershipMockData';
+import { upsertMembershipPlans, deleteMembershipPlan, DraftPlan } from '@/lib/helpers/membershipHelper';
 
 export function useUpsertMembershipPlans() {
   const queryClient = useQueryClient();

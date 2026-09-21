@@ -36,7 +36,7 @@ export async function getGymCustomers(gymId: string) {
 export async function getGymAttendanceToday(gymId: string, dateStr: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("attendance")
+    .from("gym_attendance")
     .select("*")
     .eq("gymId", gymId)
     .eq("date", dateStr);
@@ -87,7 +87,7 @@ export async function getGymCustomerMembershipPlans(userId: string) {
 export async function getCustomerTrainersByGym(gymId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("gym_customer_trainers")
+    .from("customer_trainers")
     .select("*")
     .eq("gymId", gymId)
     .eq("is_deleted", false);

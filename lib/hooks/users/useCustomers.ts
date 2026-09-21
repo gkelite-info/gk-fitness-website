@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
 
 const PAGE_SIZE = 10;
 
@@ -12,18 +12,21 @@ export function useCustomers(gymId: string | null, filter: string, debouncedSear
       const from = pageParam * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
+      const supabase = createClient();
       let query = supabase
         .from('gym_customers')
         .select(
           planFilter !== 'All' 
-            ? '*, gym_customer_membership_plans!inner(planId)' 
-            : '*', 
+            ? '*, gym_customer_membership_plans!inner(planId, endDate, is_Active, is_deleted, gym_membership_plans(planName))' 
+            : '*, gym_customer_membership_plans(planId, endDate, is_Active, is_deleted, gym_membership_plans(planName))', 
           { count: 'exact' }
         )
         .eq('gymId', gymId);
 
       if (planFilter !== 'All') {
-        query = query.eq('gym_customer_membership_plans.planId', planFilter);
+        query = query
+          .eq('gym_customer_membership_plans.planId', planFilter)
+          .eq('gym_customer_membership_plans.is_deleted', false);
       }
 
       if (filter === 'active') {
@@ -51,6 +54,7 @@ export function useCustomers(gymId: string | null, filter: string, debouncedSear
     },
     getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 0,
-    enabled: !!gymId, // Only run the query if gymId is present
+    enabled: !!gymId,
   });
 }
+

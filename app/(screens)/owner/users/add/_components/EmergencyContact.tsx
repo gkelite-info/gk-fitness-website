@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { ShieldCheck } from "@phosphor-icons/react";
 import Dropdown from "../../../../components/reusable/Dropdown";
+import { useFormContext } from "react-hook-form";
 
 export default function EmergencyContact() {
-  const [relationship, setRelationship] = useState("");
-  const [countryCode, setCountryCode] = useState("+91");
+  const { register, watch, setValue, formState: { errors } } = useFormContext();
+  
+  const relationship = watch("relationship");
+  const emergencyCountryCode = watch("emergencyCountryCode") || "+91";
 
   const relationshipOptions = [
     { label: "Parent", value: "parent" },
@@ -39,13 +42,15 @@ export default function EmergencyContact() {
           <label className="w-full font-sans font-medium text-[11px] leading-4 text-[#D1D5DB]">
             Contact Name <span className="text-red-500">*</span>
           </label>
-          <div className="flex flex-row justify-center items-start px-3 py-[9px] w-full bg-[#1A2029] border border-[#14161A] rounded-lg">
+          <div className={`flex flex-row justify-center items-start px-3 py-[9px] w-full bg-[#1A2029] border rounded-lg ${errors.emergencyContactName ? "border-red-500" : "border-[#14161A]"}`}>
             <input
               type="text"
+              {...register("emergencyContactName")}
               placeholder="Enter contact name"
               className="w-full bg-transparent outline-none font-sans font-normal text-xs leading-[14px] text-white placeholder:text-[#6B7280]"
             />
           </div>
+          {errors.emergencyContactName && <span className="text-red-500 text-[10px]">{errors.emergencyContactName.message as string}</span>}
         </div>
 
         {/* Relationship */}
@@ -56,9 +61,10 @@ export default function EmergencyContact() {
           <Dropdown
             options={relationshipOptions}
             value={relationship}
-            onChange={(val) => setRelationship(val)}
+            onChange={(val) => setValue("relationship", val, { shouldValidate: true })}
             placeholder="Select relationship"
           />
+          {errors.relationship && <span className="text-red-500 text-[10px]">{errors.relationship.message as string}</span>}
         </div>
 
         {/* Contact Phone */}
@@ -66,23 +72,25 @@ export default function EmergencyContact() {
           <label className="w-full font-sans font-medium text-[11px] leading-4 text-[#D1D5DB]">
             Contact Phone <span className="text-red-500">*</span>
           </label>
-          <div className="flex flex-row items-stretch w-full h-[34px] bg-[#1A2029] border border-[#14161A] rounded-lg overflow-hidden">
+          <div className={`flex flex-row items-stretch w-full h-[34px] bg-[#1A2029] border rounded-lg overflow-hidden ${errors.emergencyContactNumber ? "border-red-500" : "border-[#14161A]"}`}>
             <div className="w-[85px] shrink-0 h-full border-r border-[#14161A] bg-[rgba(17,22,29,0.6)]">
               <Dropdown
                 options={countryOptions}
-                value={countryCode}
-                onChange={(val) => setCountryCode(val)}
+                value={emergencyCountryCode}
+                onChange={(val) => setValue("emergencyCountryCode", val, { shouldValidate: true })}
                 triggerClassName="relative flex flex-row items-center justify-between px-3 py-2 w-full h-full cursor-pointer hover:bg-white/5 transition-colors"
               />
             </div>
             <div className="flex-1 flex flex-col justify-center px-3">
               <input
                 type="tel"
+                {...register("emergencyContactNumber")}
                 placeholder="Enter contact number"
                 className="w-full bg-transparent outline-none font-sans font-normal text-xs leading-[14px] text-white placeholder:text-[#6B7280]"
               />
             </div>
           </div>
+          {errors.emergencyContactNumber && <span className="text-red-500 text-[10px]">{errors.emergencyContactNumber.message as string}</span>}
         </div>
       </div>
     </div>

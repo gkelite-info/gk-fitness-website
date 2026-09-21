@@ -43,6 +43,7 @@ export function useSaveGymAnnouncement() {
     mutationFn: (announcementData: SaveGymAnnouncementParams) => saveGymAnnouncement(announcementData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gymAnnouncements'] });
+      queryClient.invalidateQueries({ queryKey: ['gymAnnouncementsPaginated'] });
     },
   });
 }
@@ -54,6 +55,7 @@ export function useDeleteGymAnnouncement() {
     mutationFn: (id: string) => deleteGymAnnouncement(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gymAnnouncements'] });
+      queryClient.invalidateQueries({ queryKey: ['gymAnnouncementsPaginated'] });
     },
   });
 }

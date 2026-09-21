@@ -17,13 +17,17 @@ interface Customer {
 
 interface CustomersTableProps {
   customers: Customer[];
+  userType?: "customers" | "trainers";
 }
 
-export default function CustomersTable({ customers }: CustomersTableProps) {
+export default function CustomersTable({ customers, userType = "customers" }: CustomersTableProps) {
+  const isTrainer = userType === "trainers";
+  const title = isTrainer ? "Trainers" : "Customers";
+
   return (
     <div className="flex flex-col w-full mt-8 gap-4">
       <h2 className="font-sans font-bold text-[15px] leading-6 text-white tracking-[-0.2px]">
-        Customers ({customers.length})
+        {title} ({customers.length})
       </h2>
       
       <Table>
@@ -32,9 +36,9 @@ export default function CustomersTable({ customers }: CustomersTableProps) {
             <TableHeadCell>Member</TableHeadCell>
             <TableHeadCell>Status</TableHeadCell>
             <TableHeadCell>Phone</TableHeadCell>
-            <TableHeadCell>Plan</TableHeadCell>
+            <TableHeadCell>{isTrainer ? "Specialization" : "Plan"}</TableHeadCell>
             <TableHeadCell>Joined Date</TableHeadCell>
-            <TableHeadCell>Valid Till</TableHeadCell>
+            {!isTrainer && <TableHeadCell>Valid Till</TableHeadCell>}
             <TableHeadCell className="w-[40px]"></TableHeadCell>
           </TableRow>
         </TableHeader>
@@ -80,11 +84,13 @@ export default function CustomersTable({ customers }: CustomersTableProps) {
                   <span className="text-[#848C99]">{customer.joinedDate}</span>
                 </TableCell>
                 
-                <TableCell>
-                  <strong className={`font-normal ${isActive ? "text-white" : "text-[#F87171]"}`}>
-                    {customer.validTill}
-                  </strong>
-                </TableCell>
+                {!isTrainer && (
+                  <TableCell>
+                    <strong className={`font-normal ${isActive ? "text-white" : "text-[#F87171]"}`}>
+                      {customer.validTill}
+                    </strong>
+                  </TableCell>
+                )}
                 
                 <TableCell>
                   <CaretRight size={16} className="text-[#656C79] group-hover:text-[#D2F829] transition-colors" weight="bold" />

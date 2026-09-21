@@ -15,13 +15,16 @@ export interface Customer {
 
 interface CustomersGridProps {
   customers: Customer[];
+  userType?: "customers" | "trainers";
 }
 
-export default function CustomersGrid({ customers }: CustomersGridProps) {
+export default function CustomersGrid({ customers, userType = "customers" }: CustomersGridProps) {
+  const title = userType === "trainers" ? "Trainers" : "Customers";
+
   return (
     <div className="flex flex-col w-full mt-8 gap-4">
       <h2 className="font-sans font-bold text-[15px] leading-6 text-white tracking-[-0.2px]">
-        Customers ({customers.length})
+        {title} ({customers.length})
       </h2>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 w-full">
@@ -35,6 +38,7 @@ export default function CustomersGrid({ customers }: CustomersGridProps) {
             plan={customer.plan}
             joinedDate={customer.joinedDate}
             validTill={customer.validTill}
+            type={userType === "trainers" ? "trainer" : "customer"}
           />
         ))}
       </div>

@@ -1,7 +1,6 @@
 // @ts-nocheck
 import { useQuery } from '@tanstack/react-query';
-import { fetchGymMembershipPlans } from '@/lib/helpers/membershipHelper';
-import { MembershipPlan } from '@/constants/membershipMockData';
+import { fetchGymMembershipPlans, MembershipPlan } from '@/lib/helpers/membershipHelper';
 
 export function useMembershipPlans(gymId: string | null) {
   return useQuery<MembershipPlan[]>({

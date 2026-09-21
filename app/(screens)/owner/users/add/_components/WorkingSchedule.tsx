@@ -1,23 +1,22 @@
 "use client";
 
-import { useState } from "react";
 import { Clock } from "@phosphor-icons/react";
+import { useFormContext } from "react-hook-form";
 
 export default function WorkingSchedule() {
-  const [shiftPref, setShiftPref] = useState<"morning" | "evening">("morning");
+  const { register, watch, setValue, formState: { errors } } = useFormContext();
   
-  const [workingDays, setWorkingDays] = useState<Record<string, boolean>>({
-    MON: true,
-    TUE: true,
-    WED: true,
-    THU: true,
-    FRI: true,
-    SAT: false,
-    SUN: false,
-  });
+  const shiftPref = watch("shiftPreference") || "morning";
+  const workingDaysArr = watch("workingDays") || ["MON", "TUE", "WED", "THU", "FRI"];
 
   const toggleDay = (day: string) => {
-    setWorkingDays((prev) => ({ ...prev, [day]: !prev[day] }));
+    let newDays = [...workingDaysArr];
+    if (newDays.includes(day)) {
+      newDays = newDays.filter((d) => d !== day);
+    } else {
+      newDays.push(day);
+    }
+    setValue("workingDays", newDays, { shouldValidate: true });
   };
 
   const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -37,7 +36,7 @@ export default function WorkingSchedule() {
         {/* Shift Preference Radios */}
         <div className="flex flex-col items-start gap-2 w-full">
           <label className="w-full font-sans font-medium text-[11px] leading-4 text-[#D1D5DB]">
-            Shift Preference
+            Shift Preference <span className="text-red-500">*</span>
           </label>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full mt-1">
             {/* Morning Shift */}
@@ -55,10 +54,8 @@ export default function WorkingSchedule() {
               </div>
               <input
                 type="radio"
-                name="shiftPref"
                 value="morning"
-                checked={shiftPref === "morning"}
-                onChange={() => setShiftPref("morning")}
+                {...register("shiftPreference")}
                 className="hidden"
               />
               <span
@@ -85,10 +82,8 @@ export default function WorkingSchedule() {
               </div>
               <input
                 type="radio"
-                name="shiftPref"
                 value="evening"
-                checked={shiftPref === "evening"}
-                onChange={() => setShiftPref("evening")}
+                {...register("shiftPreference")}
                 className="hidden"
               />
               <span
@@ -100,16 +95,17 @@ export default function WorkingSchedule() {
               </span>
             </label>
           </div>
+          {errors.shiftPreference && <span className="text-red-500 text-[10px]">{errors.shiftPreference.message as string}</span>}
         </div>
 
         {/* Working Days Selection */}
         <div className="flex flex-col items-start gap-2 w-full mt-2">
           <label className="w-full font-sans font-medium text-[11px] leading-4 text-[#D1D5DB]">
-            Working Days
+            Working Days <span className="text-red-500">*</span>
           </label>
           <div className="flex flex-row flex-wrap items-start gap-2 w-full">
             {days.map((day) => {
-              const isSelected = workingDays[day];
+              const isSelected = workingDaysArr.includes(day);
               return (
                 <button
                   key={day}
@@ -132,6 +128,7 @@ export default function WorkingSchedule() {
               );
             })}
           </div>
+          {errors.workingDays && <span className="text-red-500 text-[10px]">{errors.workingDays.message as string}</span>}
         </div>
       </div>
     </div>

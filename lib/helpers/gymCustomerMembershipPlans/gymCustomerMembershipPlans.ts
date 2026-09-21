@@ -1,4 +1,6 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
+
+const getSupabase = () => createClient();
 
 export interface GymCustomerMembershipPlanAttributes {
   GymCustomerMembershipPlanId?: string;
@@ -29,6 +31,7 @@ export interface SaveGymCustomerMembershipPlanParams {
 }
 
 export async function fetchGymCustomerMembershipPlans(gymId?: string, customerId?: string) {
+  const supabase = getSupabase();
   let query = supabase
     .from('gym_customer_membership_plans')
     .select('*, plan:gym_membership_plans(planName, durationMonths, price), gym_customers(fullName, email, phone, gymId, is_Active, users(profilePhoto, status, createdAt))')
@@ -55,6 +58,7 @@ export async function fetchGymCustomerMembershipPlans(gymId?: string, customerId
 }
 
 export async function fetchGymCustomerMembershipPlanById(id: string) {
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('gym_customer_membership_plans')
     .select('*')
@@ -71,6 +75,7 @@ export async function fetchGymCustomerMembershipPlanById(id: string) {
 }
 
 export async function saveGymCustomerMembershipPlan(planData: SaveGymCustomerMembershipPlanParams) {
+  const supabase = getSupabase();
   const now = new Date().toISOString();
 
   let targetPlanId = planData.GymCustomerMembershipPlanId;
@@ -169,6 +174,30 @@ export async function saveGymCustomerMembershipPlan(planData: SaveGymCustomerMem
 
     return data ? data[0] : null;
   } else {
+    let finalCreatedBy = planData.createdBy;
+    if (finalCreatedBy) {
+      const { data: ownerRows } = await supabase
+        .from('gym_owners')
+        .select('gymOwnerId')
+        .or(`userId.eq.${finalCreatedBy},createdBy.eq.${finalCreatedBy},gymOwnerId.eq.${finalCreatedBy}`)
+        .eq('is_deleted', false)
+        .limit(1);
+
+      if (ownerRows && ownerRows.length > 0 && ownerRows[0].gymOwnerId) {
+        finalCreatedBy = ownerRows[0].gymOwnerId;
+      } else if (planData.gymId) {
+        const { data: ownerByGym } = await supabase
+          .from('gym_owners')
+          .select('gymOwnerId')
+          .eq('gymId', planData.gymId)
+          .eq('is_deleted', false)
+          .limit(1);
+        if (ownerByGym && ownerByGym.length > 0 && ownerByGym[0].gymOwnerId) {
+          finalCreatedBy = ownerByGym[0].gymOwnerId;
+        }
+      }
+    }
+
     const generatedId = targetPlanId || crypto.randomUUID();
     const insertPayload = {
       GymCustomerMembershipPlanId: generatedId,
@@ -178,7 +207,7 @@ export async function saveGymCustomerMembershipPlan(planData: SaveGymCustomerMem
       customAmount: planData.customAmount || 0,
       startDate: finalStartDate,
       endDate: finalEndDate,
-      createdBy: planData.createdBy,
+      createdBy: finalCreatedBy,
       is_Active: finalIsActive,
       is_deleted: false,
       createdAt: now,
@@ -198,6 +227,7 @@ export async function saveGymCustomerMembershipPlan(planData: SaveGymCustomerMem
 }
 
 export async function deleteGymCustomerMembershipPlan(id: string) {
+  const supabase = getSupabase();
   const now = new Date().toISOString();
 
   const { data, error } = await supabase
@@ -218,6 +248,7 @@ export async function deleteGymCustomerMembershipPlan(id: string) {
 }
 
 export async function toggleGymCustomerMembershipPlanActiveStatus(id: string, currentStatus: boolean) {
+  const supabase = getSupabase();
   const now = new Date().toISOString();
 
   const { data, error } = await supabase
@@ -247,6 +278,7 @@ export async function fetchGymCustomerMembershipPlansPaginated(
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
+  const supabase = getSupabase();
   let query = supabase
     .from('gym_customer_membership_plans')
     .select('*, gym_customers!inner(fullName, email, phone, is_Active, users!inner(profilePhoto, status, createdAt)), gym_membership_plans(planName, durationMonths, price)', { count: 'exact' })

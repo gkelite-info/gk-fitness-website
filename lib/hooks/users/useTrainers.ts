@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
 
 const PAGE_SIZE = 10;
 
@@ -12,6 +12,7 @@ export function useTrainers(gymId: string | null, filter: string, debouncedSearc
       const from = pageParam * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
+      const supabase = createClient();
       let query = supabase
         .from('gym_trainers')
         .select('*', { count: 'exact' })

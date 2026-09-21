@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchGymCustomers, fetchGymCustomersPaginated, fetchGymCustomerById } from '@/lib/helpers/customers/customerHelper';
+import { fetchGymCustomers, fetchGymCustomersPaginated, fetchGymCustomerById, fetchPastGymCustomers } from '@/lib/helpers/customers/customerHelper';
 
 export function useGymCustomers(gymId?: string) {
   return useQuery({
@@ -8,6 +8,18 @@ export function useGymCustomers(gymId?: string) {
       const data = await fetchGymCustomers(gymId);
       return data;
     },
+  });
+}
+
+export function usePastGymCustomers(gymId?: string) {
+  return useQuery({
+    queryKey: ['pastCustomers', gymId],
+    queryFn: async () => {
+      if (!gymId) return [];
+      const data = await fetchPastGymCustomers(gymId);
+      return data;
+    },
+    enabled: !!gymId,
   });
 }
 

@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Phone } from "@phosphor-icons/react";
 import Dropdown from "../../../../components/reusable/Dropdown";
+import { useFormContext } from "react-hook-form";
 
 export default function ContactInformation() {
-  const [countryCode, setCountryCode] = useState("+91");
+  const { register, watch, setValue, formState: { errors } } = useFormContext();
+
+  const countryCode = watch("countryCode") || "+91";
 
   const countryOptions = [
     { label: "+91", value: "+91" },
@@ -30,37 +33,41 @@ export default function ContactInformation() {
           <label className="w-full font-sans font-medium text-[11px] leading-4 text-[#D1D5DB]">
             Phone Number <span className="text-red-500">*</span>
           </label>
-          <div className="flex flex-row items-stretch w-full h-[34px] bg-[#1A2029] border border-[#14161A] rounded-lg overflow-hidden">
+          <div className={`flex flex-row items-stretch w-full h-[34px] bg-[#1A2029] border rounded-lg overflow-hidden ${errors.phone ? "border-red-500" : "border-[#14161A]"}`}>
             <div className="w-[85px] shrink-0 h-full border-r border-[#14161A] bg-[rgba(17,22,29,0.6)]">
               <Dropdown
                 options={countryOptions}
                 value={countryCode}
-                onChange={(val) => setCountryCode(val)}
+                onChange={(val) => setValue("countryCode", val, { shouldValidate: true })}
                 triggerClassName="relative flex flex-row items-center justify-between px-3 py-2 w-full h-full cursor-pointer hover:bg-white/5 transition-colors"
               />
             </div>
             <div className="flex-1 flex flex-col justify-center px-3">
               <input
                 type="tel"
+                {...register("phone")}
                 placeholder="Enter phone number"
                 className="w-full bg-transparent outline-none font-sans font-normal text-xs leading-[14px] text-white placeholder:text-[#6B7280]"
               />
             </div>
           </div>
+          {errors.phone && <span className="text-red-500 text-[10px]">{errors.phone.message as string}</span>}
         </div>
 
         {/* Email Address */}
         <div className="flex flex-col items-start gap-1.5 w-full">
           <label className="w-full font-sans font-medium text-[11px] leading-4 text-[#D1D5DB]">
-            Email Address
+            Email Address <span className="text-red-500">*</span>
           </label>
-          <div className="flex flex-row justify-center items-start px-3 py-[9px] w-full h-[34px] bg-[#1A2029] border border-[#14161A] rounded-lg">
+          <div className={`flex flex-row justify-center items-start px-3 py-[9px] w-full h-[34px] bg-[#1A2029] border rounded-lg ${errors.email ? "border-red-500" : "border-[#14161A]"}`}>
             <input
               type="email"
+              {...register("email")}
               placeholder="Enter email address"
               className="w-full h-full bg-transparent outline-none font-sans font-normal text-xs leading-[14px] text-white placeholder:text-[#6B7280]"
             />
           </div>
+          {errors.email && <span className="text-red-500 text-[10px]">{errors.email.message as string}</span>}
         </div>
       </div>
     </div>

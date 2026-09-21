@@ -1,6 +1,8 @@
 import { createUser } from '@/lib/helpers/otpHelper';
 import { rollbackRegistrationData } from '@/lib/helpers/registrationRollbackHelper';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
+
+const supabase = createClient();
 
 export type TrainerGender = 'male' | 'female' | 'other';
 export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
@@ -22,6 +24,8 @@ export interface GymTrainerAttributes {
   bio?: string | null;
   languagesSpeaks: string[];
   createdBy: string;
+  personalTrainingFee?: number | null;
+  groupTrainingFee?: number | null;
   is_Active?: boolean;
   is_deleted?: boolean;
   createdAt?: string;
@@ -64,6 +68,8 @@ export interface SaveGymTrainerParams {
   bio?: string | null;
   languagesSpeaks?: string[] | string;
   createdBy: string;
+  personalTrainingFee?: number | string | null;
+  groupTrainingFee?: number | string | null;
   shiftPreference?: 'morning' | 'evening' | 'both' | string;
   workingDays?: string[];
   is_Active?: boolean;
@@ -240,6 +246,9 @@ export async function saveGymTrainer(params: SaveGymTrainerParams) {
   let isNewUser = false;
   let isNewAuthUser = false;
 
+  const { data: sessionData } = await supabase.auth.getSession();
+  const originalSession = sessionData?.session;
+
   try {
     if (!targetUserId) {
       // Pre-check for phone or email existing in users table before Auth signup
@@ -276,10 +285,24 @@ export async function saveGymTrainer(params: SaveGymTrainerParams) {
       });
 
       if (authError && !authError.message?.toLowerCase().includes('already registered')) {
+        if (originalSession) {
+          await supabase.auth.setSession({
+            access_token: originalSession.access_token,
+            refresh_token: originalSession.refresh_token,
+          });
+        }
         throw authError;
       }
 
+      if (originalSession) {
+        await supabase.auth.setSession({
+          access_token: originalSession.access_token,
+          refresh_token: originalSession.refresh_token,
+        });
+      }
+
       targetUserId = authData?.user?.id;
+      
       if (authData?.user?.id) {
         isNewAuthUser = true;
       }
@@ -342,6 +365,8 @@ export async function saveGymTrainer(params: SaveGymTrainerParams) {
       bio: params.bio ? params.bio.trim() : null,
       languagesSpeaks: languagesArr,
       createdBy: params.createdBy,
+      personalTrainingFee: params.personalTrainingFee ? Number(params.personalTrainingFee) : null,
+      groupTrainingFee: params.groupTrainingFee ? Number(params.groupTrainingFee) : null,
       is_Active: params.is_Active ?? true,
       is_deleted: false,
       updatedAt: now,

@@ -5,9 +5,22 @@ import { UserPlus, ArrowsOut, MagnifyingGlass, CaretRight, Users, UserList } fro
 export interface UsersTopBarProps {
   activeTab: "customers" | "trainers";
   onTabChange: (tab: "customers" | "trainers") => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  totalCount: number;
+  onShowPastCustomers?: () => void;
 }
 
-export default function UsersTopBar({ activeTab, onTabChange }: UsersTopBarProps) {
+export default function UsersTopBar({
+  activeTab,
+  onTabChange,
+  searchQuery,
+  onSearchChange,
+  totalCount,
+  onShowPastCustomers
+}: UsersTopBarProps) {
+
+  // export default function UsersTopBar({ activeTab, onTabChange }: UsersTopBarProps) {
   return (
     <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center w-full gap-4 mt-6">
       {/* Left Group */}
@@ -15,25 +28,23 @@ export default function UsersTopBar({ activeTab, onTabChange }: UsersTopBarProps
         <div className="flex flex-row items-center p-1 bg-[#1B1F24] border border-[#262B32] rounded-[16px] h-[46px] flex-shrink-0">
           <button
             onClick={() => onTabChange("customers")}
-            className={`flex flex-row items-center justify-center px-5 py-2.5 gap-2 h-[36px] rounded-[12px] transition-all cursor-pointer ${
-              activeTab === "customers"
+            className={`flex flex-row items-center justify-center px-5 py-2.5 gap-2 h-[36px] rounded-[12px] transition-all cursor-pointer ${activeTab === "customers"
                 ? "bg-[#D2F829] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-black"
                 : "bg-transparent text-[#808794] hover:text-white"
-            }`}
+              }`}
           >
             <UserPlus size={16} weight={activeTab === "customers" ? "bold" : "regular"} />
             <span className={`font-sans text-[12px] leading-4 tracking-[0.3px] ${activeTab === "customers" ? "font-bold" : "font-medium"}`}>
               Customers
             </span>
           </button>
-          
+
           <button
             onClick={() => onTabChange("trainers")}
-            className={`flex flex-row items-center justify-center px-5 py-2.5 gap-2 h-[36px] rounded-[12px] transition-all cursor-pointer ${
-              activeTab === "trainers"
+            className={`flex flex-row items-center justify-center px-5 py-2.5 gap-2 h-[36px] rounded-[12px] transition-all cursor-pointer ${activeTab === "trainers"
                 ? "bg-[#D2F829] shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-black"
                 : "bg-transparent text-[#808794] hover:text-white"
-            }`}
+              }`}
           >
             <ArrowsOut size={16} weight={activeTab === "trainers" ? "bold" : "regular"} />
             <span className={`font-sans text-[12px] leading-4 tracking-[0.3px] ${activeTab === "trainers" ? "font-bold" : "font-medium"}`}>
@@ -49,11 +60,16 @@ export default function UsersTopBar({ activeTab, onTabChange }: UsersTopBarProps
           />
           <input
             type="text"
-            placeholder="Search by name"
+            placeholder={`Search ${activeTab} by name or phone`}
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
             className="w-full h-full bg-[#121417] border border-[#23272E] rounded-[12px] pl-10 pr-4 font-sans text-[12px] leading-[15px] text-white placeholder:text-[#747B87] focus:outline-none focus:border-[#D2F829] transition-colors"
           />
         </div>
-        <button className="flex flex-row items-center justify-center px-4 py-2.5 gap-2 h-[38px] bg-[#121417] border border-[#D2F829] rounded-[12px] hover:bg-[rgba(210,248,41,0.05)] transition-colors cursor-pointer flex-shrink-0">
+        <button
+          onClick={onShowPastCustomers}
+          className="flex flex-row items-center justify-center px-4 py-2.5 gap-2 h-[38px] bg-[#121417] border border-[#D2F829] rounded-[12px] hover:bg-[rgba(210,248,41,0.05)] transition-colors cursor-pointer flex-shrink-0"
+        >
           <UserList size={16} className="text-[#D2F829]" weight="regular" />
           <span className="font-sans font-semibold text-[12px] leading-4 text-[#D2F829]">
             Past Customers
@@ -67,14 +83,14 @@ export default function UsersTopBar({ activeTab, onTabChange }: UsersTopBarProps
         </div>
         <div className="flex flex-col items-end gap-1">
           <span className="font-sans font-bold text-[10px] leading-[15px] tracking-[0.5px] uppercase text-[#848D9A]">
-            TOTAL CUSTOMERS
+            TOTAL {activeTab.toUpperCase()}
           </span>
           <span className="font-sans font-black text-[24px] leading-[24px] text-[#D2F829]">
-            324
+            {totalCount}
           </span>
         </div>
       </div>
-      
+
     </div>
   );
 }

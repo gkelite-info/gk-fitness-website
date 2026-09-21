@@ -17,7 +17,7 @@ const files: FileDefinition[] = [
   },
   {
     path: 'helpers/attendance/attendanceHelper.ts',
-    content: `"use server";\nimport { createClient } from "@/app/api/supabase/server";\nexport async function getGymAttendanceToday(gymId: string, dateStr: string) { const supabase = await createClient(); const { data } = await supabase.from("attendance").select("*").eq("gymId", gymId).eq("date", dateStr); return data || []; }`
+    content: `"use server";\nimport { createClient } from "@/app/api/supabase/server";\nexport async function getGymAttendanceToday(gymId: string, dateStr: string) { const supabase = await createClient(); const { data } = await supabase.from("gym_attendance").select("*").eq("gymId", gymId).eq("date", dateStr); return data || []; }`
   },
   {
     path: 'helpers/gymPayments.ts',
@@ -29,7 +29,7 @@ const files: FileDefinition[] = [
   },
   {
     path: 'helpers/customerTrainers/customerTrainersHelper.ts',
-    content: `"use server";\nimport { createClient } from "@/app/api/supabase/server";\nexport async function getCustomerTrainersByGym(gymId: string) { const supabase = await createClient(); const { data } = await supabase.from("gym_customer_trainers").select("*").eq("gymId", gymId).eq("is_deleted", false); return data || []; }`
+    content: `"use server";\nimport { createClient } from "@/app/api/supabase/server";\nexport async function getCustomerTrainersByGym(gymId: string) { const supabase = await createClient(); const { data } = await supabase.from("customer_trainers").select("*").eq("gymId", gymId).eq("is_deleted", false); return data || []; }`
   },
   {
     path: 'hooks/customers/useGymCustomers.ts',
@@ -62,4 +62,3 @@ files.forEach((f: FileDefinition) => {
   fs.mkdirSync(path.dirname(fullPath), { recursive: true });
   fs.writeFileSync(fullPath, f.content);
 });
-console.log('Done');
