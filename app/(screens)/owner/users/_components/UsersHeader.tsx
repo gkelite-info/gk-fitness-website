@@ -1,4 +1,4 @@
-import { Plus } from "@phosphor-icons/react/dist/ssr";
+import { Plus } from "@phosphor-icons/react";
 import Link from "next/link";
 
 export default function UsersHeader() {

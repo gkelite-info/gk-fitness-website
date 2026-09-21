@@ -14,11 +14,10 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
   const { user, roleData } = useUser();
   const userId = user?.id || null;
   const gymId = roleData?.[0]?.gymId || "";
-  
+
   const [isCreating, setIsCreating] = useState(defaultCreate);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  
-  // Create form state
+
   const [message, setMessage] = useState("");
   const { mutateAsync: saveAnnouncement, isPending: isSaving } = useSaveGymAnnouncement();
 
@@ -68,7 +67,7 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
         message,
         announcementDate: now.toISOString().split('T')[0],
         announcementTime: now.toLocaleTimeString(),
-        createdBy: user?.id || "System",
+        createdBy: roleData?.[0]?.gymOwnerId || user?.id || "System",
       });
       setMessage("");
       setIsCreating(false);
@@ -78,12 +77,10 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
   };
 
   const announcements = data ? data.pages.flatMap(page => page.data) : [];
-  
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-[#14151A] border border-[rgba(255,255,255,0.06)] rounded-[16px] w-full max-w-md max-h-[80vh] flex flex-col relative overflow-hidden shadow-2xl">
-        
-        {/* Header */}
         <div className="flex flex-row items-center justify-between p-4 sm:p-5 border-b border-[#222530]">
           <h2 className="font-sans font-bold text-[18px] leading-[24px] tracking-[0.4px] text-white">
             {isCreating ? "Create Announcement" : "Announcements"}
@@ -93,9 +90,7 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-4 relative">
-          
           {isCreating ? (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
@@ -108,13 +103,13 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
                 />
               </div>
               <div className="flex flex-row gap-3 mt-2">
-                <button 
+                <button
                   className="flex-1 py-3 bg-[#222530] text-white font-semibold rounded-[12px] hover:bg-[#2a2e3b] transition-colors"
                   onClick={() => setIsCreating(false)}
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   className="flex-1 py-3 bg-[#D4FF32] text-black font-semibold rounded-[12px] hover:bg-[#c5f020] transition-colors disabled:opacity-50 cursor-pointer"
                   onClick={handleCreate}
                   disabled={!message.trim() || isSaving}
@@ -125,13 +120,13 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
             </div>
           ) : (
             <>
-              {/* Date Filter */}
               <div className="flex flex-row items-center gap-3 w-full bg-[#191B22] border border-[#222530] rounded-[12px] p-2 px-3">
                 <Calendar size={18} color="#D4FF32" />
-                <input 
+                <input
                   type="date"
                   className="flex-1 bg-transparent text-white text-[14px] outline-none [color-scheme:dark] cursor-pointer"
                   value={selectedDate || ""}
+                  max={new Date().toISOString().split('T')[0]}
                   onChange={handleDateChange}
                 />
                 {selectedDate && (
@@ -141,7 +136,6 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
                 )}
               </div>
 
-              {/* List */}
               <div className="flex flex-col gap-3 pb-16">
                 {!isLoading && announcements.length === 0 ? (
                   <div className="py-10 flex flex-col items-center justify-center text-center gap-2">
@@ -158,14 +152,12 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
                     </div>
                   ))
                 )}
-                
-                {/* Loader / Observer target */}
+
                 {isFetchingNextPage && <div className="text-center text-[#D4FF32] py-2 text-[12px]">Loading more...</div>}
                 <div ref={observerTarget} className="h-4" />
               </div>
 
-              {/* Floating Action Button */}
-              <button 
+              <button
                 onClick={() => setIsCreating(true)}
                 className="absolute bottom-5 right-5 w-14 h-14 bg-[#D4FF32] rounded-full flex items-center justify-center shadow-[0px_4px_12px_rgba(212,255,50,0.3)] hover:scale-105 transition-transform cursor-pointer"
               >

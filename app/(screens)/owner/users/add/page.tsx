@@ -3,6 +3,14 @@
 import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CaretLeft, UsersThree, Barbell } from "@phosphor-icons/react";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import toast from "react-hot-toast";
+import { useUser } from "@/app/context/UserContext";
+
+import { trainerRegistrationSchema, customerRegistrationSchema, TrainerRegistrationData, CustomerRegistrationData } from "@/lib/schemas/userRegistrationSchemas";
+import { useMutateGymTrainer } from "@/lib/hooks/trainers/useMutateGymTrainer";
+import { useMutateGymCustomer } from "@/lib/hooks/customers/useMutateGymCustomer";
 
 import PersonalInformation from "./_components/PersonalInformation";
 import ProfessionalInformation from "./_components/ProfessionalInformation";
@@ -17,7 +25,7 @@ function AddUserForm() {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type");
   const initialTab = typeParam === "trainers" ? "trainers" : "customers";
-  
+
   const [activeTab, setActiveTab] = useState<"customers" | "trainers">(initialTab);
 
   useEffect(() => {
@@ -27,12 +35,68 @@ function AddUserForm() {
   }, [typeParam]);
   const router = useRouter();
 
+  const { user } = useUser();
+  const userId = user?.id;
+  const { mutateAsync: createTrainer, isPending: isCreatingTrainer } = useMutateGymTrainer();
+  const { mutateAsync: createCustomer, isPending: isCreatingCustomer } = useMutateGymCustomer();
+
+  const trainerMethods = useForm<TrainerRegistrationData>({
+    resolver: zodResolver(trainerRegistrationSchema),
+    defaultValues: {
+      gender: "male",
+      shiftPreference: "morning",
+      workingDays: ["MON", "TUE", "WED", "THU", "FRI"],
+    },
+  });
+
+  const customerMethods = useForm<CustomerRegistrationData>({
+    resolver: zodResolver(customerRegistrationSchema),
+    defaultValues: {
+      gender: "male",
+    },
+  });
+
+  const onSubmitTrainer = async (data: TrainerRegistrationData) => {
+    if (!userId) return
+    try {
+      const result = await createTrainer({ ...data, createdBy: userId });
+      toast.success("Trainer created successfully!");
+      router.push("/owner/users");
+    } catch (error: any) {
+      console.error("[AddUserForm] Error creating trainer:", error);
+      toast.error(error?.message || "Failed to create trainer. Please try again.");
+    }
+  };
+
+  const onSubmitCustomer = async (data: CustomerRegistrationData) => {
+    if (!userId) return
+    try {
+      const result = await createCustomer({ ...data, createdBy: userId });
+      toast.success("Customer created successfully!");
+      router.push("/owner/users");
+    } catch (error: any) {
+      console.error("[AddUserForm] Error creating customer:", error);
+      toast.error(error?.message || "Failed to create customer. Please try again.");
+    }
+  };
+
+  const handleSubmit = () => {
+    if (activeTab === "trainers") {
+      trainerMethods.handleSubmit(onSubmitTrainer, (errors) => {
+        console.error("[AddUserForm] Trainer form validation failed:", errors);
+      })();
+    } else {
+      customerMethods.handleSubmit(onSubmitCustomer, (errors) => {
+        console.error("[AddUserForm] Customer form validation failed:", errors);
+      })();
+    }
+  };
+
+  const isPending = activeTab === "trainers" ? isCreatingTrainer : isCreatingCustomer;
+
   return (
     <div className="flex flex-col w-full min-h-screen px-4 md:px-6 lg:px-8 pb-10 max-w-[1200px] mx-auto mt-6 overflow-x-hidden">
-      {/* Page Title & Segmented Toggle Controls */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center w-full gap-4 md:gap-0 mb-8">
-        
-        {/* Title and Back button */}
         <div className="flex flex-row items-center">
           <button
             type="button"
@@ -52,49 +116,44 @@ function AddUserForm() {
           </div>
         </div>
 
-        {/* Segmented Tab / Switcher */}
         <div className="flex flex-row items-start p-1 bg-[#161B22] border border-[#232A35] rounded-lg">
           <button
             type="button"
             onClick={() => router.push("?type=customers", { scroll: false })}
-            className={`flex flex-row items-center px-4 py-1.5 gap-2 h-[28px] rounded-md transition-all cursor-pointer ${
-              activeTab === "customers"
-                ? "bg-[#D4FF32] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
-                : "bg-transparent hover:bg-white/5"
-            }`}
+            className={`flex flex-row items-center px-4 py-1.5 gap-2 h-[28px] rounded-md transition-all cursor-pointer ${activeTab === "customers"
+              ? "bg-[#D4FF32] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+              : "bg-transparent hover:bg-white/5"
+              }`}
           >
-            <UsersThree 
-              size={14} 
-              weight={activeTab === "customers" ? "bold" : "regular"} 
-              className={activeTab === "customers" ? "text-black" : "text-[#9CA3AF]"} 
+            <UsersThree
+              size={14}
+              weight={activeTab === "customers" ? "bold" : "regular"}
+              className={activeTab === "customers" ? "text-black" : "text-[#9CA3AF]"}
             />
             <span
-              className={`font-sans text-xs leading-4 text-center ${
-                activeTab === "customers" ? "font-semibold text-black" : "font-medium text-[#9CA3AF]"
-              }`}
+              className={`font-sans text-xs leading-4 text-center ${activeTab === "customers" ? "font-semibold text-black" : "font-medium text-[#9CA3AF]"
+                }`}
             >
               Customers
             </span>
           </button>
-          
+
           <button
             type="button"
             onClick={() => router.push("?type=trainers", { scroll: false })}
-            className={`flex flex-row items-center px-4 py-1.5 gap-2 h-[28px] rounded-md transition-all cursor-pointer ${
-              activeTab === "trainers"
-                ? "bg-[#D4FF32] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
-                : "bg-transparent hover:bg-white/5"
-            }`}
+            className={`flex flex-row items-center px-4 py-1.5 gap-2 h-[28px] rounded-md transition-all cursor-pointer ${activeTab === "trainers"
+              ? "bg-[#D4FF32] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+              : "bg-transparent hover:bg-white/5"
+              }`}
           >
-            <Barbell 
-              size={14} 
-              weight={activeTab === "trainers" ? "bold" : "regular"} 
-              className={activeTab === "trainers" ? "text-black" : "text-[#9CA3AF]"} 
+            <Barbell
+              size={14}
+              weight={activeTab === "trainers" ? "bold" : "regular"}
+              className={activeTab === "trainers" ? "text-black" : "text-[#9CA3AF]"}
             />
             <span
-              className={`font-sans text-xs leading-4 text-center ${
-                activeTab === "trainers" ? "font-semibold text-black" : "font-medium text-[#9CA3AF]"
-              }`}
+              className={`font-sans text-xs leading-4 text-center ${activeTab === "trainers" ? "font-semibold text-black" : "font-medium text-[#9CA3AF]"
+                }`}
             >
               Trainers
             </span>
@@ -102,51 +161,47 @@ function AddUserForm() {
         </div>
       </div>
 
-      {/* Main Form Layout */}
       {activeTab === "trainers" ? (
-        <div className="flex flex-col items-start w-full gap-5">
-          {/* SECTION ROW 1 */}
-          <div className="flex flex-col lg:flex-row justify-center items-stretch w-full gap-5">
-            <PersonalInformation />
-            <ProfessionalInformation />
+        <FormProvider {...trainerMethods}>
+          <div className="flex flex-col items-start w-full gap-5">
+            <div className="flex flex-col lg:flex-row justify-center items-stretch w-full gap-5">
+              <PersonalInformation />
+              <ProfessionalInformation />
+            </div>
+
+            <div className="flex flex-col lg:flex-row justify-center items-stretch w-full gap-5">
+              <ContactInformation />
+              <WorkingSchedule />
+            </div>
+
+            <AdditionalInformation />
+
+            <AccountInformation userType="trainer" />
           </div>
-
-          {/* SECTION ROW 2 */}
-          <div className="flex flex-col lg:flex-row justify-center items-stretch w-full gap-5">
-            <ContactInformation />
-            <WorkingSchedule />
-          </div>
-
-          {/* SECTION ROW 3 */}
-          <AdditionalInformation />
-
-          {/* SECTION ROW 4 */}
-          <AccountInformation userType="trainer" />
-        </div>
+        </FormProvider>
       ) : (
-        <div className="flex flex-col lg:flex-row items-stretch w-full gap-5">
-          {/* Left Column */}
-          <div className="flex flex-col w-full lg:w-1/2 gap-5">
-            <PersonalInformation />
-            
-            <div className="flex-1 flex flex-col [&>div]:flex-1 [&>div]:h-full">
-              <EmergencyContact />
+        <FormProvider {...customerMethods}>
+          <div className="flex flex-col lg:flex-row items-stretch w-full gap-5">
+            <div className="flex flex-col w-full lg:w-1/2 gap-5">
+              <PersonalInformation />
+
+              <div className="flex-1 flex flex-col [&>div]:flex-1 [&>div]:h-full">
+                <EmergencyContact />
+              </div>
+            </div>
+
+            <div className="flex flex-col w-full lg:w-1/2 gap-5">
+              <ContactInformation />
+              <MembershipInformation />
+
+              <div className="flex-1 flex flex-col [&>div]:flex-1 [&>div]:h-full">
+                <AccountInformation userType="customer" />
+              </div>
             </div>
           </div>
-
-          {/* Right Column */}
-          <div className="flex flex-col w-full lg:w-1/2 gap-5">
-            <ContactInformation />
-            <MembershipInformation />
-
-            <div className="flex-1 flex flex-col [&>div]:flex-1 [&>div]:h-full">
-              <AccountInformation userType="customer" />
-            </div>
-          </div>
-        </div>
+        </FormProvider>
       )}
 
-      {/* Form Bottom Action Bar */}
       <div className="flex flex-row justify-end items-center pt-4 mt-5 w-full border-t border-[#14161A] gap-4">
         <button
           type="button"
@@ -160,11 +215,13 @@ function AddUserForm() {
 
         <button
           type="button"
-          className="relative flex flex-col justify-center items-center px-7 py-2.5 h-[38px] bg-[#D4FF32] rounded-lg overflow-hidden group cursor-pointer"
+          onClick={handleSubmit}
+          disabled={isPending}
+          className="relative flex flex-col justify-center items-center px-7 py-2.5 h-[38px] bg-[#D4FF32] rounded-lg overflow-hidden group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="absolute inset-0 bg-[rgba(255,255,255,0.002)] shadow-[0_10px_15px_-3px_rgba(212,255,50,0.1),0_4px_6px_-4px_rgba(212,255,50,0.1)] rounded-lg z-0" />
           <span className="relative z-10 font-sans font-bold text-xs leading-4 text-center tracking-[0.6px] uppercase text-black group-hover:scale-[1.02] transition-transform">
-            Create {activeTab === "trainers" ? "Trainer" : "Customer"}
+            {isPending ? "Creating..." : `Create ${activeTab === "trainers" ? "Trainer" : "Customer"}`}
           </span>
         </button>
       </div>

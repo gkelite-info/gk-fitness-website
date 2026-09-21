@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
 import { getOwnerGymId } from '@/lib/helpers/trainers/trainerHelper';
 
 export function useGymCustomerMembershipPlans(userId: string | null, customerId?: string | null) {
@@ -12,6 +12,7 @@ export function useGymCustomerMembershipPlans(userId: string | null, customerId?
       
       if (!gymId) return [];
 
+      const supabase = createClient();
       let query = supabase
         .from('gym_customer_membership_plans')
         .select(`

@@ -9,6 +9,7 @@ export interface UserCardProps {
   joinedDate: string;
   validTill: string;
   avatarUrl?: string;
+  type?: "customer" | "trainer";
   onClick?: () => void;
 }
 
@@ -21,14 +22,15 @@ export default function UserCard({
   joinedDate,
   validTill,
   avatarUrl,
+  type = "customer",
   onClick,
 }: UserCardProps) {
   const isActive = status === "Active";
 
   return (
-    <div 
+    <div
       onClick={onClick}
-      className="flex flex-col items-start p-5 pb-11 w-full min-h-[248px] bg-[#14161A] border border-[#22262D] rounded-[16px] cursor-pointer hover:border-[#323842] transition-colors"
+      className="flex flex-col items-start p-5 w-full min-h-[248px] bg-[#14161A] border border-[#22262D] rounded-[16px] cursor-pointer hover:border-[#323842] transition-colors"
     >
       <div className="flex flex-row items-start justify-between w-full mb-[18px]">
         <div className="flex flex-row gap-3">
@@ -39,7 +41,7 @@ export default function UserCard({
               <span className="text-[#717885] text-[12px] font-bold">{name.charAt(0)}</span>
             )}
           </div>
-          
+
           <div className="flex flex-col justify-center gap-1.5">
             <h3 className="font-sans font-bold text-[14px] leading-[18px] text-white">
               {name}
@@ -49,11 +51,10 @@ export default function UserCard({
             </span>
           </div>
         </div>
-        
+
         <div className="flex flex-row items-center gap-1.5 mt-1">
-          <div className={`px-2 py-0.5 rounded-full border flex items-center justify-center ${
-            isActive ? "bg-[#1C331A] border-[#234D20] text-[#4ADE80]" : "bg-[#2F1B1E] border-[#482025] text-[#F87171]"
-          }`}>
+          <div className={`px-2 py-0.5 rounded-full border flex items-center justify-center ${isActive ? "bg-[#1C331A] border-[#234D20] text-[#4ADE80]" : "bg-[#2F1B1E] border-[#482025] text-[#F87171]"
+            }`}>
             <span className="font-sans font-semibold text-[10px] leading-[15px]">
               {status}
             </span>
@@ -87,14 +88,15 @@ export default function UserCard({
             Joined {joinedDate}
           </span>
         </div>
-
-        <div className="flex flex-row items-center gap-2.5">
-          <CalendarBlank size={14} className="text-[#737B88]" weight="regular" />
-          <span className="font-sans font-normal text-[12px] leading-4 text-[#848C99]">
-            {isActive ? "Valid till " : "Inactive on "}
-            <strong className={`font-normal ${isActive ? "text-white" : "text-[#F87171]"}`}>{validTill}</strong>
-          </span>
-        </div>
+        {type !== "trainer" && (
+          <div className="flex flex-row items-center gap-2.5">
+            <CalendarBlank size={14} className="text-[#737B88]" weight="regular" />
+            <span className="font-sans font-normal text-[12px] leading-4 text-[#848C99]">
+              {isActive ? "Valid till " : "Inactive on "}
+              <strong className={`font-normal ${isActive ? "text-white" : "text-[#F87171]"}`}>{validTill}</strong>
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

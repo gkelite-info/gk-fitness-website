@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from '@/app/api/supabase/client';
 
 export interface GymAnnouncementAttributes {
   gymAnnouncementId?: string;
@@ -23,6 +23,7 @@ export interface SaveGymAnnouncementParams {
 }
 
 export async function fetchGymAnnouncements(gymId?: string) {
+  const supabase = createClient();
   let query = supabase
     .from('gym_announcements')
     .select('*')
@@ -44,6 +45,7 @@ export async function fetchGymAnnouncements(gymId?: string) {
 }
 
 export async function fetchGymAnnouncementsPaginated(gymId: string, page = 1, limit = 10, dateStr?: string | null) {
+  const supabase = createClient();
   let query = supabase
     .from('gym_announcements')
     .select('*', { count: 'exact' })
@@ -69,6 +71,7 @@ export async function fetchGymAnnouncementsPaginated(gymId: string, page = 1, li
 }
 
 export async function saveGymAnnouncement(announcementData: SaveGymAnnouncementParams) {
+  const supabase = createClient();
   const now = new Date().toISOString();
 
   if (announcementData.gymAnnouncementId) {
@@ -119,6 +122,7 @@ export async function saveGymAnnouncement(announcementData: SaveGymAnnouncementP
 }
 
 export async function deleteGymAnnouncement(gymAnnouncementId: string) {
+  const supabase = createClient();
   const now = new Date().toISOString();
 
   const { data, error } = await supabase

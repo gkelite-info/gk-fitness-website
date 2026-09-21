@@ -1,4 +1,6 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
+
+
 
 export type CustomerGender = 'male' | 'female' | 'other';
 
@@ -13,6 +15,9 @@ export interface SaveGymCustomerParams {
   emergencyContactName: string;
   relationship: string;
   emergencyContactNumber: string;
+  membershipPlanId: string;
+  planStartDate: string;
+  planExpiryDate: string;
   createdBy: string;
   is_Active?: boolean;
 }
@@ -48,6 +53,7 @@ export function formatToPgDate(dateStr?: string): string {
 import { getOwnerGymId } from '@/lib/helpers/trainers/trainerHelper';
 
 export async function saveGymCustomer(params: SaveGymCustomerParams) {
+  const supabase = createClient();
   if (!params.fullName || !params.phone || !params.email) {
     throw new Error('Missing required fields: fullName, phone, email');
   }
@@ -55,6 +61,27 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
   const now = new Date().toISOString();
 
   let resolvedGymId = params.gymId;
+  let resolvedCreatedBy = params.createdBy;
+
+  if (params.createdBy) {
+    const { data: ownerRows } = await supabase
+      .from('gym_owners')
+      .select('gymId, gymOwnerId')
+      .or(`userId.eq.${params.createdBy},createdBy.eq.${params.createdBy},gymOwnerId.eq.${params.createdBy}`)
+      .eq('is_deleted', false)
+      .limit(1);
+
+    const ownerRecord = ownerRows && ownerRows.length > 0 ? ownerRows[0] : null;
+    if (ownerRecord) {
+      if (!resolvedGymId && ownerRecord.gymId) {
+        resolvedGymId = ownerRecord.gymId;
+      }
+      if (ownerRecord.gymOwnerId) {
+        resolvedCreatedBy = ownerRecord.gymOwnerId;
+      }
+    }
+  }
+
   if (!resolvedGymId) {
     const fetchedGymId = await getOwnerGymId(params.createdBy);
     if (fetchedGymId) {
@@ -64,6 +91,19 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
 
   if (!resolvedGymId) {
     throw new Error('Failed to identify active Gym for this owner. Cannot register customer.');
+  }
+
+  if (resolvedCreatedBy === params.createdBy && resolvedGymId) {
+    const { data: ownerByGym } = await supabase
+      .from('gym_owners')
+      .select('gymOwnerId')
+      .eq('gymId', resolvedGymId)
+      .eq('is_deleted', false)
+      .limit(1);
+
+    if (ownerByGym && ownerByGym.length > 0 && ownerByGym[0].gymOwnerId) {
+      resolvedCreatedBy = ownerByGym[0].gymOwnerId;
+    }
   }
 
   const cleanEmail = params.email.trim().toLowerCase();
@@ -91,6 +131,9 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
   let targetUserId = params.customerId;
   let isNewUser = false;
 
+  const { data: sessionData } = await supabase.auth.getSession();
+  const originalSession = sessionData?.session;
+
   try {
     if (!targetUserId) {
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -106,7 +149,21 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
       });
 
       if (authError && !authError.message?.toLowerCase().includes('already registered')) {
+        // If signUp failed, we should still try to restore session just in case it wiped it
+        if (originalSession) {
+          await supabase.auth.setSession({
+            access_token: originalSession.access_token,
+            refresh_token: originalSession.refresh_token,
+          });
+        }
         throw authError;
+      }
+
+      if (originalSession) {
+        await supabase.auth.setSession({
+          access_token: originalSession.access_token,
+          refresh_token: originalSession.refresh_token,
+        });
       }
 
       targetUserId = authData?.user?.id;
@@ -198,6 +255,31 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
       savedCustomer = data ? data[0] : null;
     }
 
+    if (params.membershipPlanId && params.planStartDate && params.planExpiryDate) {
+      const planPayload = {
+        GymCustomerMembershipPlanId: crypto.randomUUID(),
+        customerId: targetUserId,
+        gymId: resolvedGymId,
+        planId: params.membershipPlanId,
+        startDate: formatToPgDate(params.planStartDate),
+        endDate: formatToPgDate(params.planExpiryDate),
+        createdBy: resolvedCreatedBy,
+        is_Active: true,
+        is_deleted: false,
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      const { error: planErr } = await supabase
+        .from('gym_customer_membership_plans')
+        .insert([planPayload]);
+        
+      if (planErr) {
+        console.error('[customerHelper] Error inserting membership plan:', planErr);
+        throw new Error(`Membership plan insertion failed: ${planErr.message}`);
+      }
+    }
+
     const { data: verUser, error: verUserErr } = await supabase
       .from('users')
       .select('userId')
@@ -231,6 +313,7 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
 
     if (targetUserId) {
       try {
+        await supabase.from('gym_customer_membership_plans').delete().eq('customerId', targetUserId);
         await supabase.from('gym_customers').delete().eq('customerId', targetUserId);
         if (isNewUser) {
           await supabase.from('users').delete().eq('userId', targetUserId);
@@ -245,6 +328,7 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
 }
 
 export async function fetchGymCustomers(gymId?: string) {
+  const supabase = createClient();
   let query = supabase
     .from('gym_customers')
     .select('*')
@@ -263,12 +347,31 @@ export async function fetchGymCustomers(gymId?: string) {
   return data ?? [];
 }
 
+export async function fetchPastGymCustomers(gymId: string) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('gym_customers')
+    .select('*')
+    .eq('gymId', gymId)
+    .eq('is_Active', false)
+    .eq('is_deleted', true)
+    .not('deletedAt', 'is', null)
+    .order('deletedAt', { ascending: false });
+
+  if (error) {
+    console.error('[customerHelper] fetchPastGymCustomers Error:', error);
+    throw error;
+  }
+  return data ?? [];
+}
+
 export async function fetchGymCustomersPaginated(
   gymId?: string,
   page = 1,
   limit = 10,
   searchQuery?: string
 ) {
+  const supabase = createClient();
   let query = supabase
     .from('gym_customers')
     .select('*', { count: 'exact' })
@@ -296,6 +399,7 @@ export async function fetchGymCustomersPaginated(
 }
 
 export async function fetchGymCustomerById(customerId: string) {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('gym_customers')
     .select('*, user:users(address)')

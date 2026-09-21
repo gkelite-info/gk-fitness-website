@@ -1,8 +1,39 @@
 // @ts-nocheck
-import { supabase } from '@/lib/supabase';
-import { MembershipPlan, DraftPlan, MembershipFeatureItem, MOCK_SELECTABLE_FEATURES } from '@/constants/membershipMockData';
+import { createClient } from '@/app/api/supabase/client';
+
+export interface MembershipFeatureItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  defaultChecked?: boolean;
+}
+
+export interface DraftPlan {
+  id: string;
+  name: string;
+  price: string;
+  duration: string;
+  selectedFeatureIds?: string[];
+}
+
+export interface MembershipPlan {
+  id: string;
+  name: string;
+  priceFormatted: string;
+  priceNumeric: string;
+  billingCycle: string;
+  duration: string;
+  durationMonths: number;
+  membersCount: number;
+  membersText: string;
+  features: string[];
+  twoColumnLayout: boolean;
+}
+
+const getSupabase = () => createClient();
 
 export async function fetchFeatures(): Promise<MembershipFeatureItem[]> {
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('features')
     .select('featureId, featureName, description, is_Active')
@@ -14,25 +45,6 @@ export async function fetchFeatures(): Promise<MembershipFeatureItem[]> {
     return [];
   }
 
-  if (!data || data.length === 0) {
-    const seedData = MOCK_SELECTABLE_FEATURES.map(f => ({
-      featureId: crypto.randomUUID(),
-      featureName: f.title,
-      description: f.subtitle,
-      is_Active: true,
-      is_deleted: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }));
-
-    const { error: seedError } = await supabase.from('features').insert(seedData);
-    if (!seedError) {
-      return fetchFeatures();
-    } else {
-      console.error('Error seeding features:', seedError);
-    }
-  }
-
   return (data || []).map(f => ({
     id: f.featureId,
     title: f.featureName,
@@ -42,6 +54,7 @@ export async function fetchFeatures(): Promise<MembershipFeatureItem[]> {
 }
 
 export async function fetchGymMembershipPlans(gymId: string): Promise<MembershipPlan[]> {
+  const supabase = getSupabase();
   const { data: plansData, error: plansError } = await supabase
     .from('gym_membership_plans')
     .select(`
@@ -98,6 +111,7 @@ export async function fetchGymMembershipPlans(gymId: string): Promise<Membership
 }
 
 export async function upsertMembershipPlans(gymId: string, createdBy: string, drafts: DraftPlan[]) {
+  const supabase = getSupabase();
   for (const draft of drafts) {
     const isNew = draft.id.startsWith('plan-');
     let planId = draft.id;
@@ -176,6 +190,7 @@ export async function upsertMembershipPlans(gymId: string, createdBy: string, dr
 }
 
 export async function deleteMembershipPlan(planId: string) {
+  const supabase = getSupabase();
   const { error } = await supabase
     .from('gym_membership_plans')
     .update({

@@ -1,6 +1,7 @@
 import { createUser } from '@/lib/helpers/otpHelper';
 import { rollbackRegistrationData } from '@/lib/helpers/registrationRollbackHelper';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
+
 
 export type TrainerGender = 'male' | 'female' | 'other';
 export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
@@ -22,6 +23,8 @@ export interface GymTrainerAttributes {
   bio?: string | null;
   languagesSpeaks: string[];
   createdBy: string;
+  personalTrainingFee?: number | null;
+  groupTrainingFee?: number | null;
   is_Active?: boolean;
   is_deleted?: boolean;
   createdAt?: string;
@@ -64,6 +67,8 @@ export interface SaveGymTrainerParams {
   bio?: string | null;
   languagesSpeaks?: string[] | string;
   createdBy: string;
+  personalTrainingFee?: number | string | null;
+  groupTrainingFee?: number | string | null;
   shiftPreference?: 'morning' | 'evening' | 'both' | string;
   workingDays?: string[];
   is_Active?: boolean;
@@ -122,6 +127,7 @@ export function formatToPgDate(dateStr?: string): string {
 
 
 export async function getOwnerGymId(ownerUserId: string): Promise<string | null> {
+  const supabase = createClient();
   try {
     const { data: ownerRecord } = await supabase
       .from('gym_owners')
@@ -161,6 +167,7 @@ export async function getOwnerGymId(ownerUserId: string): Promise<string | null>
 
 
 export async function fetchTrainers(gymId?: string, searchQuery?: string) {
+  const supabase = createClient();
   let query = supabase
     .from('gym_trainers')
     .select('*, users!gym_trainers_userId_fkey(profilePhoto)')
@@ -186,6 +193,7 @@ export async function fetchTrainers(gymId?: string, searchQuery?: string) {
 
 
 export async function fetchTrainerById(gymTrainerId: string) {
+  const supabase = createClient();
   const { data: trainer, error: trainerErr } = await supabase
     .from('gym_trainers')
     .select('*, users!gym_trainers_userId_fkey(profilePhoto)')
@@ -209,6 +217,7 @@ export async function fetchTrainerById(gymTrainerId: string) {
 
 
 export async function saveGymTrainer(params: SaveGymTrainerParams) {
+  const supabase = createClient();
   const now = new Date().toISOString();
 
   let resolvedGymId: string | null | undefined = params.gymId;
@@ -239,6 +248,9 @@ export async function saveGymTrainer(params: SaveGymTrainerParams) {
   let targetUserId = params.gymTrainerId;
   let isNewUser = false;
   let isNewAuthUser = false;
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const originalSession = sessionData?.session;
 
   try {
     if (!targetUserId) {
@@ -276,10 +288,24 @@ export async function saveGymTrainer(params: SaveGymTrainerParams) {
       });
 
       if (authError && !authError.message?.toLowerCase().includes('already registered')) {
+        if (originalSession) {
+          await supabase.auth.setSession({
+            access_token: originalSession.access_token,
+            refresh_token: originalSession.refresh_token,
+          });
+        }
         throw authError;
       }
 
+      if (originalSession) {
+        await supabase.auth.setSession({
+          access_token: originalSession.access_token,
+          refresh_token: originalSession.refresh_token,
+        });
+      }
+
       targetUserId = authData?.user?.id;
+
       if (authData?.user?.id) {
         isNewAuthUser = true;
       }
@@ -342,6 +368,8 @@ export async function saveGymTrainer(params: SaveGymTrainerParams) {
       bio: params.bio ? params.bio.trim() : null,
       languagesSpeaks: languagesArr,
       createdBy: params.createdBy,
+      personalTrainingFee: params.personalTrainingFee ? Number(params.personalTrainingFee) : null,
+      groupTrainingFee: params.groupTrainingFee ? Number(params.groupTrainingFee) : null,
       is_Active: params.is_Active ?? true,
       is_deleted: false,
       updatedAt: now,
@@ -460,6 +488,7 @@ export async function saveGymTrainer(params: SaveGymTrainerParams) {
 }
 
 export async function deleteGymTrainer(gymTrainerId: string) {
+  const supabase = createClient();
   const now = new Date().toISOString();
 
   const { data, error } = await supabase
@@ -482,6 +511,7 @@ export async function deleteGymTrainer(gymTrainerId: string) {
 }
 
 export async function toggleTrainerActiveStatus(gymTrainerId: string, currentStatus: boolean) {
+  const supabase = createClient();
   const now = new Date().toISOString();
   const nextStatus = !currentStatus;
 

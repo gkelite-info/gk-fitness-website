@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
-import { CaretDown, User } from "@phosphor-icons/react";
+import React from "react";
+import { User } from "@phosphor-icons/react";
 import Dropdown from "../../../../components/reusable/Dropdown";
+import { useFormContext } from "react-hook-form";
 
 export default function PersonalInformation() {
-  const [gender, setGender] = useState("");
-  const [languages, setLanguages] = useState<string[]>([]);
+  const { register, watch, setValue, formState: { errors } } = useFormContext();
+
+  const gender = watch("gender");
+  const languages = watch("languagesSpeaks") || [];
 
   const genderOptions = [
     { label: "Male", value: "male" },
@@ -19,6 +22,7 @@ export default function PersonalInformation() {
     { label: "Spanish", value: "spanish" },
     { label: "French", value: "french" },
     { label: "Hindi", value: "hindi" },
+    { label: "Telugu", value: "telugu" },
     { label: "German", value: "german" },
     { label: "Mandarin", value: "mandarin" },
   ];
@@ -40,13 +44,15 @@ export default function PersonalInformation() {
           <label className="w-full font-sans font-medium text-[11px] leading-4 text-[#D1D5DB]">
             Full Name <span className="text-red-500">*</span>
           </label>
-          <div className="flex flex-row justify-center items-start px-3 py-[9px] w-full bg-[#1A2029] border border-[#14161A] rounded-lg">
+          <div className={`flex flex-row justify-center items-start px-3 py-[9px] w-full bg-[#1A2029] border rounded-lg ${errors.fullName ? "border-red-500" : "border-[#14161A]"}`}>
             <input
               type="text"
+              {...register("fullName")}
               placeholder="Enter full name"
               className="w-full bg-transparent outline-none font-sans font-normal text-xs leading-[14px] text-white placeholder:text-[#6B7280]"
             />
           </div>
+          {errors.fullName && <span className="text-red-500 text-[10px]">{errors.fullName.message as string}</span>}
         </div>
 
         {/* Gender */}
@@ -57,9 +63,10 @@ export default function PersonalInformation() {
           <Dropdown
             options={genderOptions}
             value={gender}
-            onChange={(val) => setGender(val)}
+            onChange={(val) => setValue("gender", val, { shouldValidate: true })}
             placeholder="Select gender"
           />
+          {errors.gender && <span className="text-red-500 text-[10px]">{errors.gender.message as string}</span>}
         </div>
 
         {/* Date of Birth */}
@@ -67,12 +74,14 @@ export default function PersonalInformation() {
           <label className="w-full font-sans font-medium text-[11px] leading-4 text-[#D1D5DB]">
             Date of Birth <span className="text-red-500">*</span>
           </label>
-          <div className="relative flex flex-row items-center px-3 py-[9px] w-full bg-[#1A2029] border border-[#14161A] rounded-lg h-[34px]">
+          <div className={`relative flex flex-row items-center px-3 py-[9px] w-full bg-[#1A2029] border rounded-lg h-[34px] ${errors.dateOfBirth ? "border-red-500" : "border-[#14161A]"}`}>
             <input
               type="date"
+              {...register("dateOfBirth")}
               className="w-full h-full bg-transparent outline-none font-sans font-normal text-xs leading-4 text-[#D1D5DB] [color-scheme:dark]"
             />
           </div>
+          {errors.dateOfBirth && <span className="text-red-500 text-[10px]">{errors.dateOfBirth.message as string}</span>}
         </div>
 
         {/* Languages Spoken */}
@@ -83,10 +92,11 @@ export default function PersonalInformation() {
           <Dropdown
             options={languageOptions}
             value={languages}
-            onChange={(val) => setLanguages(val)}
+            onChange={(val) => setValue("languagesSpeaks", val, { shouldValidate: true })}
             placeholder="Select languages"
             multiSelect={true}
           />
+          {errors.languagesSpeaks && <span className="text-red-500 text-[10px]">{errors.languagesSpeaks.message as string}</span>}
         </div>
       </div>
     </div>
