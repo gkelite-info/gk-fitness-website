@@ -3,7 +3,6 @@ import { rollbackRegistrationData } from '@/lib/helpers/registrationRollbackHelp
 import { createClient } from '@/app/api/supabase/client';
 
 
-
 export type TrainerGender = 'male' | 'female' | 'other';
 export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
@@ -128,6 +127,7 @@ export function formatToPgDate(dateStr?: string): string {
 
 
 export async function getOwnerGymId(ownerUserId: string): Promise<string | null> {
+  const supabase = createClient();
   try {
     const { data: ownerRecord } = await supabase
       .from('gym_owners')
@@ -166,7 +166,8 @@ export async function getOwnerGymId(ownerUserId: string): Promise<string | null>
 }
 
 
-\n  const supabase = createClient();
+export async function fetchTrainers(gymId?: string, searchQuery?: string) {
+  const supabase = createClient();
   let query = supabase
     .from('gym_trainers')
     .select('*, users!gym_trainers_userId_fkey(profilePhoto)')
@@ -191,7 +192,8 @@ export async function getOwnerGymId(ownerUserId: string): Promise<string | null>
 }
 
 
-\n  const supabase = createClient();
+export async function fetchTrainerById(gymTrainerId: string) {
+  const supabase = createClient();
   const { data: trainer, error: trainerErr } = await supabase
     .from('gym_trainers')
     .select('*, users!gym_trainers_userId_fkey(profilePhoto)')
@@ -214,7 +216,8 @@ export async function getOwnerGymId(ownerUserId: string): Promise<string | null>
 }
 
 
-\n  const supabase = createClient();
+export async function saveGymTrainer(params: SaveGymTrainerParams) {
+  const supabase = createClient();
   const now = new Date().toISOString();
 
   let resolvedGymId: string | null | undefined = params.gymId;
@@ -302,7 +305,7 @@ export async function getOwnerGymId(ownerUserId: string): Promise<string | null>
       }
 
       targetUserId = authData?.user?.id;
-      
+
       if (authData?.user?.id) {
         isNewAuthUser = true;
       }
@@ -484,7 +487,8 @@ export async function getOwnerGymId(ownerUserId: string): Promise<string | null>
   }
 }
 
-\n  const supabase = createClient();
+export async function deleteGymTrainer(gymTrainerId: string) {
+  const supabase = createClient();
   const now = new Date().toISOString();
 
   const { data, error } = await supabase
@@ -506,7 +510,8 @@ export async function getOwnerGymId(ownerUserId: string): Promise<string | null>
   return data ? data[0] : null;
 }
 
-\n  const supabase = createClient();
+export async function toggleTrainerActiveStatus(gymTrainerId: string, currentStatus: boolean) {
+  const supabase = createClient();
   const now = new Date().toISOString();
   const nextStatus = !currentStatus;
 
