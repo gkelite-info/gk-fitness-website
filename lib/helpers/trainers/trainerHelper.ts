@@ -2,7 +2,7 @@ import { createUser } from '@/lib/helpers/otpHelper';
 import { rollbackRegistrationData } from '@/lib/helpers/registrationRollbackHelper';
 import { createClient } from '@/app/api/supabase/client';
 
-const supabase = createClient();
+
 
 export type TrainerGender = 'male' | 'female' | 'other';
 export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
@@ -166,7 +166,7 @@ export async function getOwnerGymId(ownerUserId: string): Promise<string | null>
 }
 
 
-export async function fetchTrainers(gymId?: string, searchQuery?: string) {
+\n  const supabase = createClient();
   let query = supabase
     .from('gym_trainers')
     .select('*, users!gym_trainers_userId_fkey(profilePhoto)')
@@ -191,7 +191,7 @@ export async function fetchTrainers(gymId?: string, searchQuery?: string) {
 }
 
 
-export async function fetchTrainerById(gymTrainerId: string) {
+\n  const supabase = createClient();
   const { data: trainer, error: trainerErr } = await supabase
     .from('gym_trainers')
     .select('*, users!gym_trainers_userId_fkey(profilePhoto)')
@@ -214,7 +214,7 @@ export async function fetchTrainerById(gymTrainerId: string) {
 }
 
 
-export async function saveGymTrainer(params: SaveGymTrainerParams) {
+\n  const supabase = createClient();
   const now = new Date().toISOString();
 
   let resolvedGymId: string | null | undefined = params.gymId;
@@ -484,7 +484,7 @@ export async function saveGymTrainer(params: SaveGymTrainerParams) {
   }
 }
 
-export async function deleteGymTrainer(gymTrainerId: string) {
+\n  const supabase = createClient();
   const now = new Date().toISOString();
 
   const { data, error } = await supabase
@@ -506,7 +506,7 @@ export async function deleteGymTrainer(gymTrainerId: string) {
   return data ? data[0] : null;
 }
 
-export async function toggleTrainerActiveStatus(gymTrainerId: string, currentStatus: boolean) {
+\n  const supabase = createClient();
   const now = new Date().toISOString();
   const nextStatus = !currentStatus;
 

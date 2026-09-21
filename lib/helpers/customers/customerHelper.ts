@@ -1,6 +1,6 @@
 import { createClient } from '@/app/api/supabase/client';
 
-const supabase = createClient();
+
 
 export type CustomerGender = 'male' | 'female' | 'other';
 
@@ -52,7 +52,7 @@ export function formatToPgDate(dateStr?: string): string {
 
 import { getOwnerGymId } from '@/lib/helpers/trainers/trainerHelper';
 
-export async function saveGymCustomer(params: SaveGymCustomerParams) {
+\n  const supabase = createClient();
   if (!params.fullName || !params.phone || !params.email) {
     throw new Error('Missing required fields: fullName, phone, email');
   }
@@ -326,7 +326,7 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
   }
 }
 
-export async function fetchGymCustomers(gymId?: string) {
+\n  const supabase = createClient();
   let query = supabase
     .from('gym_customers')
     .select('*')
@@ -345,7 +345,7 @@ export async function fetchGymCustomers(gymId?: string) {
   return data ?? [];
 }
 
-export async function fetchPastGymCustomers(gymId: string) {
+\n  const supabase = createClient();
   const { data, error } = await supabase
     .from('gym_customers')
     .select('*')
@@ -362,12 +362,7 @@ export async function fetchPastGymCustomers(gymId: string) {
   return data ?? [];
 }
 
-export async function fetchGymCustomersPaginated(
-  gymId?: string,
-  page = 1,
-  limit = 10,
-  searchQuery?: string
-) {
+\n  const supabase = createClient();
   let query = supabase
     .from('gym_customers')
     .select('*', { count: 'exact' })
@@ -394,7 +389,7 @@ export async function fetchGymCustomersPaginated(
   return { data: data ?? [], total: count || 0 };
 }
 
-export async function fetchGymCustomerById(customerId: string) {
+\n  const supabase = createClient();
   const { data, error } = await supabase
     .from('gym_customers')
     .select('*, user:users(address)')
