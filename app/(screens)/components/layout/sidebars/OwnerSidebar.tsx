@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Users, CurrencyInr, Compass, User, Barbell } from "@phosphor-icons/react";
+import { House, Users, CurrencyInr, Compass, User, Barbell, Crown, Wallet } from "@phosphor-icons/react";
 import LogoutButton from "../../reusable/LogoutButton";
 
 const navLinks = [
   { name: "Home", href: "/owner", icon: House },
   { name: "Users", href: "/owner/users", icon: Users },
+  { name: "Membership Plans", href: "/owner/membership-plans", icon: Crown },
   { name: "Finance", href: "/owner/finance", icon: CurrencyInr },
+  { name: "Payments", href: "/owner/payments", icon: Wallet },
   { name: "Explore", href: "/owner/explore", icon: Compass },
   { name: "Profile", href: "/owner/profile", icon: User },
 ];

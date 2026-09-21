@@ -42,11 +42,11 @@ export default function Pagination({ currentPage, totalPages, totalItems, itemsP
         Showing <strong className="text-white font-semibold">{startItem}</strong> to <strong className="text-white font-semibold">{endItem}</strong> of <strong className="text-white font-semibold">{totalItems}</strong> entries
       </span>
       
-      <div className="flex flex-row items-center gap-1.5">
+      <div className="flex flex-row items-center gap-0.5 sm:gap-1.5 mt-4 sm:mt-0 w-full sm:w-auto justify-center sm:justify-end">
         <button
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
-          className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#14161A] border border-[#22262D] text-[#94A3B8] hover:text-white hover:border-[#323842] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="hidden sm:flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-lg bg-[#14161A] border border-[#22262D] text-[#94A3B8] hover:text-white hover:border-[#323842] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           <CaretDoubleLeft size={14} weight="bold" />
         </button>
@@ -54,16 +54,16 @@ export default function Pagination({ currentPage, totalPages, totalItems, itemsP
         <button
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#14161A] border border-[#22262D] text-[#94A3B8] hover:text-white hover:border-[#323842] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-lg bg-[#14161A] border border-[#22262D] text-[#94A3B8] hover:text-white hover:border-[#323842] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           <CaretLeft size={14} weight="bold" />
         </button>
 
-        <div className="flex flex-row items-center gap-1 mx-2">
+        <div className="flex flex-row items-center gap-0.5 sm:gap-1 mx-1 sm:mx-2">
           {pages.map((page, index) => {
             if (page === '...') {
               return (
-                <span key={`ellipsis-${index}`} className="flex items-center justify-center w-8 h-8 font-sans font-bold text-[14px] text-[#64748B]">
+                <span key={`ellipsis-${index}`} className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 shrink-0 font-sans font-bold text-[12px] sm:text-[14px] text-[#64748B]">
                   ...
                 </span>
               );
@@ -74,7 +74,7 @@ export default function Pagination({ currentPage, totalPages, totalItems, itemsP
               <button
                 key={`page-${page}`}
                 onClick={() => onPageChange(page as number)}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg font-sans font-bold text-[13px] transition-all cursor-pointer ${
+                className={`flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-lg font-sans font-bold text-[11px] sm:text-[13px] transition-all cursor-pointer ${
                   isCurrent 
                     ? "bg-[#D2F829] text-black shadow-[0_0_12px_rgba(210,248,41,0.2)]" 
                     : "bg-[#14161A] border border-[#22262D] text-[#94A3B8] hover:text-white hover:border-[#323842]"
@@ -89,7 +89,7 @@ export default function Pagination({ currentPage, totalPages, totalItems, itemsP
         <button
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#14161A] border border-[#22262D] text-[#94A3B8] hover:text-white hover:border-[#323842] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-lg bg-[#14161A] border border-[#22262D] text-[#94A3B8] hover:text-white hover:border-[#323842] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           <CaretRight size={14} weight="bold" />
         </button>
@@ -97,7 +97,7 @@ export default function Pagination({ currentPage, totalPages, totalItems, itemsP
         <button
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
-          className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#14161A] border border-[#22262D] text-[#94A3B8] hover:text-white hover:border-[#323842] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="hidden sm:flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-lg bg-[#14161A] border border-[#22262D] text-[#94A3B8] hover:text-white hover:border-[#323842] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           <CaretDoubleRight size={14} weight="bold" />
         </button>
