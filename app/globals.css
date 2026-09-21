@@ -75,10 +75,12 @@ input:-webkit-autofill:active {
 }
 
 .scrollbar-themed::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #D4FF32 0%, #a3cc1a 100%);
+  background: #D4FF32;
   border-radius: 999px;
+  box-shadow: 0 0 8px rgba(212, 255, 50, 0.4);
 }
 
 .scrollbar-themed::-webkit-scrollbar-thumb:hover {
-  background: #D4FF32;
+  background: #E2FF66;
+  box-shadow: 0 0 12px rgba(212, 255, 50, 0.6);
 }
