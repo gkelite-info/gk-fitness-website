@@ -14,6 +14,7 @@ interface ConfirmationModalProps {
   confirmText: string;
   cancelText?: string;
   isConfirming?: boolean;
+  confirmingText?: string;
   isDestructive?: boolean;
 }
 
@@ -26,6 +27,7 @@ export default function ConfirmationModal({
   confirmText,
   cancelText = "Cancel",
   isConfirming = false,
+  confirmingText = "Processing...",
   isDestructive = true,
 }: ConfirmationModalProps) {
   const [mounted, setMounted] = useState(false);
@@ -93,7 +95,7 @@ export default function ConfirmationModal({
                 {isConfirming ? (
                   <div className="flex flex-row items-center justify-center gap-2">
                     <div className="w-4 h-4 border-[2px] border-current border-t-transparent rounded-full animate-spin" />
-                    Logging out...
+                    {confirmingText}
                   </div>
                 ) : (
                   confirmText

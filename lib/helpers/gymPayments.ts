@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
 
 export interface GymPaymentAttributes {
   gymPaymentId?: string;
@@ -33,6 +33,7 @@ export interface SaveGymPaymentParams {
 }
 
 export async function fetchGymPayments(gymId?: string) {
+  const supabase = createClient();
   let query = supabase
     .from('gym_payments')
     .select(`
@@ -69,6 +70,7 @@ export async function fetchGymPaymentsPaginated(
   limit: number = 10,
   filters?: { tab?: string; searchQuery?: string; customerId?: string }
 ) {
+  const supabase = createClient();
   let query = supabase
     .from('gym_payments')
     .select(`
@@ -126,6 +128,7 @@ export async function fetchGymPaymentsPaginated(
 }
 
 export async function fetchGymPaymentById(gymPaymentId: string) {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('gym_payments')
     .select('*')
@@ -143,6 +146,7 @@ export async function fetchGymPaymentById(gymPaymentId: string) {
 
 export async function saveGymPayment(paymentData: SaveGymPaymentParams) {
   const now = new Date().toISOString();
+  const supabase = createClient();
 
   if (paymentData.gymPaymentId) {
     const { data, error } = await supabase
@@ -204,6 +208,7 @@ export async function saveGymPayment(paymentData: SaveGymPaymentParams) {
 
 export async function deleteGymPayment(gymPaymentId: string) {
   const now = new Date().toISOString();
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('gym_payments')

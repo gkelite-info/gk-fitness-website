@@ -14,26 +14,7 @@ const ACTIONS = [
     iconBorder: "border-[#34D399]/40",
     iconShadow: "shadow-[0_0_15px_rgba(34,197,94,0.3)]",
   },
-  {
-    title: "Announcement",
-    icon: <Megaphone size={24} color="#C084FC" weight="regular" className="scale-x-[-1]" />,
-    baseBg: "bg-[rgba(26,20,36,0.9)]",
-    baseBorder: "border-[rgba(168,85,247,0.3)]",
-    baseShadow: "shadow-[0_10px_24px_-8px_rgba(168,85,247,0.28)]",
-    iconGradient: "bg-gradient-to-br from-[#C084FC]/20 to-[#D946EF]/20",
-    iconBorder: "border-[#C084FC]/40",
-    iconShadow: "shadow-[0_0_15px_rgba(168,85,247,0.3)]",
-  },
-  {
-    title: "Open Check-in QR",
-    icon: <QrCode size={24} color="#22D3EE" weight="regular" />,
-    baseBg: "bg-[rgba(17,28,36,0.9)]",
-    baseBorder: "border-[rgba(6,182,212,0.3)]",
-    baseShadow: "shadow-[0_10px_24px_-8px_rgba(6,182,212,0.28)]",
-    iconGradient: "bg-gradient-to-br from-[#22D3EE]/20 to-[#0EA5E9]/20",
-    iconBorder: "border-[#22D3EE]/40",
-    iconShadow: "shadow-[0_0_15px_rgba(6,182,212,0.3)]",
-  },
+
   {
     title: "Manage Inventory",
     icon: <Cube size={24} color="#FB923C" weight="regular" />,
@@ -45,7 +26,8 @@ const ACTIONS = [
     iconShadow: "shadow-[0_0_15px_rgba(249,115,22,0.3)]",
   },
   {
-    title: "Record Payment",
+    title: "Finance",
+    href: "/owner/finance",
     icon: <CreditCard size={24} color="#FACC15" weight="regular" />,
     baseBg: "bg-[rgba(32,28,16,0.9)]",
     baseBorder: "border-[rgba(245,158,11,0.3)]",
@@ -66,6 +48,7 @@ const ACTIONS = [
   },
   {
     title: "Create Plan",
+    href: "/owner/membership-plans",
     icon: <Image src="/images/Createplan.png" alt="Create Plan" width={24} height={24} quality={100} unoptimized className="object-contain" />,
     baseBg: "bg-[rgba(20,22,40,0.9)]",
     baseBorder: "border-[rgba(99,102,241,0.3)]",
@@ -93,12 +76,12 @@ export default function QuickActions() {
         <h3 className="font-sans font-bold text-[16px] leading-[24px] tracking-[0.4px] text-white">
           Quick Actions
         </h3>
-        <button className="flex flex-row items-center gap-1 group cursor-pointer">
+        {/* <button className="flex flex-row items-center gap-1 group cursor-pointer">
           <span className="font-sans font-semibold text-[12px] leading-4 text-[#D4FF32] group-hover:underline">
             View All
           </span>
           <CaretRight size={12} color="#D4FF32" weight="bold" />
-        </button>
+        </button> */}
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full h-full">
         {ACTIONS.map((action, index) => {

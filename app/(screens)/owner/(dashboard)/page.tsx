@@ -37,10 +37,10 @@ export default function OwnerDashboardPage() {
 
   const selectedDateStr = getYYYYMMDD(selectedDate);
 
-  const { data: customerPlans } = useGymCustomerMembershipPlans(userId);
-  const { data: gymTrainers } = useGymTrainers(gymId);
-  const { data: attendances } = useGymAttendanceToday(gymId, selectedDateStr);
-  const { data: payments } = useGymPayments(userId);
+  const { data: customerPlans, isLoading: isCustomerPlansLoading } = useGymCustomerMembershipPlans(userId);
+  const { data: gymTrainers, isLoading: isGymTrainersLoading } = useGymTrainers(gymId);
+  const { data: attendances, isLoading: isAttendancesLoading } = useGymAttendanceToday(gymId, selectedDateStr);
+  const { data: payments, isLoading: isPaymentsLoading } = useGymPayments(userId);
   const { data: gymCustomerTrainers } = useCustomerTrainersByGym(gymId);
 
   const activeCustomersCount = customerPlans?.filter((plan: any) => {
@@ -150,17 +150,17 @@ export default function OwnerDashboardPage() {
   return (
     <div className="flex flex-col items-start px-4 sm:px-8 py-6 pb-12 gap-7 w-full max-w-[1024px] mx-auto 2xl:max-w-[1200px]">
       <OverviewMetrics
-        activeCustomers={totalActive}
-        checkIns={checkInsCount}
-        revenueToday={formatCurrency(revenueToday)}
-        monthlyGrowth={growthValue}
+        activeCustomers={isCustomerPlansLoading || isGymTrainersLoading ? null : totalActive}
+        checkIns={isAttendancesLoading ? null : checkInsCount}
+        revenueToday={isPaymentsLoading ? null : formatCurrency(revenueToday)}
+        monthlyGrowth={isPaymentsLoading ? null : growthValue}
       />
       <ManualAttendanceBanner />
 
       <div className="w-full grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         <div className="flex flex-col gap-6 xl:col-span-7">
           <QuickActions />
-          <ManagementShortcuts />
+          {/* <ManagementShortcuts /> */}
           <OperationsMetrics ptSessionsCount={activePtSessionsCount} />
         </div>
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Table, TableHeader, TableBody, TableRow, TableHeadCell, TableCell } from "@/app/(screens)/components/reusable/table";
 import Pagination from "@/app/(screens)/components/reusable/Pagination";
 
-interface SummaryData {
+export interface SummaryData {
   tierName: string;
   duration: string;
   monthlyRate: string;
@@ -48,7 +48,11 @@ const tableData: SummaryData[] = [
   },
 ];
 
-export default function RetentionSummary() {
+interface RetentionSummaryProps {
+  data?: SummaryData[];
+}
+
+export default function RetentionSummary({ data = tableData }: RetentionSummaryProps) {
   const [autoRenew, setAutoRenew] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -63,7 +67,7 @@ export default function RetentionSummary() {
             Live breakdown of revenue contribution and renewal rates per plan
           </p>
         </div>
-        <div className="flex flex-row items-center gap-[8px] shrink-0">
+        {/* <div className="flex flex-row items-center gap-[8px] shrink-0">
           <span className="text-[#9CA3AF] text-[12px] font-[500] font-['Plus_Jakarta_Sans',sans-serif] leading-[16px]">
             Auto-renew reminder:
           </span>
@@ -79,7 +83,7 @@ export default function RetentionSummary() {
               }`}
             />
           </button>
-        </div>
+        </div> */}
       </div>
 
       <Table className="border-none bg-transparent rounded-none">
@@ -109,7 +113,7 @@ export default function RetentionSummary() {
           </TableRow>
         </TableHeader>
         <TableBody className="divide-[#232631]">
-          {tableData.map((row, index) => (
+          {data.map((row, index) => (
             <TableRow key={index} className="hover:bg-[#1E2028] transition-colors">
               <TableCell className="py-5 px-0">
                 <div className="flex flex-row items-center gap-3">
@@ -160,7 +164,7 @@ export default function RetentionSummary() {
         <Pagination 
           currentPage={currentPage} 
           totalPages={1} 
-          totalItems={tableData.length} 
+          totalItems={data.length} 
           itemsPerPage={10} 
           onPageChange={setCurrentPage} 
         />

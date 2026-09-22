@@ -2,20 +2,40 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, MagnifyingGlass, CaretDown } from "@phosphor-icons/react";
+import { Plus, MagnifyingGlass } from "@phosphor-icons/react";
 import PlanCard from "./components/PlanCard";
 import RetentionSummary from "./components/RetentionSummary";
 import Dropdown from "@/app/(screens)/components/reusable/Dropdown";
+import { useUser } from "@/app/context/UserContext";
+import { useGymMembershipPlans } from "@/lib/hooks/useGymMembershipPlans";
+import { useGymCustomerMembershipPlans } from "@/lib/hooks/useGymCustomerMembershipPlans";
+import { useGymPayments } from "@/lib/hooks/useGymPayments";
+import { useQuery } from "@tanstack/react-query";
+import { getOwnerGymId } from "@/lib/helpers/trainers/trainerHelper";
+import { fetchCustomerGymPayments } from "@/lib/helpers/customerGymPayments/customerGymPayments";
 
 export default function MembershipPlansPage() {
+  const { user } = useUser();
+  const { data: rawPlans, isLoading: isPlansLoading } = useGymMembershipPlans(user?.id || null);
+  const { data: customerPlans } = useGymCustomerMembershipPlans(user?.id || null);
+  const { data: manualPayments } = useGymPayments(user?.id || null);
+
+  const { data: customerPayments } = useQuery({
+    queryKey: ['allCustomerPaymentsForGym', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const gymId = await getOwnerGymId(user.id);
+      if (!gymId) return [];
+      return await fetchCustomerGymPayments(gymId);
+    },
+    enabled: !!user?.id,
+  });
+
+  const payments = [...(manualPayments || []), ...(customerPayments || [])];
+
   const [activeTab, setActiveTab] = useState("Active Plans");
   const [billingCycle, setBillingCycle] = useState("all");
-
-  const tabs = [
-    { name: "Active Plans", count: 3 },
-    { name: "Drafts", count: 1 },
-    { name: "Archived", count: 0 },
-  ];
+  const [searchQuery, setSearchQuery] = useState("");
 
   const billingOptions = [
     { label: "All Billing Cycles", value: "all" },
@@ -24,55 +44,117 @@ export default function MembershipPlansPage() {
     { label: "Yearly", value: "yearly" },
   ];
 
-  const membershipPlans = [
-    {
-      title: "Basic Membership",
-      price: "₹799",
-      period: "/ Month",
-      status: "Active",
-      features: [
-        "Workout Plans",
-        "Attendance",
-        "Water Tracker",
-        "Community",
-      ],
-      duration: "1 Month",
-      members: 42,
-      extraFeaturesCount: 2,
-    },
-    {
-      title: "Premium Membership",
-      price: "₹1,299",
-      period: "/ Month",
-      status: "Active",
-      features: [
-        "Workout Plans",
-        "Recipes",
-        "Nutrition Plans",
-        "Community",
-        "Progress Tracking",
-        "AI Recommendations",
-        "Water Tracker",
-      ],
-      duration: "3 Months",
-      members: 138,
-      isHighlighted: true,
-      extraFeaturesCount: 1,
-    },
-    {
-      title: "Elite Membership",
-      price: "₹2,499",
-      period: "/ Month",
-      status: "Active",
-      features: [
-        "All Premium Features",
-        "Priority Support 24/7",
-        "Early Access to New Features",
-        "Steam & Sauna Unlimited Access",
-      ],
-      duration: "6 Months",
-      members: 0,
+  const formattedPlans = (rawPlans || []).map((plan: any) => {
+    const extractedFeatures = plan.gym_membership_plan_features
+      ?.map((f: any) => f.features?.featureName)
+      .filter(Boolean) || [];
+
+    const featuresList = extractedFeatures.length > 0
+      ? extractedFeatures
+      : [];
+
+    const rawDur = plan.durationMonths;
+    let durationStr = "1 Month";
+    let isYearly = false;
+    let isMonthly = false;
+    let isQuarterly = false;
+
+    if (rawDur) {
+      const s = String(rawDur).toLowerCase().trim();
+      if (s.includes("year")) {
+        const num = parseInt(s.match(/\d+/)?.[0] || "1", 10);
+        durationStr = num === 1 ? "1 Year" : `${num} Years`;
+        isYearly = true;
+      } else {
+        const num = parseInt(s.match(/\d+/)?.[0] || "1", 10);
+        if (num >= 12) {
+          durationStr = num === 12 ? "1 Year" : `${num / 12} Years`;
+          isYearly = true;
+        } else {
+          durationStr = num === 1 ? "1 Month" : `${num} Months`;
+          if (num === 3) isQuarterly = true;
+          else isMonthly = true;
+        }
+      }
+    } else {
+      isMonthly = true;
     }
+
+    const membersCount = (customerPlans || []).filter(
+      (cp: any) => cp.planId === plan.planId
+    ).length;
+
+    return {
+      id: plan.planId,
+      title: plan.planName || "Membership Plan",
+      price: `₹${Number(plan.price || 0).toLocaleString("en-IN")}`,
+      period: isYearly ? "/ Year" : "/ Month",
+      status: plan.is_deleted ? "Inactive" : (plan.is_Active ? "Active" : "Inactive"),
+      features: featuresList,
+      duration: durationStr,
+      members: membersCount,
+      isYearly,
+      isMonthly,
+      isQuarterly,
+    };
+  });
+
+  const filteredPlans = formattedPlans.filter((plan) => {
+    if (searchQuery && !plan.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    if (billingCycle === "monthly" && !plan.isMonthly) return false;
+    if (billingCycle === "quarterly" && !plan.isQuarterly) return false;
+    if (billingCycle === "yearly" && !plan.isYearly) return false;
+    if (activeTab === "Active Plans" && plan.status !== "Active") return false;
+    if (activeTab === "Inactive Plans" && plan.status !== "Inactive") return false;
+    return true;
+  });
+
+  const dotColors = ["bg-[#F59E0B]", "bg-[#D4FF32]", "bg-[#A855F7]", "bg-[#34D399]", "bg-[#22D3EE]", "bg-[#FB7185]"];
+  
+  const retentionData = filteredPlans.map((plan, index) => {
+    const planPayments = (payments || []).filter((p: any) => p.planId === plan.id);
+    const totalAmount = planPayments.reduce((sum: number, p: any) => sum + Number(p.amountPaid || 0), 0);
+    
+    const allEntriesForPlan = (customerPlans || []).filter((cp: any) => cp.planId === plan.id || cp.plan?.planId === plan.id);
+    
+    const customerCounts = new Map<string, number>();
+    allEntriesForPlan.forEach((cp: any) => {
+      customerCounts.set(cp.customerId, (customerCounts.get(cp.customerId) || 0) + 1);
+    });
+    
+    const totalUniqueCustomers = customerCounts.size;
+    let renewedCustomers = 0;
+    customerCounts.forEach(count => {
+      if (count > 1) renewedCustomers++;
+    });
+    
+    let renewalRateStr = "—";
+    if (totalUniqueCustomers > 0) {
+      renewalRateStr = `${((renewedCustomers / totalUniqueCustomers) * 100).toFixed(1)}%`;
+    }
+
+    const dotColor = dotColors[index % dotColors.length];
+
+    return {
+      tierName: plan.title,
+      duration: plan.duration,
+      monthlyRate: plan.price,
+      activeMembers: `${plan.members} Members`,
+      currentMrr: `₹${totalAmount.toLocaleString("en-IN")}`,
+      renewalRate: renewalRateStr,
+      status: plan.status,
+      dotColor,
+    };
+  });
+
+  const activeCount = formattedPlans.filter((p) => p.status === "Active").length;
+  const inactiveCount = formattedPlans.filter((p) => p.status === "Inactive").length;
+
+  const tabs = [
+    { name: "Active Plans", count: activeCount },
+    { name: "Inactive Plans", count: inactiveCount },
   ];
 
   return (
@@ -141,7 +223,6 @@ export default function MembershipPlansPage() {
             triggerClassName="h-[34px] pl-[14px] pr-[12px] py-[8px] bg-[#171B20] border border-[#262B32] rounded-[12px] flex flex-row items-center justify-between text-[#D1D5DB] hover:text-white hover:border-[#333845] transition-colors w-[177px] shrink-0 cursor-pointer"
           />
 
-          
           <div className="relative w-[176px] h-[34px] shrink-0">
             <MagnifyingGlass
               size={14}
@@ -150,6 +231,8 @@ export default function MembershipPlansPage() {
             <input
               type="text"
               placeholder="Search plans..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-full pl-[32px] pr-[12px] py-[8px] bg-[#171B20] border border-[#262B32] rounded-[12px] text-white placeholder-[#6B7280] font-['Plus_Jakarta_Sans',sans-serif] text-[12px] leading-[15px] focus:outline-none focus:border-[#D4FF00] transition-colors"
             />
           </div>
@@ -157,12 +240,18 @@ export default function MembershipPlansPage() {
       </div>
 
       <div className="flex flex-row overflow-x-auto gap-6 mb-12 w-[calc(100%+48px)] -ml-6 px-6 md:w-full md:ml-0 md:px-0 justify-start pb-4 scrollbar-themed snap-x">
-        {membershipPlans.map((plan, index) => (
-          <PlanCard key={index} {...plan} />
-        ))}
+        {isPlansLoading ? (
+          <div className="text-[#9CA3AF] text-[14px] py-8 font-['Plus_Jakarta_Sans',sans-serif]">Loading plans...</div>
+        ) : filteredPlans.length === 0 ? (
+          <div className="text-[#9CA3AF] text-[14px] py-8 font-['Plus_Jakarta_Sans',sans-serif]">No membership plans found.</div>
+        ) : (
+          filteredPlans.map((plan) => (
+            <PlanCard key={plan.id} {...plan} />
+          ))
+        )}
       </div>
 
-      <RetentionSummary />
+      <RetentionSummary data={retentionData} />
     </div>
   );
 }

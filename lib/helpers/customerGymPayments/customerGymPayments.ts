@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
 
 export enum PaymentMethod {
     UPI = 'UPI',
@@ -42,6 +42,7 @@ export interface SaveCustomerGymPaymentParams {
 }
 
 export async function fetchCustomerGymPayments(gymId?: string, customerId?: string) {
+  const supabase = createClient();
   let query = supabase
     .from('customer_gym_payments')
     .select('*, plan:gym_membership_plans(planName), gym_customers(fullName, email, phone, is_Active, users(profilePhoto, status, createdAt))')
@@ -67,6 +68,7 @@ export async function fetchCustomerGymPayments(gymId?: string, customerId?: stri
 }
 
 export async function fetchCustomerGymPaymentById(id: string) {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('customer_gym_payments')
     .select('*')
@@ -84,6 +86,7 @@ export async function fetchCustomerGymPaymentById(id: string) {
 
 export async function saveCustomerGymPayment(paymentData: SaveCustomerGymPaymentParams) {
   const now = new Date().toISOString();
+  const supabase = createClient();
 
   let isUpdate = false;
   if (paymentData.customerPaymentId) {
@@ -154,6 +157,7 @@ export async function saveCustomerGymPayment(paymentData: SaveCustomerGymPayment
 
 export async function deleteCustomerGymPayment(id: string) {
   const now = new Date().toISOString();
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('customer_gym_payments')
@@ -182,6 +186,7 @@ export async function fetchCustomerGymPaymentsPaginated(
 ) {
   const from = (page - 1) * limit;
   const to = from + limit - 1;
+  const supabase = createClient();
 
   let query = supabase
     .from('customer_gym_payments')

@@ -1,21 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Plus, ArrowRight } from "@phosphor-icons/react";
 import PlanForm, { PlanData } from "./_components/PlanForm";
+import { useUpsertMembershipPlans } from "@/lib/hooks/membership/useMutateMembershipPlan";
+import { useUser } from "@/app/context/UserContext";
+import { getOwnerGymId } from "@/lib/helpers/trainers/trainerHelper";
+import { useGymMembershipPlans } from "@/lib/hooks/useGymMembershipPlans";
+
+const ALL_FEATURES_MAP: Record<string, string> = {
+  "workout plans": "workout-plans",
+  "nutrition plans": "nutrition-plans",
+  "water tracker": "water-tracker",
+  "progress tracking": "progress-tracking",
+  "attendance": "attendance",
+  "recipes": "recipes",
+  "community access": "community-access",
+  "ai recommendations": "ai-recommendations",
+};
 
 const INITIAL_PLAN: PlanData = {
+  id: "",
   name: "",
   price: "",
   duration: "1 month",
   features: [],
 };
 
-export default function CreateMembershipPlanPage() {
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="w-full h-full bg-[#0B0D10]" />}>
+      <CreateMembershipPlanPage />
+    </Suspense>
+  );
+}
+
+function CreateMembershipPlanPage() {
   const router = useRouter();
-  const [plans, setPlans] = useState<PlanData[]>([{ ...INITIAL_PLAN }]);
+  const searchParams = useSearchParams();
+  const planIdToEdit = searchParams.get("planId");
+  const { user } = useUser();
+  const { data: rawPlans } = useGymMembershipPlans(user?.id || null);
+  const upsertPlans = useUpsertMembershipPlans();
+  const [plans, setPlans] = useState<PlanData[]>([{ ...INITIAL_PLAN, id: `plan-${crypto.randomUUID()}` }]);
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (planIdToEdit && rawPlans && rawPlans.length > 0 && !isEditing) {
+      const planToEdit = rawPlans.find((p: any) => p.planId === planIdToEdit);
+      if (planToEdit) {
+        setIsEditing(true);
+        let durationStr = "1 month";
+        if (planToEdit.durationMonths) {
+          if (planToEdit.durationMonths >= 12) {
+             durationStr = "1 year";
+          } else {
+             durationStr = `${planToEdit.durationMonths} month${planToEdit.durationMonths > 1 ? 's' : ''}`;
+          }
+        }
+        
+        setPlans([{
+          id: planToEdit.planId,
+          name: planToEdit.planName || "",
+          price: planToEdit.price?.toString() || "",
+          duration: durationStr,
+          features: planToEdit.gym_membership_plan_features?.map((f: any) => {
+            const dbName = f.features?.featureName?.toLowerCase()?.trim();
+            return dbName ? ALL_FEATURES_MAP[dbName] : null;
+          }).filter(Boolean) || [],
+        }]);
+      }
+    }
+  }, [planIdToEdit, rawPlans, isEditing]);
 
   const updatePlan = (index: number, updated: PlanData) => {
     const newPlans = [...plans];
@@ -24,13 +82,27 @@ export default function CreateMembershipPlanPage() {
   };
 
   const addPlan = () => {
-    setPlans([...plans, { ...INITIAL_PLAN }]);
+    setPlans([...plans, { ...INITIAL_PLAN, id: `plan-${crypto.randomUUID()}` }]);
   };
 
-  const handleSave = () => {
-    // In a real app, you would send `plans` to your API here
-    console.log("Saving plans:", plans);
-    router.push("/owner/membership-plans");
+  const handleSave = async () => {
+    if (!user?.id) return;
+    const gymId = await getOwnerGymId(user.id);
+    if (!gymId) return;
+
+    const drafts = plans.map(p => ({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      duration: p.duration,
+      selectedFeatureIds: p.features,
+    }));
+
+    upsertPlans.mutate({ gymId, userId: user.id, plans: drafts }, {
+      onSuccess: () => {
+        router.push("/owner/membership-plans");
+      }
+    });
   };
 
   return (
@@ -81,10 +153,13 @@ export default function CreateMembershipPlanPage() {
 
           <button
             onClick={handleSave}
-            className="flex flex-row items-center justify-center px-[28px] py-[12px] h-[40px] bg-[#CCFF00] rounded-[9999px] gap-[8px] cursor-pointer shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] transition-colors hover:bg-[#bbf000]"
+            disabled={upsertPlans.isPending}
+            className={`flex flex-row items-center justify-center px-[28px] py-[12px] h-[40px] rounded-[9999px] gap-[8px] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] transition-colors ${
+              upsertPlans.isPending ? "bg-[#809900] cursor-not-allowed opacity-70" : "bg-[#CCFF00] cursor-pointer hover:bg-[#bbf000]"
+            }`}
           >
             <span className="font-['Inter'] font-[700] text-[12px] leading-[16px] text-center tracking-[0.3px] text-black">
-              Save
+              {upsertPlans.isPending ? "Saving..." : "Save"}
             </span>
             <ArrowRight size={16} className="text-black" strokeWidth={2} />
           </button>

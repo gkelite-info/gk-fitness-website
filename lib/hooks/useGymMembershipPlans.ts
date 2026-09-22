@@ -15,11 +15,15 @@ export function useGymMembershipPlans(userId: string | null) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('gym_membership_plans')
-        .select('*')
+        .select(`
+          *,
+          gym_membership_plan_features (
+            featureId,
+            features ( featureName )
+          )
+        `)
         .eq('gymId', gymId)
-        .eq('is_deleted', false)
-        .eq('is_Active', true)
-        .order('createdAt', { ascending: false });
+        .order('createdAt', { ascending: true });
 
       if (error) {
         console.error('[useGymMembershipPlans] Error:', error);

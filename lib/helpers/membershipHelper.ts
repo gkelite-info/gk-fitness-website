@@ -112,6 +112,34 @@ export async function fetchGymMembershipPlans(gymId: string): Promise<Membership
 
 export async function upsertMembershipPlans(gymId: string, createdBy: string, drafts: DraftPlan[]) {
   const supabase = getSupabase();
+
+  const { data: dbFeatures } = await supabase
+    .from('features')
+    .select('featureId, featureName')
+    .eq('is_deleted', false);
+
+  const featureIdMap: Record<string, string> = {};
+  if (dbFeatures) {
+    const nameToId: Record<string, string> = {
+      "workout-plans": "Workout Plans",
+      "nutrition-plans": "Nutrition Plans",
+      "water-tracker": "Water Tracker",
+      "progress-tracking": "Progress Tracking",
+      "attendance": "Attendance",
+      "recipes": "Recipes",
+      "community-access": "Community Access",
+      "ai-recommendations": "AI Recommendations",
+    };
+    
+    dbFeatures.forEach(f => {
+      const dbNameLower = f.featureName?.toLowerCase()?.trim();
+      const key = Object.keys(nameToId).find(k => nameToId[k].toLowerCase().trim() === dbNameLower);
+      if (key) {
+        featureIdMap[key] = f.featureId;
+      }
+    });
+  }
+
   for (const draft of drafts) {
     const isNew = draft.id.startsWith('plan-');
     let planId = draft.id;
@@ -170,13 +198,16 @@ export async function upsertMembershipPlans(gymId: string, createdBy: string, dr
     }
 
     if (draft.selectedFeatureIds && draft.selectedFeatureIds.length > 0) {
-      const featureMappings = draft.selectedFeatureIds.map(fid => ({
-        planFeatureId: crypto.randomUUID(),
-        planId: planId,
-        featureId: fid,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }));
+      const featureMappings = draft.selectedFeatureIds.map(fid => {
+        const actualFeatureId = featureIdMap[fid] || fid;
+        return {
+          planFeatureId: crypto.randomUUID(),
+          planId: planId,
+          featureId: actualFeatureId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      });
 
       const { error: featureError } = await supabase
         .from('gym_membership_plan_features')
@@ -202,5 +233,22 @@ export async function deleteMembershipPlan(planId: string) {
 
   if (error) {
     console.error('Error deleting plan:', error);
+  }
+}
+
+export async function restoreMembershipPlan(planId: string) {
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from('gym_membership_plans')
+    .update({
+      is_deleted: false,
+      is_Active: true,
+      deletedAt: null,
+      updatedAt: new Date().toISOString()
+    })
+    .eq('planId', planId);
+
+  if (error) {
+    console.error('Error restoring plan:', error);
   }
 }
