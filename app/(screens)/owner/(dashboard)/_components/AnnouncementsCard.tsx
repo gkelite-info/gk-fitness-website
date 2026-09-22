@@ -1,12 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Megaphone, CaretRight } from "@phosphor-icons/react/dist/ssr";
 import AnnouncementsModal from "./AnnouncementsModal";
+import { useBirthdayAnnouncements } from "@/lib/hooks/gymAnnouncements/useBirthdayAnnouncements";
+import { useUser } from "@/app/context/UserContext";
 
 export default function AnnouncementsCard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [defaultCreate, setDefaultCreate] = useState(false);
+  const { roleData } = useUser();
+  const gymId = roleData?.[0]?.gymId;
+  const { data: birthdayData } = useBirthdayAnnouncements(gymId);
+
+  useEffect(() => {
+    const handleOpen = () => {
+      setDefaultCreate(false);
+      setIsModalOpen(true);
+    };
+    window.addEventListener('open-announcements-modal', handleOpen);
+    return () => window.removeEventListener('open-announcements-modal', handleOpen);
+  }, []);
 
   return (
     <>
@@ -35,7 +49,7 @@ export default function AnnouncementsCard() {
               <Megaphone size={20} color="#D4FF32" weight="bold" />
             </div>
             <span className="font-sans font-normal text-[12px] leading-4 text-[#94A3B8] break-words">
-              Share updates...
+              {birthdayData?.announcementText || "Share updates..."}
             </span>
           </div>
           <button 

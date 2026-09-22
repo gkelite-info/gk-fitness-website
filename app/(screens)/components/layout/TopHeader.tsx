@@ -86,7 +86,10 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
           <button className="cursor-pointer w-10 h-10 flex items-center justify-center bg-[#15161C] border border-[#232631] rounded-xl hover:bg-[#1f212a] transition-colors">
             <UsersThree size={16} className="text-[#CBD5E1]" weight="regular" />
           </button>
-          <button className="cursor-pointer relative w-10 h-10 flex items-center justify-center bg-[#15161C] border border-[#232631] rounded-xl hover:bg-[#1f212a] transition-colors">
+          <button 
+            onClick={() => window.dispatchEvent(new CustomEvent('open-announcements-modal'))}
+            className="cursor-pointer relative w-10 h-10 flex items-center justify-center bg-[#15161C] border border-[#232631] rounded-xl hover:bg-[#1f212a] transition-colors"
+          >
             <Bell size={16} className="text-[#CBD5E1]" weight="regular" />
             <div className="absolute right-[9px] top-[9px] w-2 h-2 bg-[#F43F5E] rounded-full shadow-[0_0_0_2px_#15161C]" />
           </button>
