@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { CaretLeft, CaretRight, CaretDoubleLeft, CaretDoubleRight } from "@phosphor-icons/react";
 
 interface PaginationProps {
@@ -11,6 +12,31 @@ interface PaginationProps {
 }
 
 export default function Pagination({ currentPage, totalPages, totalItems, itemsPerPage = 20, onPageChange }: PaginationProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isWrapped, setIsWrapped] = useState(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const checkWrap = () => {
+      if (container.children.length >= 2) {
+        const firstChild = container.children[0] as HTMLElement;
+        const lastChild = container.children[container.children.length - 1] as HTMLElement;
+        // If the top positions differ, the flex items have wrapped to multiple lines
+        setIsWrapped(Math.abs(firstChild.offsetTop - lastChild.offsetTop) > 10);
+      }
+    };
+
+    const observer = new ResizeObserver(checkWrap);
+    observer.observe(container);
+    
+    // Check initial state
+    setTimeout(checkWrap, 0);
+
+    return () => observer.disconnect();
+  }, [currentPage, totalPages]);
+
   // Logic to calculate page numbers to display
   const getPageNumbers = () => {
     const pages = [];
@@ -37,7 +63,10 @@ export default function Pagination({ currentPage, totalPages, totalItems, itemsP
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex flex-wrap items-center justify-center w-full mt-6 py-4 border-t border-[#1D2127] gap-y-4 gap-x-8">
+    <div 
+      ref={containerRef}
+      className={`flex flex-wrap items-center w-full mt-6 py-4 border-t border-[#1D2127] gap-y-4 gap-x-4 ${isWrapped ? 'justify-center' : 'justify-between'}`}
+    >
       <span className="font-sans font-medium text-[13px] text-[#64748B] whitespace-nowrap text-center shrink-0">
         Showing <strong className="text-white font-semibold">{startItem}</strong> to <strong className="text-white font-semibold">{endItem}</strong> of <strong className="text-white font-semibold">{totalItems}</strong> entries
       </span>
