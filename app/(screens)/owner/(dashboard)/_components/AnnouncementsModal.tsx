@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, CalendarBlank as Calendar, Plus, Megaphone } from "@phosphor-icons/react/dist/ssr";
 import { useInfiniteGymAnnouncements, useSaveGymAnnouncement } from '@/lib/hooks/gymAnnouncements/useGymAnnouncements';
 import { useUser } from '@/app/context/UserContext';
+import { useBirthdayAnnouncements } from '@/lib/hooks/gymAnnouncements/useBirthdayAnnouncements';
 
 interface AnnouncementsModalProps {
   onClose: () => void;
@@ -76,7 +77,25 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
     }
   };
 
-  const announcements = data ? data.pages.flatMap(page => page.data) : [];
+  const { data: birthdayData, isLoading: isBirthdayLoading } = useBirthdayAnnouncements(gymId);
+
+  let announcements = data ? data.pages.flatMap(page => page.data) : [];
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  
+  if (birthdayData?.announcementText && (!selectedDate || selectedDate === todayStr)) {
+    announcements = [
+      {
+        gymAnnouncementId: 'birthday-announcement',
+        message: birthdayData.announcementText,
+        announcementDate: todayStr,
+        announcementTime: 'All Day',
+      },
+      ...announcements
+    ];
+  }
+
+  const isListEmpty = !isLoading && !isBirthdayLoading && announcements.length === 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -137,7 +156,7 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
               </div>
 
               <div className="flex flex-col gap-3 pb-16">
-                {!isLoading && announcements.length === 0 ? (
+                {isListEmpty ? (
                   <div className="py-10 flex flex-col items-center justify-center text-center gap-2">
                     <div className="w-12 h-12 rounded-full bg-[rgba(212,255,50,0.1)] flex items-center justify-center mb-2">
                       <Megaphone size={24} color="#D4FF32" />
