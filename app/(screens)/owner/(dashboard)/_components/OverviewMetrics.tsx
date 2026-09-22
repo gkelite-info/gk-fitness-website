@@ -1,10 +1,10 @@
 import { Users, CheckCircle, CurrencyInr, TrendUp, ArrowUp } from "@phosphor-icons/react/dist/ssr";
 
 interface OverviewMetricsProps {
-  activeCustomers: number;
-  checkIns: number;
-  revenueToday: string;
-  monthlyGrowth: string;
+  activeCustomers: number | null;
+  checkIns: number | null;
+  revenueToday: string | null;
+  monthlyGrowth: string | null;
 }
 
 export default function OverviewMetrics({
@@ -31,28 +31,28 @@ export default function OverviewMetrics({
         <MetricCard
           icon={<Users size={24} color="#D4FF32" weight="regular" />}
           label="ACTIVE CUSTOMERS"
-          value={activeCustomers.toLocaleString('en-IN')}
+          value={activeCustomers === null ? "..." : activeCustomers.toLocaleString('en-IN')}
           trend="+0%"
           subtext=""
         />
         <MetricCard
           icon={<CheckCircle size={24} color="#D4FF32" weight="regular" />}
           label="CHECK-INS"
-          value={checkIns.toLocaleString('en-IN')}
+          value={checkIns === null ? "..." : checkIns.toLocaleString('en-IN')}
           trend="+0%"
           subtext=""
         />
         <MetricCard
           icon={<CurrencyInr size={24} color="#D4FF32" weight="regular" />}
           label="REVENUE TODAY"
-          value={revenueToday}
+          value={revenueToday === null ? "..." : revenueToday}
           trend="+0%"
           subtext=""
         />
         <MetricCard
           icon={<TrendUp size={24} color="#D4FF32" weight="regular" />}
           label="MONTHLY GROWTH"
-          value={monthlyGrowth}
+          value={monthlyGrowth === null ? "..." : monthlyGrowth}
           trend="+0%"
           subtext=""
         />

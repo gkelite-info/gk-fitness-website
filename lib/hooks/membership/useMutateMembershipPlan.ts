@@ -9,8 +9,8 @@ export function useUpsertMembershipPlans() {
     mutationFn: async ({ gymId, userId, plans }: { gymId: string; userId: string; plans: DraftPlan[] }) => {
       await upsertMembershipPlans(gymId, userId, plans);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['membershipPlans'] });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gymMembershipPlans', variables.userId] });
     },
   });
 }
@@ -23,7 +23,21 @@ export function useDeleteMembershipPlan() {
       await deleteMembershipPlan(planId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['membershipPlans'] });
+      queryClient.invalidateQueries({ queryKey: ['gymMembershipPlans'] });
+    },
+  });
+}
+
+export function useRestoreMembershipPlan() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (planId: string) => {
+      const { restoreMembershipPlan } = await import('@/lib/helpers/membershipHelper');
+      await restoreMembershipPlan(planId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gymMembershipPlans'] });
     },
   });
 }

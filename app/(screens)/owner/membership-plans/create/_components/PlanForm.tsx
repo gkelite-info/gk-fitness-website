@@ -32,6 +32,7 @@ const DURATION_OPTIONS = [
 ];
 
 export interface PlanData {
+  id: string;
   name: string;
   price: string;
   duration: string;
