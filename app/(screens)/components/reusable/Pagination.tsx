@@ -37,12 +37,12 @@ export default function Pagination({ currentPage, totalPages, totalItems, itemsP
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between w-full mt-6 py-4 border-t border-[#1D2127] gap-4 sm:gap-0">
-      <span className="font-sans font-medium text-[13px] text-[#64748B]">
+    <div className="flex flex-wrap items-center justify-center w-full mt-6 py-4 border-t border-[#1D2127] gap-y-4 gap-x-8">
+      <span className="font-sans font-medium text-[13px] text-[#64748B] whitespace-nowrap text-center shrink-0">
         Showing <strong className="text-white font-semibold">{startItem}</strong> to <strong className="text-white font-semibold">{endItem}</strong> of <strong className="text-white font-semibold">{totalItems}</strong> entries
       </span>
       
-      <div className="flex flex-row items-center gap-0.5 sm:gap-1.5 mt-4 sm:mt-0 w-full sm:w-auto justify-center sm:justify-end">
+      <div className="flex flex-row flex-wrap items-center justify-center gap-1 sm:gap-1.5 shrink-0">
         <button
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
