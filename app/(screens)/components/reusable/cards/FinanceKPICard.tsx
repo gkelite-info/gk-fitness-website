@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 
 export interface FinanceKPICardProps {
   title: string;
@@ -12,6 +13,7 @@ export interface FinanceKPICardProps {
   iconBgColor: string;
   iconBorderColor: string;
   iconColor: string;
+  href?: string;
 }
 
 export default function FinanceKPICard({
@@ -23,10 +25,11 @@ export default function FinanceKPICard({
   icon,
   iconBgColor,
   iconBorderColor,
-  iconColor
+  iconColor,
+  href
 }: FinanceKPICardProps) {
-  return (
-    <div className="flex flex-row items-center p-5 gap-4 w-full bg-[#111418] border border-[#1D222B] rounded-[16px]">
+  const content = (
+    <>
       <div 
         className="flex justify-center items-center w-12 h-12 rounded-[16px] shrink-0"
         style={{ 
@@ -58,6 +61,22 @@ export default function FinanceKPICard({
           </span>
         </div>
       </div>
+    </>
+  );
+
+  const containerClasses = `flex flex-row items-center p-5 gap-4 w-full bg-[#111418] border border-[#1D222B] rounded-[16px] ${href ? 'cursor-pointer hover:border-[#334155] hover:bg-[#1A1F26] transition-all' : ''}`;
+
+  if (href) {
+    return (
+      <Link href={href} className={containerClasses}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div className={containerClasses}>
+      {content}
     </div>
   );
 }

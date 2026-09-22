@@ -84,3 +84,29 @@ input:-webkit-autofill:active {
   background: #E2FF66;
   box-shadow: 0 0 12px rgba(212, 255, 50, 0.6);
 }
+
+.scrollbar-orange {
+  scrollbar-width: thin;
+  scrollbar-color: #F59E0B #14151A;
+}
+
+.scrollbar-orange::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-orange::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.scrollbar-orange::-webkit-scrollbar-thumb {
+  background: #F59E0B;
+  border-radius: 999px;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.scrollbar-orange::-webkit-scrollbar-thumb:hover {
+  background: #FBBF24;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+}

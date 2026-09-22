@@ -13,7 +13,8 @@ const KPI_DATA: FinanceKPICardProps[] = [
     icon: <Database size={24} weight="regular" />,
     iconBgColor: "#122B1C",
     iconBorderColor: "rgba(16, 185, 129, 0.2)",
-    iconColor: "#34D399"
+    iconColor: "#34D399",
+    href: "/owner/finance/today"
   },
   {
     title: "Total Customers",

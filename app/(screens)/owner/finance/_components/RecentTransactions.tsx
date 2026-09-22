@@ -2,6 +2,7 @@
 
 import { CaretRight } from "@phosphor-icons/react";
 import Avatar from "@/app/(screens)/components/reusable/Avatar";
+import { useRouter } from "next/navigation";
 
 const TRANSACTIONS_DATA = [
   {
@@ -35,22 +36,22 @@ const TRANSACTIONS_DATA = [
 ];
 
 export default function RecentTransactions() {
+  const router = useRouter();
+
   return (
     <div className="flex flex-col p-4 md:p-6 w-full h-full bg-[#111418] border border-[#1D222B] rounded-[16px] min-h-[350px]">
       <div className="flex flex-row justify-between items-center pb-4 w-full gap-2 flex-wrap">
         <h2 className="font-[700] text-[16px] leading-[24px] text-white m-0">
           Recent Transactions
         </h2>
-        <button className="flex flex-row items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity">
-          <span className="font-[600] text-[12px] leading-[16px] text-[#CCFF00]">
-            View All
-          </span>
-          <CaretRight size={14} weight="regular" className="text-[#CCFF00]" />
-        </button>
       </div>
-      <div className="flex flex-col w-full gap-3 mt-2">
+      <div className="flex flex-col w-full gap-1 mt-2">
         {TRANSACTIONS_DATA.map((tx, index) => (
-          <div key={index} className="flex flex-row justify-between items-center py-2 w-full gap-2">
+          <div 
+            key={index} 
+            onClick={() => router.push(`/owner/finance/today/payments/${index}`)}
+            className="flex flex-row justify-between items-center p-2 w-full gap-2 hover:bg-[#1A1F26] rounded-[8px] transition-colors cursor-pointer group"
+          >
             <div className="flex flex-row items-center gap-3.5 min-w-0 flex-1">
               <div className="w-10 h-10 rounded-full border border-slate-600/40 shrink-0 flex items-center justify-center overflow-hidden bg-slate-700/60">
                 <Avatar gender={tx.gender} className="w-[38px] h-[38px]" />
@@ -73,7 +74,7 @@ export default function RecentTransactions() {
                   {tx.time}
                 </span>
               </div>
-              <CaretRight size={14} weight="regular" className="text-[#64748B] shrink-0" />
+              <CaretRight size={14} weight="regular" className="text-[#64748B] group-hover:text-white transition-colors shrink-0" />
             </div>
           </div>
         ))}
