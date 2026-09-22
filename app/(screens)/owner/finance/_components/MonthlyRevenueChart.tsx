@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CaretRight } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
 
 const CHART_DATA = [
   { month: "Jan", value: 108000 },
@@ -40,6 +41,7 @@ const formatCurrency = (val: number) => {
 };
 
 export default function MonthlyRevenueChart() {
+  const router = useRouter();
   const [activeTooltip, setActiveTooltip] = useState<number | null>(null);
 
   const maxDataValue = Math.max(...CHART_DATA.map((d) => d.value), 1);
@@ -63,7 +65,10 @@ export default function MonthlyRevenueChart() {
         <h2 className="font-[700] text-[16px] leading-[24px] text-white m-0">
           Monthly Revenue
         </h2>
-        <button className="flex flex-row items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity">
+        <button 
+          onClick={() => router.push('/owner/finance/monthly-growth')}
+          className="flex flex-row items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+        >
           <span className="font-[600] text-[12px] leading-[16px] text-[#CCFF00]">
             View Trend
           </span>

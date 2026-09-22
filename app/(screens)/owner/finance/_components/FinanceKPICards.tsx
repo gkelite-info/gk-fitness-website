@@ -25,7 +25,8 @@ const KPI_DATA: FinanceKPICardProps[] = [
     icon: <UsersThree size={24} weight="regular" />,
     iconBgColor: "#2E1D15",
     iconBorderColor: "rgba(180, 83, 9, 0.2)",
-    iconColor: "#FF8C42"
+    iconColor: "#FF8C42",
+    href: "/owner/finance/active-customers"
   },
   {
     title: "Monthly Growth",
@@ -36,7 +37,8 @@ const KPI_DATA: FinanceKPICardProps[] = [
     icon: <TrendUp size={24} weight="regular" />,
     iconBgColor: "#132238",
     iconBorderColor: "rgba(37, 99, 235, 0.2)",
-    iconColor: "#60A5FA"
+    iconColor: "#60A5FA",
+    href: "/owner/finance/monthly-growth"
   }
 ];
 
