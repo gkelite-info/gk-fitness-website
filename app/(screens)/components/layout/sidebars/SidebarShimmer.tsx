@@ -10,7 +10,7 @@ export default function SidebarShimmer() {
           </div>
         </div>
         <div className="flex flex-col items-start gap-2 w-full">
-          {[1, 2, 3, 4, 5].map((i) => (
+          {Array.from({ length: 10 }).map((_, i) => (
             <div
               key={i}
               className="flex flex-row items-center px-4 py-3 gap-3.5 w-full h-[46px] rounded-2xl"
