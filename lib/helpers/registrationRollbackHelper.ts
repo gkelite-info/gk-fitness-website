@@ -77,12 +77,13 @@ export async function rollbackRegistrationData(target: RollbackTarget) {
         cleanupStatus['supabase_auth'] = true;
       } else {
         try {
-          const { error: adminErr } = await supabaseAdminAuth.auth.admin.deleteUser(targetId);
-          if (!adminErr) {
+          const { rollbackAuthUser } = await import('@/app/api/auth/actions');
+          const rollbackResult = await rollbackAuthUser(targetId);
+          if (!rollbackResult.error) {
             cleanupStatus['supabase_auth'] = true;
           }
         } catch (e) {
-          // Ignore if admin key is restricted on client
+          console.error('Error executing auth rollback action:', e);
         }
       }
     } catch (e: any) {

@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchTodayBirthdayAnnouncements } from '@/lib/helpers/gymAnnouncements/birthdayAnnouncementsHelper';
+import { fetchBirthdayAnnouncementsForDate } from '@/lib/helpers/gymAnnouncements/birthdayAnnouncementsHelper';
 
-export function useBirthdayAnnouncements(gymId?: string | null) {
+export function useBirthdayAnnouncements(gymId?: string | null, targetDateStr?: string | null) {
   return useQuery({
-    queryKey: ['todayBirthdayAnnouncements', gymId],
+    queryKey: ['birthdayAnnouncementsForDate', gymId, targetDateStr],
     queryFn: async () => {
       if (!gymId) return { birthdays: [], announcementText: null };
-      return await fetchTodayBirthdayAnnouncements(gymId);
+      return await fetchBirthdayAnnouncementsForDate(gymId, targetDateStr || undefined);
     },
     enabled: !!gymId,
     staleTime: 1000 * 60 * 15,

@@ -10,58 +10,59 @@ import { TableHeadCell, TableRow, TableCell } from "@/app/(screens)/components/r
 import Pagination from "@/app/(screens)/components/reusable/Pagination";
 import { useRouter } from "next/navigation";
 
-const PAYMENTS_DATA = [
-  {
-    name: "Rahul Sharma",
-    plan: "Gold Membership",
-    time: "09:45 AM",
-    amount: "₹2,500",
-    method: "UPI",
-    gender: "male" as const
-  },
-  {
-    name: "Sneha Patel",
-    plan: "Premium Membership",
-    time: "09:15 AM",
-    amount: "₹2,999",
-    method: "Card",
-    gender: "female" as const
-  },
-  {
-    name: "Amit Kumar",
-    plan: "Gold Membership",
-    time: "08:40 AM",
-    amount: "₹2,500",
-    method: "Cash",
-    gender: "male" as const
-  },
-  {
-    name: "Neha Kapoor",
-    plan: "Silver Membership",
-    time: "08:10 AM",
-    amount: "₹650",
-    method: "Net Banking",
-    gender: "female" as const
-  }
-];
+export interface TodayPaymentData {
+  gymPaymentId: string;
+  name: string;
+  plan: string;
+  amount: number;
+  paymentDate: string;
+  createdAt?: string;
+  method: string;
+  gender: "male" | "female";
+}
 
-const renderMethodIcon = (method: string) => {
-  switch(method) {
-    case 'UPI': return <Lightning size={16} weight="fill" className="text-[#CCFF00]" />;
-    case 'Card': return <CreditCard size={16} weight="fill" className="text-[#A855F7]" />;
-    case 'Cash': return <Money size={16} weight="fill" className="text-[#F59E0B]" />;
-    case 'Net Banking': return <Bank size={16} weight="fill" className="text-[#3B82F6]" />;
-    default: return null;
-  }
+interface TodayRecentPaymentsProps {
+  payments?: TodayPaymentData[];
+}
+
+const formatCurrency = (val: number) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0
+  }).format(val);
 };
 
-export default function TodayRecentPayments() {
+const formatTimeOnly = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
+};
+
+const formatDateOnly = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
+};
+
+const renderMethodIcon = (method: string) => {
+  const m = method.toLowerCase();
+  if (m.includes('upi')) return <Lightning size={16} weight="fill" className="text-[#CCFF00]" />;
+  if (m.includes('card')) return <CreditCard size={16} weight="fill" className="text-[#A855F7]" />;
+  if (m.includes('cash')) return <Money size={16} weight="fill" className="text-[#F59E0B]" />;
+  if (m.includes('bank') || m.includes('transfer')) return <Bank size={16} weight="fill" className="text-[#3B82F6]" />;
+  return <Money size={16} weight="fill" className="text-[#94A3B8]" />;
+};
+
+export default function TodayRecentPayments({ payments = [] }: TodayRecentPaymentsProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
 
-  const handleOpenDetails = (index: number) => {
-    router.push(`/owner/finance/today/payments/${index}`);
+  const handleOpenDetails = (id: string) => {
+    router.push(`/owner/payments/${id}`);
   };
+
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.max(1, Math.ceil(payments.length / ITEMS_PER_PAGE));
+  const displayPayments = payments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
     <div className="flex flex-col p-4 md:p-6 w-full bg-[#111418] border border-[#1D222B] rounded-[16px]">
@@ -69,7 +70,7 @@ export default function TodayRecentPayments() {
         <div className="flex flex-row items-center gap-2">
           <Clock size={16} className="text-[#94A3B8]" />
           <h2 className="font-[600] text-[13px] leading-[16px] text-white m-0">
-            Recent Payments
+            All Payments
           </h2>
         </div>
       </div>
@@ -79,6 +80,7 @@ export default function TodayRecentPayments() {
           <TableRow>
             <TableHeadCell>MEMBER</TableHeadCell>
             <TableHeadCell>MEMBERSHIP PLAN</TableHeadCell>
+            <TableHeadCell>DATE</TableHeadCell>
             <TableHeadCell>TIME</TableHeadCell>
             <TableHeadCell>AMOUNT</TableHeadCell>
             <TableHeadCell>PAYMENT METHOD</TableHeadCell>
@@ -86,59 +88,74 @@ export default function TodayRecentPayments() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {PAYMENTS_DATA.map((payment, index) => (
-            <TableRow key={index} className="hover:bg-[#1A1F26] border-b border-[#1B2029] last:border-0">
-              <TableCell>
-                <div className="flex flex-row items-center gap-3">
-                  <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center overflow-hidden bg-slate-700/60">
-                    <Avatar gender={payment.gender} className="w-[30px] h-[30px]" />
+          {displayPayments.length > 0 ? (
+            displayPayments.map((payment) => (
+              <TableRow key={payment.gymPaymentId} className="hover:bg-[#1A1F26] border-b border-[#1B2029] last:border-0 transition-colors">
+                <TableCell>
+                  <div className="flex flex-row items-center gap-3 cursor-pointer" onClick={() => handleOpenDetails(payment.gymPaymentId)}>
+                    <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center overflow-hidden bg-slate-700/60">
+                      <Avatar gender={payment.gender} className="w-[30px] h-[30px]" />
+                    </div>
+                    <span className="font-[600] text-[13px] text-white whitespace-nowrap hover:underline">
+                      {payment.name}
+                    </span>
                   </div>
-                  <span className="font-[600] text-[13px] text-white whitespace-nowrap">
-                    {payment.name}
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <span className="font-[400] text-[13px] text-[#94A3B8] whitespace-nowrap">
-                  {payment.plan}
-                </span>
-              </TableCell>
-              <TableCell>
-                <span className="font-[400] text-[13px] text-[#94A3B8] whitespace-nowrap">
-                  {payment.time}
-                </span>
-              </TableCell>
-              <TableCell>
-                <span className="font-[700] text-[13px] text-white whitespace-nowrap">
-                  {payment.amount}
-                </span>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-row items-center gap-2">
-                  {renderMethodIcon(payment.method)}
+                </TableCell>
+                <TableCell>
                   <span className="font-[400] text-[13px] text-[#94A3B8] whitespace-nowrap">
-                    {payment.method}
+                    {payment.plan}
                   </span>
+                </TableCell>
+                <TableCell>
+                  <span className="font-[400] text-[13px] text-[#94A3B8] whitespace-nowrap">
+                    {formatDateOnly(payment.createdAt || payment.paymentDate)}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span className="font-[400] text-[13px] text-[#94A3B8] whitespace-nowrap">
+                    {formatTimeOnly(payment.createdAt || payment.paymentDate)}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span className="font-[700] text-[13px] text-white whitespace-nowrap">
+                    {formatCurrency(payment.amount)}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-row items-center gap-2">
+                    {renderMethodIcon(payment.method)}
+                    <span className="font-[400] text-[13px] text-[#94A3B8] whitespace-nowrap capitalize">
+                      {payment.method || 'Unknown'}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <button
+                    onClick={() => handleOpenDetails(payment.gymPaymentId)}
+                    className="flex items-center justify-center text-[#64748B] hover:text-white transition-colors cursor-pointer"
+                  >
+                    <Eye size={20} weight="regular" />
+                  </button>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={7}>
+                <div className="flex items-center justify-center py-6">
+                  <span className="text-sm text-[#94A3B8]">No payments recorded.</span>
                 </div>
-              </TableCell>
-              <TableCell>
-                <button 
-                  onClick={() => handleOpenDetails(index)}
-                  className="flex items-center justify-center text-[#64748B] hover:text-white transition-colors cursor-pointer"
-                >
-                  <Eye size={20} weight="regular" />
-                </button>
               </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
 
       <Pagination
         currentPage={currentPage}
-        totalPages={1}
-        totalItems={PAYMENTS_DATA.length}
-        itemsPerPage={10}
+        totalPages={totalPages}
+        totalItems={payments.length}
+        itemsPerPage={ITEMS_PER_PAGE}
         onPageChange={setCurrentPage}
       />
     </div>

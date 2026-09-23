@@ -1,6 +1,10 @@
 "use client";
 
-const CHART_DATA = [
+interface MonthlyGrowthChartProps {
+  chartData?: { month: string; value: number; display: string; }[];
+}
+
+const DEFAULT_CHART_DATA = [
   { month: "Jan", value: 6200, display: "₹6.2K" },
   { month: "Feb", value: 7800, display: "₹7.8K" },
   { month: "Mar", value: 9500, display: "₹9.5K" },
@@ -15,9 +19,15 @@ const CHART_DATA = [
   { month: "Dec", value: 19800, display: "₹19.8K" }
 ];
 
-export default function MonthlyGrowthChart() {
-  const maxDataValue = 25000;
-  const yAxisLabels = [25000, 20000, 15000, 10000, 5000, 0];
+export default function MonthlyGrowthChart({ chartData }: MonthlyGrowthChartProps) {
+  const dataToUse = chartData || DEFAULT_CHART_DATA;
+  const maxValue = Math.max(...dataToUse.map(d => d.value), 0);
+  const maxDataValue = maxValue > 0 ? Math.ceil(maxValue / 5000) * 5000 : 25000;
+  
+  const yAxisLabels = [];
+  for (let i = maxDataValue; i >= 0; i -= Math.max(maxDataValue / 5, 5000)) {
+    yAxisLabels.push(i);
+  }
 
   const formatLabel = (val: number) => {
     if (val === 0) return "0";
@@ -37,10 +47,8 @@ export default function MonthlyGrowthChart() {
           </span>
         </div>
       </div>
-      
+
       <div className="flex flex-row w-full relative">
-        
-        {/* Y-Axis Fixed */}
         <div className="flex flex-col justify-between items-end pr-3 w-10 shrink-0 h-[300px] pt-10 pb-8 z-30 bg-[#10151C] border-r border-[#1B2029]">
           {yAxisLabels.map((val, idx) => (
             <span key={idx} className="font-[500] text-[11px] leading-[16px] text-[#64748B]">
@@ -48,13 +56,10 @@ export default function MonthlyGrowthChart() {
             </span>
           ))}
         </div>
-        
-        {/* Scrollable Chart Area */}
+
         <div className="flex-1 overflow-x-auto scrollbar-themed">
           <div className="relative flex flex-row items-start min-w-[700px] h-[300px] pt-10 pb-8">
             <div className="relative flex-1 h-[228px] isolate">
-              
-              {/* Grid Lines */}
               <div className="absolute inset-0 flex flex-col justify-between items-start pointer-events-none z-0">
                 <div className="w-full h-[1px] border-b border-dashed border-[#1B2029]" />
                 <div className="w-full h-[1px] border-b border-dashed border-[#1B2029]" />
@@ -63,26 +68,24 @@ export default function MonthlyGrowthChart() {
                 <div className="w-full h-[1px] border-b border-dashed border-[#1B2029]" />
                 <div className="w-full h-[1px] border-b border-solid border-[#1B2029]" />
               </div>
-              
-              {/* Bars */}
+
               <div className="relative flex flex-row justify-around items-end px-2 h-full w-full z-10">
-                {CHART_DATA.map((data, index) => {
-                  const heightPercent = (data.value / maxDataValue) * 100;
+                {dataToUse.map((data, index) => {
+                  const heightPercent = maxDataValue > 0 ? (data.value / maxDataValue) * 100 : 0;
                   return (
-                    <div 
-                      key={index} 
+                    <div
+                      key={index}
                       className="flex flex-col items-center relative h-full justify-end"
                     >
-                      {/* Fixed Value Label */}
                       <span className="font-[600] text-[10px] leading-[14px] text-white mb-2">
                         {data.display}
                       </span>
 
-                      <div 
+                      <div
                         className="w-10 md:w-11 bg-gradient-to-b from-[#84cc16] to-[#3f6212] rounded-t-[4px] shadow-[0_0_10px_rgba(132,204,22,0.2)]"
                         style={{ height: `${heightPercent}%` }}
                       />
-                      
+
                       <span className="absolute -bottom-6 font-[500] text-[11px] leading-[16px] text-[#94A3B8] whitespace-nowrap">
                         {data.month}
                       </span>
@@ -90,11 +93,9 @@ export default function MonthlyGrowthChart() {
                   );
                 })}
               </div>
-
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

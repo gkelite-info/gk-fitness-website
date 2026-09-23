@@ -125,9 +125,10 @@ export function formatToPgDate(dateStr?: string): string {
   return new Date().toISOString().split('T')[0];
 }
 
+import { SupabaseClient } from '@supabase/supabase-js';
 
-export async function getOwnerGymId(ownerUserId: string): Promise<string | null> {
-  const supabase = createClient();
+export async function getOwnerGymId(ownerUserId: string, supabaseClient?: SupabaseClient): Promise<string | null> {
+  const supabase = supabaseClient || createClient();
   try {
     const { data: ownerRecord } = await supabase
       .from('gym_owners')
