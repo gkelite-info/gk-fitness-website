@@ -3,6 +3,9 @@
 import { MagnifyingGlass, UsersThree, Bell, Gear, List } from "@phosphor-icons/react";
 import { useUser } from "@/app/context/UserContext";
 import Avatar from "../reusable/Avatar";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import AnnouncementsModal from "@/app/(screens)/owner/(dashboard)/_components/AnnouncementsModal";
 
 interface TopHeaderProps {
   onOpenSidebar?: () => void;
@@ -10,6 +13,9 @@ interface TopHeaderProps {
 
 export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
   const { profile, roleData, loading } = useUser();
+  const router = useRouter();
+  const [isAnnouncementsModalOpen, setIsAnnouncementsModalOpen] = useState(false);
+  const [hasUnreadAnnouncements, setHasUnreadAnnouncements] = useState(true);
 
   const formattedRole = profile?.role
     ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
@@ -18,10 +24,10 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
   const displayName = profile?.name || formattedRole;
   const gender = roleData && roleData.length > 0 ? roleData[0].gender : null;
 
-  const formattedDate = new Intl.DateTimeFormat('en-GB', { 
-    weekday: 'long', 
-    day: 'numeric', 
-    month: 'long' 
+  const formattedDate = new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long'
   }).format(new Date());
 
   const currentHour = new Date().getHours();
@@ -35,7 +41,7 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex flex-col sm:flex-row justify-between items-center px-4 sm:px-8 py-4 sm:py-5 w-full bg-[rgba(12,13,16,0.95)] border-b-[2px] border-[#232631] backdrop-blur-[6px] gap-4 sm:gap-0 h-auto sm:h-[101px]">
       <div className="flex items-center gap-4 w-full sm:w-auto">
-        <button 
+        <button
           onClick={onOpenSidebar}
           className="lg:hidden flex items-center justify-center p-2 rounded-lg bg-[#15161C] border border-[#232631] text-white hover:bg-[#1f212a] transition-colors"
         >
@@ -45,10 +51,10 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
         {loading ? (
           <div className="w-12 h-12 rounded-full bg-[#232631] animate-pulse flex-shrink-0 shadow-[0_0_0_2px_#222530]" />
         ) : (
-          <Avatar 
-            src={profile?.profilePhoto} 
-            gender={gender} 
-            className="w-12 h-12 shadow-[0_0_0_2px_#222530]" 
+          <Avatar
+            src={profile?.profilePhoto}
+            gender={gender}
+            className="w-12 h-12 shadow-[0_0_0_2px_#222530]"
           />
         )}
         <div className="flex flex-col">
@@ -69,7 +75,7 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
       </div>
 
       <div className="flex items-center gap-4 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
-        <div className="relative flex-grow sm:flex-grow-0 w-full sm:w-[200px] md:w-[280px] lg:w-[320px]">
+        {/* <div className="relative flex-grow sm:flex-grow-0 w-full sm:w-[200px] md:w-[280px] lg:w-[320px]">
           <MagnifyingGlass
             size={14}
             className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]"
@@ -80,24 +86,36 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
             placeholder="Search members, payments, etc..."
             className="w-full h-[38px] bg-[#15161C] border border-[#232631] rounded-xl pl-10 pr-4 font-['Nimbus_Sans'] text-[12px] text-white placeholder:text-[#94A3B8] focus:outline-none focus:border-[#D4FF32] transition-colors"
           />
-        </div>
+        </div> */}
 
         <div className="flex items-center gap-2 flex-shrink-0">
-          <button className="cursor-pointer w-10 h-10 flex items-center justify-center bg-[#15161C] border border-[#232631] rounded-xl hover:bg-[#1f212a] transition-colors">
+          <button 
+            onClick={() => router.push('/owner/users')}
+            className="cursor-pointer w-10 h-10 flex items-center justify-center bg-[#15161C] border border-[#232631] rounded-xl hover:bg-[#1f212a] transition-colors"
+          >
             <UsersThree size={16} className="text-[#CBD5E1]" weight="regular" />
           </button>
-          <button 
-            onClick={() => window.dispatchEvent(new CustomEvent('open-announcements-modal'))}
+          <button
+            onClick={() => {
+              setHasUnreadAnnouncements(false);
+              setIsAnnouncementsModalOpen(true);
+            }}
             className="cursor-pointer relative w-10 h-10 flex items-center justify-center bg-[#15161C] border border-[#232631] rounded-xl hover:bg-[#1f212a] transition-colors"
           >
             <Bell size={16} className="text-[#CBD5E1]" weight="regular" />
-            <div className="absolute right-[9px] top-[9px] w-2 h-2 bg-[#F43F5E] rounded-full shadow-[0_0_0_2px_#15161C]" />
+            {hasUnreadAnnouncements && (
+              <div className="absolute right-[9px] top-[9px] w-2 h-2 bg-[#F43F5E] rounded-full shadow-[0_0_0_2px_#15161C]" />
+            )}
           </button>
           <button className="cursor-pointer w-10 h-10 flex items-center justify-center bg-[#15161C] border border-[#232631] rounded-xl hover:bg-[#1f212a] transition-colors">
             <Gear size={16} className="text-[#CBD5E1]" weight="regular" />
           </button>
         </div>
       </div>
+
+      {isAnnouncementsModalOpen && (
+        <AnnouncementsModal onClose={() => setIsAnnouncementsModalOpen(false)} />
+      )}
     </header>
   );
 }

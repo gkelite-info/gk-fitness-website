@@ -7,27 +7,27 @@ export interface BirthdayPerson {
   dateOfBirth: string;
 }
 
-export function isBirthdayToday(dateStr?: string | null): boolean {
+export function isBirthdayOnDate(dateStr?: string | null, targetDate?: Date): boolean {
   if (!dateStr || typeof dateStr !== 'string') return false;
   const clean = dateStr.trim();
   if (!clean) return false;
 
-  const today = new Date();
-  const todayMonth = today.getMonth() + 1;
-  const todayDay = today.getDate();
+  const target = targetDate || new Date();
+  const targetMonth = target.getMonth() + 1;
+  const targetDay = target.getDate();
 
   if (/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}/.test(clean)) {
     const parts = clean.split('T')[0].split(/[-\/]/);
     const m = parseInt(parts[1], 10);
     const d = parseInt(parts[2], 10);
-    if (m === todayMonth && d === todayDay) return true;
+    if (m === targetMonth && d === targetDay) return true;
   }
 
   if (/^\d{1,2}[-\/]\d{1,2}[-\/]\d{4}/.test(clean)) {
     const parts = clean.split(/[-\/]/);
     const p1 = parseInt(parts[0], 10);
     const p2 = parseInt(parts[1], 10);
-    if ((p1 === todayMonth && p2 === todayDay) || (p2 === todayMonth && p1 === todayDay)) {
+    if ((p1 === targetMonth && p2 === targetDay) || (p2 === targetMonth && p1 === targetDay)) {
       return true;
     }
   }
@@ -38,7 +38,7 @@ export function isBirthdayToday(dateStr?: string | null): boolean {
     const dLocal = parsed.getDate();
     const mUTC = parsed.getUTCMonth() + 1;
     const dUTC = parsed.getUTCDate();
-    if ((mLocal === todayMonth && dLocal === todayDay) || (mUTC === todayMonth && dUTC === todayDay)) {
+    if ((mLocal === targetMonth && dLocal === targetDay) || (mUTC === targetMonth && dUTC === targetDay)) {
       return true;
     }
   }
@@ -57,7 +57,7 @@ export function normalizeDateStr(dateStr?: string | null): string {
   return clean;
 }
 
-export async function fetchTodayBirthdayAnnouncements(gymId: string) {
+export async function fetchBirthdayAnnouncementsForDate(gymId: string, targetDateStr?: string) {
   if (!gymId) return { birthdays: [], announcementText: null };
 
   const supabase = createClient();
@@ -126,7 +126,8 @@ export async function fetchTodayBirthdayAnnouncements(gymId: string) {
       return;
     }
 
-    if (isBirthdayToday(userDob)) {
+    const targetDateObj = targetDateStr ? new Date(targetDateStr) : new Date();
+    if (isBirthdayOnDate(userDob, targetDateObj)) {
       birthdayList.push({
         userId: uid,
         name: userName,

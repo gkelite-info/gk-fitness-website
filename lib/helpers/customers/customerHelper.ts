@@ -1,6 +1,5 @@
 import { createClient } from '@/app/api/supabase/client';
-
-
+import { rollbackRegistrationData } from '@/lib/helpers/registrationRollbackHelper';
 
 export type CustomerGender = 'male' | 'female' | 'other';
 
@@ -19,6 +18,7 @@ export interface SaveGymCustomerParams {
   planStartDate: string;
   planExpiryDate: string;
   createdBy: string;
+  userId?: string | null;
   is_Active?: boolean;
 }
 
@@ -129,7 +129,7 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
   const temporaryPassword = `CS-${uuid.substring(0, 5).toUpperCase()}-${uuid.substring(9, 10).toUpperCase()}`;
 
   let targetUserId = params.customerId;
-  let isNewUser = false;
+  let isNewUser = false; let isNewAuthUser = false;
 
   const { data: sessionData } = await supabase.auth.getSession();
   const originalSession = sessionData?.session;
@@ -226,6 +226,7 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
       relationship: params.relationship.trim(),
       emergencyContactNumber: params.emergencyContactNumber.trim(),
       createdBy: params.createdBy,
+      userId: params.userId || targetUserId,
       is_Active: params.is_Active ?? true,
       is_deleted: false,
       updatedAt: now,

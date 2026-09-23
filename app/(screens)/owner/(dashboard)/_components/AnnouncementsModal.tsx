@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, CalendarBlank as Calendar, Plus, Megaphone } from "@phosphor-icons/react/dist/ssr";
 import { useInfiniteGymAnnouncements, useSaveGymAnnouncement } from '@/lib/hooks/gymAnnouncements/useGymAnnouncements';
 import { useUser } from '@/app/context/UserContext';
@@ -18,6 +19,11 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
 
   const [isCreating, setIsCreating] = useState(defaultCreate);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [message, setMessage] = useState("");
   const { mutateAsync: saveAnnouncement, isPending: isSaving } = useSaveGymAnnouncement();
@@ -77,18 +83,18 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
     }
   };
 
-  const { data: birthdayData, isLoading: isBirthdayLoading } = useBirthdayAnnouncements(gymId);
+  const { data: birthdayData, isLoading: isBirthdayLoading } = useBirthdayAnnouncements(gymId, selectedDate);
 
   let announcements = data ? data.pages.flatMap(page => page.data) : [];
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const targetDateStr = selectedDate || new Date().toISOString().split('T')[0];
   
-  if (birthdayData?.announcementText && (!selectedDate || selectedDate === todayStr)) {
+  if (birthdayData?.announcementText) {
     announcements = [
       {
         gymAnnouncementId: 'birthday-announcement',
         message: birthdayData.announcementText,
-        announcementDate: todayStr,
+        announcementDate: targetDateStr,
         announcementTime: 'All Day',
       },
       ...announcements
@@ -97,7 +103,9 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
 
   const isListEmpty = !isLoading && !isBirthdayLoading && announcements.length === 0;
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-[#14151A] border border-[rgba(255,255,255,0.06)] rounded-[16px] w-full max-w-md max-h-[80vh] flex flex-col relative overflow-hidden shadow-2xl">
         <div className="flex flex-row items-center justify-between p-4 sm:p-5 border-b border-[#222530]">
@@ -164,12 +172,23 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
                     <span className="text-[#94A3B8] text-[14px]">No announcements for today</span>
                   </div>
                 ) : (
-                  announcements.map((ann, idx) => (
-                    <div key={ann.gymAnnouncementId || idx} className="bg-[#191B22] border border-[#222530] rounded-[12px] p-4 flex flex-col gap-2">
-                      <p className="text-white text-[14px] leading-relaxed break-words">{ann.message}</p>
+                  announcements.map((ann, idx) => {
+                    const isBirthday = ann.gymAnnouncementId === 'birthday-announcement';
+                    return (
+                    <div 
+                      key={ann.gymAnnouncementId || idx} 
+                      className={`border rounded-[12px] p-4 flex flex-col gap-2 ${isBirthday ? 'bg-gradient-to-r from-[rgba(212,255,50,0.15)] to-[#191B22] border-[#D4FF32]/50' : 'bg-[#191B22] border-[#222530]'}`}
+                    >
+                      {isBirthday && (
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xl">🎉</span>
+                          <span className="text-[#D4FF32] font-semibold text-[13px] tracking-wide">BIRTHDAY WISHES</span>
+                        </div>
+                      )}
+                      <p className={`text-[14px] leading-relaxed break-words ${isBirthday ? 'text-[#E2E8F0] font-medium' : 'text-white'}`}>{ann.message}</p>
                       <span className="text-[#94A3B8] text-[11px]">{ann.announcementDate} {ann.announcementTime}</span>
                     </div>
-                  ))
+                  )})
                 )}
 
                 {isFetchingNextPage && <div className="text-center text-[#D4FF32] py-2 text-[12px]">Loading more...</div>}
@@ -186,6 +205,7 @@ export default function AnnouncementsModal({ onClose, defaultCreate = false }: A
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,6 +1,16 @@
 import { CurrencyInr, ChartBar } from "@phosphor-icons/react/dist/ssr";
 
-export default function TodayHeroBanner() {
+interface TodayHeroBannerProps {
+  todaysRevenue?: number;
+}
+
+const formatCurrency = (val: number) => {
+  return new Intl.NumberFormat('en-IN', {
+    maximumFractionDigits: 0
+  }).format(val);
+};
+
+export default function TodayHeroBanner({ todaysRevenue = 0 }: TodayHeroBannerProps) {
   return (
     <div 
       className="flex flex-col md:flex-row justify-between items-start md:items-center p-6 gap-6 w-full rounded-[12px] border border-[#203322] shadow-lg"
@@ -19,10 +29,10 @@ export default function TodayHeroBanner() {
         </div>
         <div className="flex flex-col items-start gap-0.5">
           <span className="font-[500] text-[12px] leading-[16px] text-[#94A3B8]">
-            Today's Revenue
+            Total Revenue
           </span>
           <span className="font-[800] text-[36px] leading-[40px] tracking-[-0.9px] text-white">
-            8,450
+            {formatCurrency(todaysRevenue)}
           </span>
         </div>
       </div>

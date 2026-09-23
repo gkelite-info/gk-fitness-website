@@ -40,9 +40,10 @@ export async function fetchGymPayments(gymId?: string) {
       *,
       gym_customers (
         fullName,
-        phone
+        phone,
+        userAccount:users!gym_customers_userId_fkey(profilePhoto)
       ),
-      gym_membership_plans (
+      gym_membership_plans!inner (
         planName,
         durationMonths
       )
@@ -77,9 +78,10 @@ export async function fetchGymPaymentsPaginated(
       *,
       gym_customers!inner (
         fullName,
-        phone
+        phone,
+        userAccount:users!gym_customers_userId_fkey(profilePhoto)
       ),
-      gym_membership_plans (
+      gym_membership_plans!inner (
         planName,
         durationMonths
       )

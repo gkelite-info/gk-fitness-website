@@ -45,7 +45,7 @@ export async function fetchCustomerGymPayments(gymId?: string, customerId?: stri
   const supabase = createClient();
   let query = supabase
     .from('customer_gym_payments')
-    .select('*, plan:gym_membership_plans(planName), gym_customers(fullName, email, phone, is_Active, users(profilePhoto, status, createdAt))')
+    .select('*, plan:gym_membership_plans!inner(planName, durationMonths), gym_customers(fullName, email, phone, is_Active, creator:users!gym_customers_createdBy_fkey(profilePhoto, status, createdAt))')
     .eq('is_deleted', false)
     .order('createdAt', { ascending: false });
 
@@ -190,7 +190,7 @@ export async function fetchCustomerGymPaymentsPaginated(
 
   let query = supabase
     .from('customer_gym_payments')
-    .select('*, gym_customers!inner(fullName, email, phone, is_Active, users!inner(profilePhoto, status, createdAt)), gym_membership_plans(planName, durationMonths, price)', { count: 'exact' })
+    .select('*, gym_customers!inner(fullName, email, phone, is_Active, creator:users!gym_customers_createdBy_fkey(profilePhoto, status, createdAt)), gym_membership_plans!inner(planName, durationMonths, price)', { count: 'exact' })
     .eq('gymId', gymId)
     .eq('is_deleted', false)
     .order('createdAt', { ascending: sortOrder === 'oldest' });

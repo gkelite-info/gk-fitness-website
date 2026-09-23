@@ -23,8 +23,6 @@ export default function InsightSplitCard({
 }: InsightSplitCardProps) {
   return (
     <div className="flex flex-col p-4 md:p-6 gap-6 w-full bg-[#10151C] border border-[#1E2A1E] rounded-[16px] shadow-lg">
-      
-      {/* Header */}
       <div className="flex flex-row justify-between items-center w-full gap-2 flex-wrap">
         <div className="flex flex-row items-center gap-2">
           <h2 className="font-[700] text-[16px] leading-[24px] text-white m-0">
@@ -39,7 +37,7 @@ export default function InsightSplitCard({
             </>
           )}
         </div>
-        
+
         {sectionBadge && (
           <div className="flex flex-row items-center gap-1.5 px-3 py-1 bg-[#1A2613] rounded-full border border-[#2B4019]">
             <div className="w-1.5 h-1.5 rounded-full bg-[#CCFF00]"></div>
@@ -50,7 +48,6 @@ export default function InsightSplitCard({
         )}
       </div>
 
-      {/* Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
         {cards.map((card, index) => {
           const isSuccess = card.tag.type === "success";
@@ -58,8 +55,8 @@ export default function InsightSplitCard({
           const tagText = isSuccess ? "text-[#A3E635]" : card.tag.type === "danger" ? "text-[#F43F5E]" : "text-[#94A3B8]";
 
           return (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="flex flex-col justify-between items-start w-full h-[125px] p-4 gap-[10px] bg-[#090D10] border border-[#1A232F] rounded-[12px]"
             >
               <div className="flex flex-row justify-between items-center w-full gap-2">
@@ -85,7 +82,6 @@ export default function InsightSplitCard({
           );
         })}
       </div>
-      
     </div>
   );
 }
