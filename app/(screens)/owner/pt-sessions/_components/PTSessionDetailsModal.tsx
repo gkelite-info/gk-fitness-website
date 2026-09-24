@@ -2,15 +2,119 @@ import { useEffect, useState } from "react";
 import { X, CaretLeft, Check, User, Clock, Barbell, Target, CalendarBlank } from "@phosphor-icons/react/dist/ssr";
 import Avatar from "../../../components/reusable/Avatar";
 import { SessionData } from "./PTSessionsTable";
+import { useGymAttendanceToday } from "@/lib/hooks/attendance/useGymAttendanceToday";
+import { useBiometricAttendanceLogs } from "@/lib/hooks/biometrics/useBiometricAttendanceLogs";
+import { useGymTimings } from "@/lib/hooks/gymTimings/useGymTimings";
 
 interface PTSessionDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   session: SessionData | null;
+  selectedDate: Date;
 }
 
-export default function PTSessionDetailsModal({ isOpen, onClose, session }: PTSessionDetailsModalProps) {
+export default function PTSessionDetailsModal({ isOpen, onClose, session, selectedDate }: PTSessionDetailsModalProps) {
   const [isVisible, setIsVisible] = useState(false);
+
+  const getLocalDateString = (d: Date) => {
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzOffset).toISOString().slice(0, 10);
+  };
+  const dateStr = getLocalDateString(selectedDate);
+
+  const { data: attendanceToday } = useGymAttendanceToday(session?.gymId, dateStr);
+  const { data: biometricsData } = useBiometricAttendanceLogs(
+    session?.gymId,
+    1,
+    1000,
+    {
+      fromDate: new Date(new Date(selectedDate).setHours(0, 0, 0, 0)).toISOString(),
+      toDate: new Date(new Date(selectedDate).setHours(23, 59, 59, 999)).toISOString(),
+      searchQuery: session?.member
+    }
+  );
+  const { data: gymTimings } = useGymTimings(session?.gymId);
+
+  const [dynamicAttendance, setDynamicAttendance] = useState({
+    text: "Pending",
+    bg: "bg-[#1C1A17]",
+    border: "border-[#2A2722]",
+    iconColor: "text-[#71717A]"
+  });
+
+  useEffect(() => {
+    if (!session || !isOpen) return;
+
+    const isPresentInGym = attendanceToday?.some((record: any) => record.customerId === session.customerId);
+    const isPresentInBio = biometricsData?.data?.some((log: any) => log.customerId === session.customerId);
+
+    if (isPresentInGym || isPresentInBio) {
+      setDynamicAttendance({
+        text: "Present",
+        bg: "bg-[#162711]",
+        border: "border-[#2D4B1A]",
+        iconColor: "text-[#88E000]"
+      });
+      return;
+    }
+
+    if (gymTimings) {
+      const targetDayStr = selectedDate.toLocaleString('en-US', { weekday: 'short' });
+      const targetTiming = gymTimings.find((t: any) => t.day === targetDayStr);
+
+      if (targetTiming) {
+        if (targetTiming.isClosed) {
+          setDynamicAttendance({
+            text: "Absent",
+            bg: "bg-[#271515]",
+            border: "border-[#4A2424]",
+            iconColor: "text-[#EF4444]"
+          });
+          return;
+        }
+
+        const isToday = new Date().toDateString() === selectedDate.toDateString();
+        const isPastDate = new Date(new Date().setHours(0, 0, 0, 0)) > selectedDate;
+
+        if (isPastDate) {
+          // It's a past date and no attendance found, so they were absent
+          setDynamicAttendance({
+            text: "Absent",
+            bg: "bg-[#271515]",
+            border: "border-[#4A2424]",
+            iconColor: "text-[#EF4444]"
+          });
+          return;
+        } else if (isToday) {
+          const now = new Date();
+          const currentTime = now.getHours() * 60 + now.getMinutes();
+          let closeTimeMinutes = 24 * 60;
+          if (targetTiming.closeTime) {
+            const [hours, minutes] = targetTiming.closeTime.split(':').map(Number);
+            closeTimeMinutes = hours * 60 + (minutes || 0);
+          }
+
+          if (currentTime >= closeTimeMinutes) {
+            setDynamicAttendance({
+              text: "Absent",
+              bg: "bg-[#271515]",
+              border: "border-[#4A2424]",
+              iconColor: "text-[#EF4444]"
+            });
+            return;
+          }
+        }
+      }
+    }
+
+    setDynamicAttendance({
+      text: "Pending",
+      bg: "bg-[#1C1A17]",
+      border: "border-[#2A2722]",
+      iconColor: "text-[#71717A]"
+    });
+
+  }, [session, isOpen, attendanceToday, biometricsData, gymTimings]);
 
   useEffect(() => {
     if (isOpen) {
@@ -81,18 +185,18 @@ export default function PTSessionDetailsModal({ isOpen, onClose, session }: PTSe
 
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}>
-      <div 
+      <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      <div 
+      <div
         className={`relative flex flex-col w-full max-w-[530px] max-h-[85vh] bg-[#0F1115] border border-[#222730] rounded-3xl shadow-[0px_25px_50px_-12px_rgba(0,0,0,0.8)] transition-transform duration-300 overflow-hidden ${isOpen ? "scale-100 translate-y-0" : "scale-95 translate-y-4"}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-row justify-between items-center w-full p-6 pb-4 border-b border-[#1F232B] shrink-0">
           <div className="flex flex-row items-center gap-3.5">
-            <button 
+            <button
               onClick={onClose}
               className="flex justify-center items-center w-9 h-9 bg-[#181B21] border border-[#272D38] rounded-full text-[#D4D4D8] hover:text-white hover:bg-[#20242C] transition-colors cursor-pointer shrink-0"
             >
@@ -107,7 +211,7 @@ export default function PTSessionDetailsModal({ isOpen, onClose, session }: PTSe
               </span>
             </div>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="flex justify-center items-center w-9 h-9 bg-[#181B21] border border-[#272D38] rounded-full text-[#A1A1AA] hover:text-white hover:bg-[#20242C] transition-colors cursor-pointer shrink-0"
           >
@@ -131,12 +235,12 @@ export default function PTSessionDetailsModal({ isOpen, onClose, session }: PTSe
               <span className="font-sans font-bold text-[10px] leading-[15px] tracking-[0.5px] uppercase text-[#71717A]">
                 SESSION STATUS
               </span>
-              <div className={`mt-1 flex flex-row items-center px-3 py-1 gap-1.5 ${statusConfig.bg} ${statusConfig.border} border rounded-lg shrink-0`}>
+              {/* <div className={`mt-1 flex flex-row items-center px-3 py-1 gap-1.5 ${statusConfig.bg} ${statusConfig.border} border rounded-lg shrink-0`}>
                 {statusConfig.icon}
                 <span className={`font-sans font-semibold text-xs leading-4 ${statusConfig.text}`}>
                   {session.status}
                 </span>
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -181,7 +285,7 @@ export default function PTSessionDetailsModal({ isOpen, onClose, session }: PTSe
                 </div>
                 <div className="flex flex-col gap-1 overflow-hidden">
                   <span className="font-sans font-normal text-[11px] leading-[14px] text-[#71717A] truncate">Duration</span>
-                  <span className="font-sans font-medium text-xs leading-4 text-white truncate">60 Minutes</span>
+                  <span className="font-sans font-medium text-xs leading-4 text-white truncate">-</span>
                 </div>
               </div>
 
@@ -211,7 +315,9 @@ export default function PTSessionDetailsModal({ isOpen, onClose, session }: PTSe
                 </div>
                 <div className="flex flex-col gap-1 overflow-hidden">
                   <span className="font-sans font-normal text-[11px] leading-[14px] text-[#71717A] truncate">Date</span>
-                  <span className="font-sans font-medium text-xs leading-4 text-white truncate">29 July 2026</span>
+                  <span className="font-sans font-medium text-xs leading-4 text-white truncate">
+                    {selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </span>
                 </div>
               </div>
             </div>
@@ -222,10 +328,10 @@ export default function PTSessionDetailsModal({ isOpen, onClose, session }: PTSe
               Attendance
             </h5>
             <div className="flex flex-row items-center p-4 gap-4 w-full bg-[#14161C] border border-[#1F232B] rounded-2xl">
-              <div className={`flex justify-center items-center w-10 h-10 shrink-0 ${statusConfig.attendanceBg} border ${statusConfig.attendanceBorder} rounded-full ${statusConfig.attendanceIconColor}`}>
-                {statusConfig.attendanceText === "Present" ? (
+              <div className={`flex justify-center items-center w-10 h-10 shrink-0 ${dynamicAttendance.bg} border ${dynamicAttendance.border} rounded-full ${dynamicAttendance.iconColor}`}>
+                {dynamicAttendance.text === "Present" ? (
                   <Check size={20} weight="bold" />
-                ) : statusConfig.attendanceText === "Absent" ? (
+                ) : dynamicAttendance.text === "Absent" ? (
                   <X size={20} weight="bold" />
                 ) : (
                   <span className="w-2 h-2 rounded-full bg-[#71717A]" />
@@ -235,8 +341,8 @@ export default function PTSessionDetailsModal({ isOpen, onClose, session }: PTSe
                 <span className="font-sans font-normal text-[11px] leading-[14px] text-[#71717A] truncate">
                   Attendance Status
                 </span>
-                <span className={`font-sans font-bold text-sm leading-5 ${statusConfig.attendanceIconColor} truncate`}>
-                  {statusConfig.attendanceText}
+                <span className={`font-sans font-bold text-sm leading-5 ${dynamicAttendance.iconColor} truncate`}>
+                  {dynamicAttendance.text}
                 </span>
               </div>
             </div>

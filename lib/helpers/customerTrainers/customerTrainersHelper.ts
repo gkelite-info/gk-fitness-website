@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
 
 export interface CustomerTrainerAttributes {
   customerTrainerId?: string;
@@ -32,10 +32,11 @@ export interface SaveCustomerTrainerParams {
 }
 
 export async function fetchCustomerTrainersByGym(gymId?: string) {
+  const supabase = createClient();
   let query = supabase
     .from('customer_trainers')
-    .select('*, customer:gym_customers(*), trainer:gym_trainers(*, users!gym_trainers_userId_fkey(profilePhoto))')
-    .eq('is_deleted', false)
+    .select('*, customer:gym_customers!inner(fullName, user:users!gym_customers_userId_fkey(profilePhoto)), trainer:gym_trainers!inner(fullName, specialization)')
+    .or('is_deleted.eq.false,is_deleted.is.null')
     .order('assignedOn', { ascending: false });
 
   if (gymId) {
@@ -53,6 +54,7 @@ export async function fetchCustomerTrainersByGym(gymId?: string) {
 }
 
 export async function fetchCustomerTrainerById(customerTrainerId: string) {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('customer_trainers')
     .select('*, customer:gym_customers(*), trainer:gym_trainers(*, users!gym_trainers_userId_fkey(profilePhoto))')
@@ -69,6 +71,7 @@ export async function fetchCustomerTrainerById(customerTrainerId: string) {
 }
 
 export async function fetchAssignedTrainersByCustomer(customerId: string) {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('customer_trainers')
     .select('*, trainer:gym_trainers(*, users!gym_trainers_userId_fkey(profilePhoto))')
@@ -85,6 +88,7 @@ export async function fetchAssignedTrainersByCustomer(customerId: string) {
 }
 
 export async function fetchAssignedCustomersByTrainer(gymTrainerId: string) {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('customer_trainers')
     .select('*, customer:gym_customers(*, creator:users!gym_customers_createdBy_fkey(profilePhoto))')
@@ -108,6 +112,7 @@ export async function fetchAssignedCustomersByTrainerPaginated(
   limit = 10,
   searchQuery?: string
 ) {
+  const supabase = createClient();
   let query = supabase
     .from('customer_trainers')
     .select('*, customer:gym_customers(*, creator:users!gym_customers_createdBy_fkey(profilePhoto))', { count: 'exact' })
@@ -138,6 +143,7 @@ export async function fetchAssignedCustomersByTrainerPaginated(
 }
 
 export async function saveCustomerTrainer(assignmentData: SaveCustomerTrainerParams) {
+  const supabase = createClient();
   const now = new Date().toISOString();
 
   if (assignmentData.customerTrainerId) {
@@ -200,6 +206,7 @@ export async function saveCustomerTrainer(assignmentData: SaveCustomerTrainerPar
 }
 
 export async function deleteCustomerTrainer(customerTrainerId: string) {
+  const supabase = createClient();
   const now = new Date().toISOString();
 
   const { data, error } = await supabase
@@ -222,6 +229,7 @@ export async function deleteCustomerTrainer(customerTrainerId: string) {
 }
 
 export async function toggleCustomerTrainerActiveStatus(customerTrainerId: string, currentStatus: boolean) {
+  const supabase = createClient();
   const now = new Date().toISOString();
 
   const { data, error } = await supabase
