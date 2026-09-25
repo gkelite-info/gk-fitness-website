@@ -18,6 +18,7 @@ interface DropdownProps {
   className?: string;
   triggerClassName?: string;
   multiSelect?: boolean;
+  icon?: React.ReactNode;
 }
 
 export default function Dropdown({
@@ -29,6 +30,7 @@ export default function Dropdown({
   className = "",
   triggerClassName,
   multiSelect = false,
+  icon,
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [openUpwards, setOpenUpwards] = useState(false);
@@ -118,6 +120,7 @@ export default function Dropdown({
           "relative flex flex-row items-center px-3 py-[9px] w-full bg-[#1A2029] border border-[#14161A] rounded-lg cursor-pointer h-[34px] disabled:opacity-50 disabled:cursor-not-allowed group transition-colors hover:border-[#303744]"
         }
       >
+        {icon && <div className="mr-1.5 flex shrink-0 items-center text-[#9CA3AF] group-hover:text-[#D1D5DB] transition-colors">{icon}</div>}
         <span
           className={`flex-1 text-left font-sans font-normal text-xs leading-4 truncate ${
             hasSelection ? "text-[#D1D5DB]" : "text-[#6B7280]"

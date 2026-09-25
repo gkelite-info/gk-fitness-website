@@ -14,6 +14,8 @@ export interface FinanceKPICardProps {
   iconBorderColor: string;
   iconColor: string;
   href?: string;
+  valueClassName?: string;
+  titleClassName?: string;
 }
 
 export default function FinanceKPICard({
@@ -26,7 +28,9 @@ export default function FinanceKPICard({
   iconBgColor,
   iconBorderColor,
   iconColor,
-  href
+  href,
+  valueClassName,
+  titleClassName
 }: FinanceKPICardProps) {
   const content = (
     <>
@@ -42,11 +46,11 @@ export default function FinanceKPICard({
           {icon}
         </div>
       </div>
-      <div className="flex flex-col items-start gap-0.5">
-        <span className="font-[500] text-[12px] leading-[16px] text-[#94A3B8] whitespace-nowrap">
+      <div className="flex flex-col items-start gap-0.5 min-w-0">
+        <span className={`font-[500] leading-[16px] text-[#94A3B8] break-words whitespace-normal ${titleClassName || 'text-[12px]'}`}>
           {title}
         </span>
-        <span className="font-[700] text-[24px] leading-[32px] tracking-[-0.6px] text-white break-words">
+        <span className={`font-[700] leading-[32px] tracking-[-0.6px] text-white break-words ${valueClassName || 'text-[24px]'}`}>
           {value}
         </span>
         <div className="flex flex-row items-center gap-1 mt-0.5">
