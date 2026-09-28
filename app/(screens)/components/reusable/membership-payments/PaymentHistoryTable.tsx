@@ -1,15 +1,16 @@
 "use client";
 
-import { MagnifyingGlass, Funnel, CalendarBlank, Check, CaretDown } from "@phosphor-icons/react";
+import { MagnifyingGlass, Funnel, CalendarBlank, Check, CaretDown, Eye } from "@phosphor-icons/react";
 import { Table, TableHeader, TableBody, TableRow, TableHeadCell, TableCell } from "../table";
 import { PaymentRecord } from "./types";
 import Pagination from "../Pagination";
 import Dropdown from "../Dropdown";
 interface PaymentHistoryTableProps {
   payments: PaymentRecord[];
+  onViewDetails?: (paymentId: string) => void;
 }
 
-export default function PaymentHistoryTable({ payments }: PaymentHistoryTableProps) {
+export default function PaymentHistoryTable({ payments, onViewDetails }: PaymentHistoryTableProps) {
   return (
     <div className="flex flex-col p-6 w-full bg-[#191C21] rounded-2xl relative shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)]">
       
@@ -63,11 +64,12 @@ export default function PaymentHistoryTable({ payments }: PaymentHistoryTablePro
               <TableHeadCell className="text-[#C4CAAC] font-mono tracking-[0.5px]">METHOD</TableHeadCell>
               <TableHeadCell className="text-[#C4CAAC] font-mono tracking-[0.5px]">TRANSACTION ID</TableHeadCell>
               <TableHeadCell className="text-[#C4CAAC] font-mono tracking-[0.5px]">STATUS</TableHeadCell>
+              <TableHeadCell className="text-[#C4CAAC] font-mono tracking-[0.5px] text-center">ACTIONS</TableHeadCell>
             </TableRow>
           </TableHeader>
           <TableBody>
             {payments.map((payment, index) => (
-              <TableRow key={payment.id} className={`border-b border-[rgba(29,32,37,0.6)] ${index === 0 ? 'border-t-0' : ''} hover:bg-[#1D2025]/50 transition-colors`}>
+              <TableRow key={payment.id} className={`border-b border-[rgba(29,32,37,0.6)] ${index === 0 ? 'border-t-0' : ''} hover:bg-[#1D2025]/50 transition-colors cursor-pointer`}>
                 
                 {/* DATE */}
                 <TableCell>
@@ -110,6 +112,18 @@ export default function PaymentHistoryTable({ payments }: PaymentHistoryTablePro
                     <span className="font-mono font-semibold text-[10px] text-[#9DDF2E]">
                       {payment.status}
                     </span>
+                  </div>
+                </TableCell>
+
+                {/* ACTIONS */}
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center w-full">
+                    <button 
+                      onClick={() => onViewDetails && onViewDetails(payment.id)}
+                      className="flex items-center justify-center text-[#64748B] hover:text-white transition-colors cursor-pointer"
+                    >
+                      <Eye size={18} weight="regular" />
+                    </button>
                   </div>
                 </TableCell>
 

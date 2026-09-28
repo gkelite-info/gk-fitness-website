@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { CaretLeft, Pen } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 

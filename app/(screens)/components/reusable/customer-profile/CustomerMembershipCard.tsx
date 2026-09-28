@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Pen, Star, CalendarBlank } from "@phosphor-icons/react";
 import { CustomerProfileData } from "./types";
 

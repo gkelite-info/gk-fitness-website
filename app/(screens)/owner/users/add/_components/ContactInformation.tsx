@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Phone } from "@phosphor-icons/react";
 import Dropdown from "../../../../components/reusable/Dropdown";
 import { useFormContext } from "react-hook-form";

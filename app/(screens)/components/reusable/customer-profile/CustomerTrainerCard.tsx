@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { User, CalendarBlank } from "@phosphor-icons/react";
 import Avatar from "../Avatar";
 import { CustomerProfileData } from "./types";

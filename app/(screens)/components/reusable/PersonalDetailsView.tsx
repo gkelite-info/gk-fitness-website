@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import PersonalDetailsHeader from "./personal-details/PersonalDetailsHeader";
 import MemberIdentityBanner from "./personal-details/MemberIdentityBanner";
 import PersonalInfoCard from "./personal-details/PersonalInfoCard";

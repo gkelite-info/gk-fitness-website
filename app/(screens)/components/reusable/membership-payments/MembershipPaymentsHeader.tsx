@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { CaretLeft, Pen } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 
@@ -21,7 +20,7 @@ export default function MembershipPaymentsHeader({ memberCode, onEditPlan }: Mem
           <div className="flex flex-row items-center gap-3">
             <button 
               onClick={() => router.back()}
-              className="flex items-center justify-center w-10 h-10 bg-[#1D2025] shadow-sm rounded-lg hover:bg-white/5 transition-colors shrink-0"
+              className="flex items-center justify-center w-10 h-10 bg-[#1D2025] shadow-sm rounded-lg hover:bg-white/5 transition-colors shrink-0 cursor-pointer"
             >
               <CaretLeft size={20} className="text-white" weight="bold" />
             </button>

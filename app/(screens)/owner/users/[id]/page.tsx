@@ -1,4 +1,3 @@
-import React from "react";
 import CustomerProfileView, { CustomerProfileData } from "../../../components/reusable/CustomerProfileView";
 
 export default async function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {

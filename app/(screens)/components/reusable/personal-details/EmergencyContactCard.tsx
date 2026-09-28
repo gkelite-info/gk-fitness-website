@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Phone, CaretDown } from "@phosphor-icons/react";
 import { PersonalDetailsData } from "./types";
 import Dropdown from "../Dropdown";
