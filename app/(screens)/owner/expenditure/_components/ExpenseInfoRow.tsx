@@ -1,4 +1,3 @@
-import React from "react";
 import { Copy } from "@phosphor-icons/react";
 
 export function ExpenseInfoRow({ label, value, isBold, isCategory, isPill, hasCopy }: any) {

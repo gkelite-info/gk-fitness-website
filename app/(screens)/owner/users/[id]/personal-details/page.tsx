@@ -1,4 +1,3 @@
-import React from "react";
 import PersonalDetailsView, { PersonalDetailsData } from "../../../../components/reusable/PersonalDetailsView";
 
 export default async function PersonalDetailsPage({ params }: { params: Promise<{ id: string }> }) {

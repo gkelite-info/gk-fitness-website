@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { User, CreditCard, CalendarBlank, Users, CaretRight, FileText } from "@phosphor-icons/react";
 import { useRouter, useParams } from "next/navigation";
 
@@ -21,7 +20,6 @@ export default function CustomerNavigationCards() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
         
-        {/* Link - Card 1: Personal Details */}
         <button 
           onClick={() => id && router.push(`/owner/users/${id}/personal-details`)}
           className="flex flex-row justify-between items-center p-4 bg-[#10151E] border border-[#1B2433] shadow-md rounded-xl hover:bg-[#151c27] transition-colors group cursor-pointer"
@@ -42,7 +40,6 @@ export default function CustomerNavigationCards() {
           <CaretRight size={16} className="text-[#6B7280] group-hover:text-white transition-colors shrink-0 ml-2" weight="bold" />
         </button>
 
-        {/* Link - Card 2: Membership & Payments */}
         <button 
           onClick={() => id && router.push(`/owner/users/${id}/membership-payments`)}
           className="flex flex-row justify-between items-center p-4 bg-[#10151E] border border-[#1B2433] shadow-md rounded-xl hover:bg-[#151c27] transition-colors group cursor-pointer"
@@ -63,8 +60,10 @@ export default function CustomerNavigationCards() {
           <CaretRight size={16} className="text-[#6B7280] group-hover:text-white transition-colors shrink-0 ml-2" weight="bold" />
         </button>
 
-        {/* Link - Card 3: Attendance History */}
-        <button className="flex flex-row justify-between items-center p-4 bg-[#10151E] border border-[#1B2433] shadow-md rounded-xl hover:bg-[#151c27] transition-colors group cursor-pointer">
+        <button 
+          onClick={() => id && router.push(`/owner/users/${id}/attendance-history`)}
+          className="flex flex-row justify-between items-center p-4 bg-[#10151E] border border-[#1B2433] shadow-md rounded-xl hover:bg-[#151c27] transition-colors group cursor-pointer"
+        >
           <div className="flex flex-row items-center gap-3.5 flex-1 min-w-0">
             <div className="flex items-center justify-center w-10 h-10 bg-[#141D1A] border border-[#213F28] rounded-xl shrink-0">
               <CalendarBlank size={20} className="text-[#D2F802]" weight="regular" />
@@ -81,7 +80,6 @@ export default function CustomerNavigationCards() {
           <CaretRight size={16} className="text-[#6B7280] group-hover:text-white transition-colors shrink-0 ml-2" weight="bold" />
         </button>
 
-        {/* Link - Card 4: Assigned Trainer */}
         <button className="flex flex-row justify-between items-center p-4 bg-[#10151E] border border-[#1B2433] shadow-md rounded-xl hover:bg-[#151c27] transition-colors group cursor-pointer">
           <div className="flex flex-row items-center gap-3.5 flex-1 min-w-0">
             <div className="flex items-center justify-center w-10 h-10 bg-[#141D1A] border border-[#213F28] rounded-xl shrink-0">

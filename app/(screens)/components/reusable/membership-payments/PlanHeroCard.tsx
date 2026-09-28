@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Star, CalendarBlank, ShieldCheck, ArrowsClockwise, Pen } from "@phosphor-icons/react";
 import { MembershipPaymentsData } from "./types";
 

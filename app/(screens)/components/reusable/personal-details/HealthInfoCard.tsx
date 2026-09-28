@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Heart } from "@phosphor-icons/react";
 import { PersonalDetailsData } from "./types";
 

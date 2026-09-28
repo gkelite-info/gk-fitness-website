@@ -1,7 +1,9 @@
-import React from "react";
 import MembershipPaymentsView, { MembershipPaymentsData } from "../../../../components/reusable/MembershipPaymentsView";
 
-export default function MembershipPaymentsPage({ params }: { params: { id: string } }) {
+export default async function MembershipPaymentsPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const userId = resolvedParams.id;
+  
   // Mock data matching the design
   const mockData: MembershipPaymentsData = {
     memberCode: "MEM-000124",
@@ -27,7 +29,7 @@ export default function MembershipPaymentsPage({ params }: { params: { id: strin
 
   return (
     <div className="flex flex-col w-full h-full bg-[#111319]">
-      <MembershipPaymentsView data={mockData} />
+      <MembershipPaymentsView data={mockData} userId={userId} />
     </div>
   );
 }
