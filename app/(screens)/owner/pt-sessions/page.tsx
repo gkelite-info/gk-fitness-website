@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import PTSessionsHeader from "./_components/PTSessionsHeader";
 import PTSessionsCards, { SessionFilter } from "./_components/PTSessionsCards";
 import PTSessionsTable, { SessionData } from "./_components/PTSessionsTable";
 import { useUser } from "@/app/context/UserContext";
 import { useCustomerTrainersByGym } from "@/lib/hooks/customerTrainers/useCustomerTrainers";
+import { useTrainerSessionsForDate } from "@/lib/hooks/trainerSessions/useTrainerSessions";
 
 export default function PTSessionsPage() {
   const [activeFilter, setActiveFilter] = useState<SessionFilter>("All");
@@ -16,48 +17,67 @@ export default function PTSessionsPage() {
   const { roleData } = useUser();
   const gymId = roleData?.[0]?.gymId;
 
-  const { data: customerTrainers, isLoading } = useCustomerTrainersByGym(gymId);
+  const { data: customerTrainers } = useCustomerTrainersByGym(gymId);
 
-  const selectedDayShort = selectedDate.toLocaleDateString('en-US', { weekday: 'short' });
-  const selectedDateMidnight = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+  const validTrainers = useMemo(() => {
+    const selectedDayShort = selectedDate.toLocaleDateString('en-US', { weekday: 'short' });
+    const selectedDateMidnight = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
 
-  const validTrainers = (customerTrainers || []).filter((ct: any) => {
-    const matchesDay = Array.isArray(ct.weekDays) && ct.weekDays.includes(selectedDayShort);
+    return (customerTrainers || []).filter((ct: any) => {
+      const matchesDay = Array.isArray(ct.weekDays) && ct.weekDays.includes(selectedDayShort);
 
-    const assignedDate = ct.assignedOn ? new Date(new Date(ct.assignedOn).setHours(0, 0, 0, 0)) : null;
-    const expiryDate = ct.expiryOn ? new Date(new Date(ct.expiryOn).setHours(23, 59, 59, 999)) : null;
+      const assignedDate = ct.assignedOn ? new Date(new Date(ct.assignedOn).setHours(0, 0, 0, 0)) : null;
+      const expiryDate = ct.expiryOn ? new Date(new Date(ct.expiryOn).setHours(23, 59, 59, 999)) : null;
 
-    const afterAssigned = assignedDate ? selectedDateMidnight >= assignedDate : true;
-    const beforeExpiry = expiryDate ? selectedDateMidnight <= expiryDate : true;
+      const afterAssigned = assignedDate ? selectedDateMidnight >= assignedDate : true;
+      const beforeExpiry = expiryDate ? selectedDateMidnight <= expiryDate : true;
 
-    return matchesDay && afterAssigned && beforeExpiry && ct.isActive;
-  });
+      return matchesDay && afterAssigned && beforeExpiry && ct.isActive;
+    });
+  }, [customerTrainers, selectedDate]);
 
-  const allSessions: SessionData[] = validTrainers.map((ct: any) => {
-    let time = "00:00";
-    let timeSuffix = "AM";
-    if (ct.timings) {
-      const parts = ct.timings.trim().split(/\s+/);
-      time = parts[0] || "00:00";
-      timeSuffix = parts[1] || "AM";
-    }
+  const customerTrainerIds = useMemo(
+    () => validTrainers.map((ct: any) => ct.customerTrainerId),
+    [validTrainers]
+  );
+  const { data: trainerSessions } = useTrainerSessionsForDate(customerTrainerIds, selectedDate);
 
-    const customerUser = Array.isArray(ct.customer?.user) ? ct.customer?.user[0] : ct.customer?.user;
+  const allSessions: SessionData[] = useMemo(() => {
+    return validTrainers.map((ct: any) => {
+      let time = "00:00";
+      let timeSuffix = "AM";
+      if (ct.timings) {
+        const parts = ct.timings.trim().split(/\s+/);
+        time = parts[0] || "00:00";
+        timeSuffix = parts[1] || "AM";
+      }
 
-    return {
-      id: ct.customerTrainerId,
-      time,
-      timeSuffix,
-      member: ct.customer?.fullName || customerUser?.name || "Unknown Member",
-      avatarUrl: customerUser?.profilePhoto || "",
-      trainer: ct.trainer?.fullName || "Unknown Trainer",
-      trainerColor: "#CBF425",
-      workoutType: ct.trainer?.specialization || "—",
-      status: "-",
-      customerId: ct.customerId,
-      gymId: ct.gymId,
-    };
-  });
+      const customerUser = Array.isArray(ct.customer?.user) ? ct.customer?.user[0] : ct.customer?.user;
+
+      const sessionRecord = trainerSessions?.find(
+        (ts: any) => ts.customerTrainerId === ct.customerTrainerId
+      );
+      let sessionStatus: SessionFilter | "-" = "Upcoming";
+      if (sessionRecord) {
+        if (sessionRecord.status === "completed") sessionStatus = "Completed";
+        else if (sessionRecord.status === "cancelled") sessionStatus = "Cancelled";
+      }
+
+      return {
+        id: ct.customerTrainerId,
+        time,
+        timeSuffix,
+        member: ct.customer?.fullName || customerUser?.name || "Unknown Member",
+        avatarUrl: customerUser?.profilePhoto || "",
+        trainer: ct.trainer?.fullName || "Unknown Trainer",
+        trainerColor: "#CBF425",
+        workoutType: ct.trainer?.specialization || "—",
+        status: sessionStatus,
+        customerId: ct.customerId,
+        gymId: ct.gymId,
+      };
+    });
+  }, [validTrainers, trainerSessions]);
 
   const stats = {
     total: allSessions.length,
