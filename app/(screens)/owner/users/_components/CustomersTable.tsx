@@ -3,6 +3,7 @@
 import { Table, TableHeader, TableBody, TableRow, TableHeadCell, TableCell } from "../../../components/reusable/table";
 import Avatar from "../../../components/reusable/Avatar";
 import { CaretRight } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
 
 interface Customer {
   id: string;
@@ -21,6 +22,7 @@ interface CustomersTableProps {
 }
 
 export default function CustomersTable({ customers, userType = "customers" }: CustomersTableProps) {
+  const router = useRouter();
   const isTrainer = userType === "trainers";
   const title = isTrainer ? "Trainers" : "Customers";
 
@@ -47,7 +49,11 @@ export default function CustomersTable({ customers, userType = "customers" }: Cu
             const isActive = customer.status === "Active";
             
             return (
-              <TableRow key={`${customer.id}-${index}`} className="cursor-pointer group hover:bg-[#1B1F24] transition-all duration-200">
+              <TableRow 
+                key={`${customer.id}-${index}`} 
+                className="cursor-pointer group hover:bg-[#1B1F24] transition-all duration-200"
+                onClick={() => router.push(`/owner/users/${customer.id}`)}
+              >
                 <TableCell>
                   <div className="flex flex-row items-center gap-3">
                     <Avatar src={customer.avatarUrl} className="w-9 h-9 shadow-[0_0_0_1px_rgba(255,255,255,0.05)]" />
