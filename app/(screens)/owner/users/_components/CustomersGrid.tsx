@@ -1,6 +1,7 @@
 "use client";
 
 import UserCard from "../../../components/reusable/UserCard";
+import { useRouter } from "next/navigation";
 
 export interface Customer {
   id: string;
@@ -19,6 +20,7 @@ interface CustomersGridProps {
 }
 
 export default function CustomersGrid({ customers, userType = "customers" }: CustomersGridProps) {
+  const router = useRouter();
   const title = userType === "trainers" ? "Trainers" : "Customers";
 
   return (
@@ -39,6 +41,7 @@ export default function CustomersGrid({ customers, userType = "customers" }: Cus
             joinedDate={customer.joinedDate}
             validTill={customer.validTill}
             type={userType === "trainers" ? "trainer" : "customer"}
+            onClick={() => router.push(`/owner/users/${customer.id}`)}
           />
         ))}
       </div>

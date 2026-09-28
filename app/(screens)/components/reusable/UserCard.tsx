@@ -1,4 +1,5 @@
 import { CaretRight, Phone, Star, CalendarBlank } from "@phosphor-icons/react/dist/ssr";
+import Avatar from "./Avatar";
 
 export interface UserCardProps {
   id: string;
@@ -32,18 +33,15 @@ export default function UserCard({
       onClick={onClick}
       className="flex flex-col items-start p-5 w-full min-h-[248px] bg-[#14161A] border border-[#22262D] rounded-[16px] cursor-pointer hover:border-[#323842] transition-colors"
     >
-      <div className="flex flex-row items-start justify-between w-full mb-[18px]">
-        <div className="flex flex-row gap-3">
-          <div className="w-[38px] h-[38px] bg-[#2B2D31] rounded-full shadow-[0_0_0_1px_rgba(255,255,255,0.1)] flex items-center justify-center overflow-hidden shrink-0 mt-0.5">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-[#717885] text-[12px] font-bold">{name.charAt(0)}</span>
-            )}
+      <div className="flex flex-row items-start justify-between w-full mb-[18px] gap-2">
+        <div className="flex flex-row gap-3 min-w-0 flex-1">
+          <div className="relative w-[38px] h-[38px] rounded-full shadow-[0_0_0_1px_rgba(255,255,255,0.1)] flex items-center justify-center shrink-0 mt-0.5">
+            <Avatar src={avatarUrl} alt={name} className="w-full h-full" />
+            <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-[2px] border-[#14161A] ${isActive ? "bg-[#4ADE80]" : "bg-[#F87171]"}`} />
           </div>
 
-          <div className="flex flex-col justify-center gap-1.5">
-            <h3 className="font-sans font-bold text-[14px] leading-[18px] text-white">
+          <div className="flex flex-col justify-center gap-1.5 min-w-0 flex-1">
+            <h3 className="font-sans font-bold text-[14px] leading-[18px] text-white truncate w-full pr-2">
               {name}
             </h3>
             <span className="font-sans font-medium text-[11px] leading-4 text-[#717885]">
@@ -52,13 +50,7 @@ export default function UserCard({
           </div>
         </div>
 
-        <div className="flex flex-row items-center gap-1.5 mt-1">
-          <div className={`px-2 py-0.5 rounded-full border flex items-center justify-center ${isActive ? "bg-[#1C331A] border-[#234D20] text-[#4ADE80]" : "bg-[#2F1B1E] border-[#482025] text-[#F87171]"
-            }`}>
-            <span className="font-sans font-semibold text-[10px] leading-[15px]">
-              {status}
-            </span>
-          </div>
+        <div className="flex flex-row items-center gap-1.5 mt-1 shrink-0">
           <CaretRight size={16} className="text-[#656C79]" weight="regular" />
         </div>
       </div>
