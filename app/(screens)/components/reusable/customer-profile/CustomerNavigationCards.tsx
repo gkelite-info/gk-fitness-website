@@ -80,7 +80,10 @@ export default function CustomerNavigationCards() {
           <CaretRight size={16} className="text-[#6B7280] group-hover:text-white transition-colors shrink-0 ml-2" weight="bold" />
         </button>
 
-        <button className="flex flex-row justify-between items-center p-4 bg-[#10151E] border border-[#1B2433] shadow-md rounded-xl hover:bg-[#151c27] transition-colors group cursor-pointer">
+        <button 
+          onClick={() => id && router.push(`/owner/users/${id}/assigned-trainer`)}
+          className="flex flex-row justify-between items-center p-4 bg-[#10151E] border border-[#1B2433] shadow-md rounded-xl hover:bg-[#151c27] transition-colors group cursor-pointer"
+        >
           <div className="flex flex-row items-center gap-3.5 flex-1 min-w-0">
             <div className="flex items-center justify-center w-10 h-10 bg-[#141D1A] border border-[#213F28] rounded-xl shrink-0">
               <Users size={20} className="text-[#D2F802]" weight="regular" />
