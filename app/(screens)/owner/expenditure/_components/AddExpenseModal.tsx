@@ -52,13 +52,13 @@ export default function AddExpenseModal({ isOpen, onClose, initialData, onSucces
     if (isOpen) {
       if (initialData) {
         setTitle(initialData.name || "");
-        // Map category label to value
         const catMap: Record<string, string> = {
           "Rent": "rent", "Staff Salaries": "salaries", "Maintenance": "maintenance",
           "Utilities": "utilities", "Marketing": "marketing", "Equipment": "equipment",
           "Supplies": "supplies", "Cleaning Supplies": "supplies", "Other": "other"
         };
-        setCategory(initialData.category ? (catMap[initialData.category] || "other") : "rent");
+        // If it's in catMap, use mapped value, otherwise keep the original custom category
+        setCategory(initialData.category ? (catMap[initialData.category] || initialData.category) : "rent");
         setAmount(initialData.amount ? initialData.amount.replace(/[^0-9.]/g, '') : "");
         setDate(initialData.date || "");
         

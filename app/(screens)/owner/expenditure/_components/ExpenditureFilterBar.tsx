@@ -1,13 +1,14 @@
 "use client";
 import { useState } from "react";
-import { MagnifyingGlass, Tag, CreditCard, CalendarBlank } from "@phosphor-icons/react";
+import { MagnifyingGlass, Tag, CreditCard } from "@phosphor-icons/react";
 import Dropdown from "@/app/(screens)/components/reusable/Dropdown";
 
 export default function ExpenditureFilterBar() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [paymentMethod, setPaymentMethod] = useState("all");
-  const [date, setDate] = useState("month");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const categoryOptions = [
     { label: "All Categories", value: "all" },
@@ -30,52 +31,51 @@ export default function ExpenditureFilterBar() {
     { label: "Cash", value: "cash" },
   ];
 
-  const dateOptions = [
-    { label: "All Time", value: "all" },
-    { label: "Today", value: "today" },
-    { label: "This Week", value: "week" },
-    { label: "This Month", value: "month" },
-  ];
-
   return (
-    <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center w-full gap-4 shrink-0">
-      <div className="flex flex-row items-center px-3 py-2 gap-3 w-full xl:w-[320px] bg-[#11161D] border border-[#1D2631] rounded-lg shrink-0">
-        <MagnifyingGlass size={16} className="text-[#6B7280]" />
+    <div className="flex flex-col gap-3 w-full shrink-0">
+      <div className="flex flex-row items-center px-3 py-2 gap-3 w-full bg-[#11161D] border border-[#1D2631] rounded-lg">
+        <MagnifyingGlass size={16} className="text-[#6B7280] shrink-0" />
         <input 
           type="text" 
-          placeholder="Search expenses by name, category..."
+          placeholder="Search expenses..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 bg-transparent border-none outline-none font-sans text-xs text-white placeholder-[#6B7280] min-w-0"
+          className="flex-1 bg-transparent border-none outline-none font-sans text-xs text-white placeholder-[#6B7280] min-w-0 w-full"
         />
       </div>
 
-      <div className="flex flex-row flex-wrap items-center gap-2.5 w-full xl:w-auto shrink-0">
-        <div className="w-full sm:w-[168px]">
-          <Dropdown 
-            options={categoryOptions}
-            value={category}
-            onChange={setCategory}
-            icon={<Tag size={14} weight="regular" />}
-            triggerClassName="flex flex-row items-center justify-between px-3 py-2 w-full h-[34px] bg-[#11161D] border border-[#1D2631] rounded-lg cursor-pointer text-xs font-medium text-[#D1D5DB]"
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full">
+        <Dropdown 
+          options={categoryOptions}
+          value={category}
+          onChange={setCategory}
+          icon={<Tag size={14} weight="regular" />}
+          triggerClassName="flex flex-row items-center justify-between px-3 py-2 w-full h-[34px] bg-[#11161D] border border-[#1D2631] rounded-lg cursor-pointer text-xs font-medium text-[#D1D5DB]"
+        />
+        <Dropdown 
+          options={paymentOptions}
+          value={paymentMethod}
+          onChange={setPaymentMethod}
+          icon={<CreditCard size={14} weight="regular" />}
+          triggerClassName="flex flex-row items-center justify-between px-3 py-2 w-full h-[34px] bg-[#11161D] border border-[#1D2631] rounded-lg cursor-pointer text-xs font-medium text-[#D1D5DB]"
+        />
+        
+        <div className="flex items-center w-full h-[34px] bg-[#11161D] border border-[#1D2631] rounded-lg px-2.5 overflow-hidden">
+          <span className="text-[#6B7280] text-[10px] uppercase font-bold mr-2 tracking-wider shrink-0">From</span>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="flex-1 bg-transparent border-none outline-none text-xs font-medium text-[#D1D5DB] [color-scheme:dark] min-w-0 w-full cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
           />
         </div>
-        <div className="w-full sm:w-[210px]">
-          <Dropdown 
-            options={paymentOptions}
-            value={paymentMethod}
-            onChange={setPaymentMethod}
-            icon={<CreditCard size={14} weight="regular" />}
-            triggerClassName="flex flex-row items-center justify-between px-3 py-2 w-full h-[34px] bg-[#11161D] border border-[#1D2631] rounded-lg cursor-pointer text-xs font-medium text-[#D1D5DB]"
-          />
-        </div>
-        <div className="w-full sm:w-[152px]">
-          <Dropdown 
-            options={dateOptions}
-            value={date}
-            onChange={setDate}
-            icon={<CalendarBlank size={14} weight="regular" />}
-            triggerClassName="flex flex-row items-center justify-between px-3 py-2 w-full h-[34px] bg-[#11161D] border border-[#1D2631] rounded-lg cursor-pointer text-xs font-medium text-[#D1D5DB]"
+        <div className="flex items-center w-full h-[34px] bg-[#11161D] border border-[#1D2631] rounded-lg px-2.5 overflow-hidden">
+          <span className="text-[#6B7280] text-[10px] uppercase font-bold mr-2 tracking-wider shrink-0">To</span>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="flex-1 bg-transparent border-none outline-none text-xs font-medium text-[#D1D5DB] [color-scheme:dark] min-w-0 w-full cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
           />
         </div>
       </div>
