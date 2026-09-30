@@ -1,10 +1,10 @@
-import { UserPlus, Megaphone, QrCode, Cube, CreditCard, Fingerprint, Barbell, CaretRight } from "@phosphor-icons/react/dist/ssr";
+import { UserPlus, Megaphone, QrCode, Cube, CreditCard, Fingerprint, Barbell, CaretRight, CurrencyCircleDollar, UsersThree, Certificate } from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
 import Link from "next/link";
 
 const ACTIONS = [
   {
-    title: "Add Member",
+    title: "Add Users",
     icon: <UserPlus size={24} color="#34D399" weight="regular" />,
     href: "/owner/users/add",
     baseBg: "bg-[rgba(20,27,22,0.9)]",
@@ -14,9 +14,31 @@ const ACTIONS = [
     iconBorder: "border-[#34D399]/40",
     iconShadow: "shadow-[0_0_15px_rgba(34,197,94,0.3)]",
   },
-
+  {
+    title: "Expenditure",
+    href: "/owner/expenditure",
+    icon: <CurrencyCircleDollar size={24} color="#A855F7" weight="regular" />,
+    baseBg: "bg-[rgba(27,20,38,0.9)]",
+    baseBorder: "border-[rgba(168,85,247,0.3)]",
+    baseShadow: "shadow-[0_10px_24px_-8px_rgba(168,85,247,0.28)]",
+    iconGradient: "bg-gradient-to-br from-[#A855F7]/20 to-[#D946EF]/20",
+    iconBorder: "border-[#A855F7]/40",
+    iconShadow: "shadow-[0_0_15px_rgba(168,85,247,0.3)]",
+  },
+  {
+    title: "Leads",
+    href: "/owner/enquiries",
+    icon: <UsersThree size={24} color="#38BDF8" weight="regular" />,
+    baseBg: "bg-[rgba(15,23,42,0.9)]",
+    baseBorder: "border-[rgba(56,189,248,0.3)]",
+    baseShadow: "shadow-[0_10px_24px_-8px_rgba(56,189,248,0.28)]",
+    iconGradient: "bg-gradient-to-br from-[#38BDF8]/20 to-[#0EA5E9]/20",
+    iconBorder: "border-[#38BDF8]/40",
+    iconShadow: "shadow-[0_0_15px_rgba(56,189,248,0.3)]",
+  },
   {
     title: "Manage Inventory",
+    href: "/owner/inventory",
     icon: <Cube size={24} color="#FB923C" weight="regular" />,
     baseBg: "bg-[rgba(34,23,17,0.9)]",
     baseBorder: "border-[rgba(249,115,22,0.3)]",
@@ -38,6 +60,7 @@ const ACTIONS = [
   },
   {
     title: "Manage Biometric",
+    href: "#",
     icon: <Fingerprint size={24} color="#FB7185" weight="regular" />,
     baseBg: "bg-[rgba(34,19,25,0.9)]",
     baseBorder: "border-[rgba(244,63,94,0.3)]",
@@ -49,7 +72,7 @@ const ACTIONS = [
   {
     title: "Create Plan",
     href: "/owner/membership-plans",
-    icon: <Image src="/images/Createplan.png" alt="Create Plan" width={24} height={24} quality={100} unoptimized className="object-contain" />,
+    icon: <Certificate size={24} color="#818CF8" weight="regular" />,
     baseBg: "bg-[rgba(20,22,40,0.9)]",
     baseBorder: "border-[rgba(99,102,241,0.3)]",
     baseShadow: "shadow-[0_10px_24px_-8px_rgba(99,102,241,0.28)]",
@@ -59,6 +82,7 @@ const ACTIONS = [
   },
   {
     title: "PT Sessions",
+    href: "/owner/pt-sessions",
     icon: <Barbell size={24} color="#F87171" weight="regular" className="-rotate-45" />,
     baseBg: "bg-[rgba(35,19,19,0.9)]",
     baseBorder: "border-[rgba(239,68,68,0.3)]",

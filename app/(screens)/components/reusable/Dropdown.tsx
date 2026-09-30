@@ -145,7 +145,7 @@ export default function Dropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: openUpwards ? 5 : -5, scale: 0.98 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className={`absolute left-0 w-full z-50 bg-[#1A2029] border border-[#303744] shadow-xl rounded-lg overflow-hidden flex flex-col py-1 ${
+            className={`absolute left-0 w-full z-50 bg-[#1A2029] border border-[#303744] shadow-xl rounded-lg overflow-x-hidden flex flex-col py-1 scrollbar-themed ${
               openUpwards ? "bottom-full mb-1" : "top-full mt-1"
             }`}
             style={{ maxHeight: "250px", overflowY: "auto" }}

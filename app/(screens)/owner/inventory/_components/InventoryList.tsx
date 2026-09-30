@@ -142,7 +142,7 @@ export default function InventoryList() {
               </div>
 
               {/* Actions */}
-              <div className="flex flex-row items-center gap-2 shrink-0 self-end xl:self-auto pt-2 xl:pt-0">
+              <div className="flex flex-row items-center justify-end gap-2 shrink-0 w-full xl:w-auto pt-4 xl:pt-0 mt-2 xl:mt-0 border-t border-[#1E2632] xl:border-none">
                 <Link 
                   href={`/owner/inventory/${item.id}`}
                   className="flex justify-center items-center w-8 h-8 rounded-lg border border-transparent hover:border-[#2B3648] hover:bg-[#1A222D] transition-colors cursor-pointer group"
