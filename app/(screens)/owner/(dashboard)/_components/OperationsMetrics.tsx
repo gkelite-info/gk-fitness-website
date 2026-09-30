@@ -29,12 +29,6 @@ export default function OperationsMetrics({ ptSessionsCount }: OperationsMetrics
         <h3 className="font-sans font-bold text-[16px] leading-[24px] tracking-[0.4px] text-white">
           Today&apos;s Operations
         </h3>
-        <button className="flex flex-row items-center gap-1 group cursor-pointer">
-          <span className="font-sans font-semibold text-[12px] leading-4 text-[#D4FF32] group-hover:underline">
-            View Details
-          </span>
-          <CaretRight size={12} color="#D4FF32" weight="bold" />
-        </button>
       </div>
       <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
         <div className="w-full bg-[#191B22] border border-[#222530] rounded-[12px] p-2 sm:p-[14px] flex flex-col items-center justify-center min-h-[80px]">

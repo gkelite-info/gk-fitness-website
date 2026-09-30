@@ -3,6 +3,7 @@
 import { useState } from "react";
 import FinanceHeader from "./_components/FinanceHeader";
 import FinanceKPICards from "./_components/FinanceKPICards";
+import FinancePrimaryCards from "./_components/FinancePrimaryCards";
 import RevenueByPlan from "./_components/RevenueByPlan";
 import RecentTransactions from "./_components/RecentTransactions";
 import MonthlyRevenueChart from "./_components/MonthlyRevenueChart";
@@ -61,6 +62,8 @@ export default function FinanceDashboardPage() {
         customerGrowth={customerGrowth}
         monthlyGrowth={monthlyGrowth}
       />
+
+      <FinancePrimaryCards />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 w-full">
         <RevenueByPlan revenueByPlan={revenueByPlan} />

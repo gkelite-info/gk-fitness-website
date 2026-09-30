@@ -11,6 +11,7 @@ import AnnouncementsCard from "./_components/AnnouncementsCard";
 import AlertsRemindersCard from "./_components/AlertsRemindersCard";
 import FinancesCard from "./_components/FinancesCard";
 import EnquiriesCard from "./_components/EnquiriesCard";
+import MembershipExpiryCard from "./_components/MembershipExpiryCard";
 import RevenueTrendChart from "./_components/RevenueTrendChart";
 import {
   useGymCustomers,
@@ -157,20 +158,25 @@ export default function OwnerDashboardPage() {
       />
       <ManualAttendanceBanner />
 
-      <div className="w-full grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+      <div className="w-full grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch">
         <div className="flex flex-col gap-6 xl:col-span-7">
           <QuickActions />
-          {/* <ManagementShortcuts /> */}
+          <EnquiriesCard />
+          <MembershipExpiryCard 
+            totalExpiring={expiringCount}
+            expiringToday={3} 
+            expiringNext3Days={6} 
+            expiringNext7Days={9} 
+          />
           <OperationsMetrics ptSessionsCount={activePtSessionsCount} />
         </div>
 
         <div className="flex flex-col gap-6 xl:col-span-5">
           <AnnouncementsCard />
-          <AlertsRemindersCard expiringCount={expiringCount} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FinancesCard paymentsToday={paymentsToday} />
-            <EnquiriesCard />
+          <div className="flex-1 flex min-h-0">
+            <AlertsRemindersCard expiringCount={expiringCount} />
           </div>
+          <FinancesCard paymentsToday={paymentsToday} />
         </div>
       </div>
 

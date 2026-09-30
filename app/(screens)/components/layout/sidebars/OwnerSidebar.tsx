@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Users, CurrencyInr, Compass, User, Barbell, Crown, Wallet, CalendarCheck, Headset, Receipt, Package } from "@phosphor-icons/react";
+import { House, Users, CurrencyInr, Compass, User, Barbell, Crown, Wallet, CalendarCheck, Headset, Receipt, Package, Clock, ListChecks, Bell } from "@phosphor-icons/react/dist/ssr";
 import LogoutButton from "../../reusable/LogoutButton";
+import { useEffect, useRef } from "react";
 
 const navLinks = [
   { name: "Home", href: "/owner", icon: House },
@@ -16,11 +17,21 @@ const navLinks = [
   { name: "Inventory", href: "/owner/inventory", icon: Package },
   { name: "Explore", href: "/owner/explore", icon: Compass },
   { name: "Enquiries", href: "/owner/enquiries", icon: Headset },
+  { name: "Membership Expiry", href: "/owner/membership-expiry", icon: Clock },
+  { name: "Manual Attendance", href: "/owner/manual-attendance", icon: ListChecks },
+  { name: "Reminders", href: "/owner/reminders", icon: Bell },
   { name: "Profile", href: "/owner/profile", icon: User },
 ];
 
 export default function OwnerSidebar() {
   const pathname = usePathname();
+  const activeItemRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    if (activeItemRef.current) {
+      activeItemRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [pathname]);
 
   return (
     <div className="w-[256px] h-full bg-[#0E0F13] border-r-[2px] border-[#232631] flex flex-col px-4 py-6 overflow-hidden">
@@ -48,6 +59,7 @@ export default function OwnerSidebar() {
               key={link.name}
               href={link.href}
               prefetch={true}
+              ref={isActive ? activeItemRef : null}
               className={`flex flex-row items-center px-4 py-3 gap-3.5 w-full h-[46px] rounded-2xl transition-all shrink-0 ${
                 isActive
                   ? "bg-gradient-to-r from-[rgba(212,255,50,0.18)] to-[rgba(212,255,50,0.05)] border border-[#D4FF32] shadow-[0_0_16px_rgba(212,255,50,0.12),inset_0_0_12px_1px_rgba(212,255,50,0.15)] text-[#D4FF32]"

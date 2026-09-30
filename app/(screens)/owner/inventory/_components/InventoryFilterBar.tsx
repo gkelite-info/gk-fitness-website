@@ -8,7 +8,7 @@ export default function InventoryFilterBar() {
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-3 w-full mb-6">
-      <div className="flex flex-row items-center px-4 py-2.5 gap-2 w-full flex-1 bg-[#121720] border border-[#1E2632] rounded-xl shrink-0 transition-colors focus-within:border-[#334155]">
+      <div className="flex flex-row items-center px-4 gap-2 w-full sm:flex-1 h-[42px] bg-[#121720] border border-[#1E2632] rounded-xl shrink-0 transition-colors focus-within:border-[#334155]">
         <MagnifyingGlass size={16} className="text-[#64748B] shrink-0" />
         <input 
           type="text" 
