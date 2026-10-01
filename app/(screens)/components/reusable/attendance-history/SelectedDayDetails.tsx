@@ -6,9 +6,22 @@ import { formatDateStr } from "./utils";
 interface SelectedDayDetailsProps {
   selectedDate: Date;
   attendanceData: Record<string, boolean>;
+  checkInTime?: string | null;
+  checkOutTime?: string | null;
+  duration?: string | null;
+  trainerName?: string;
+  routineFocus?: string;
 }
 
-export default function SelectedDayDetails({ selectedDate, attendanceData }: SelectedDayDetailsProps) {
+export default function SelectedDayDetails({ 
+  selectedDate, 
+  attendanceData,
+  checkInTime,
+  checkOutTime,
+  duration,
+  trainerName = "-",
+  routineFocus = "Rest"
+}: SelectedDayDetailsProps) {
   const dateStr = formatDateStr(selectedDate);
   const isPresent = attendanceData[dateStr] === true;
   
@@ -53,7 +66,7 @@ export default function SelectedDayDetails({ selectedDate, attendanceData }: Sel
               Check In
             </span>
             <span className="font-sans font-bold text-[11px] sm:text-xs lg:text-base leading-4 sm:leading-6 tracking-[-0.3px] text-white whitespace-nowrap">
-              07:12 AM
+              {checkInTime || "--:--"}
             </span>
           </div>
 
@@ -65,7 +78,7 @@ export default function SelectedDayDetails({ selectedDate, attendanceData }: Sel
               Check Out
             </span>
             <span className="font-sans font-bold text-[11px] sm:text-xs lg:text-base leading-4 sm:leading-6 tracking-[-0.3px] text-white whitespace-nowrap">
-              08:28 AM
+              {checkOutTime || "--:--"}
             </span>
           </div>
 
@@ -77,7 +90,7 @@ export default function SelectedDayDetails({ selectedDate, attendanceData }: Sel
               Duration
             </span>
             <span className="font-sans font-bold text-[11px] sm:text-xs lg:text-base leading-4 sm:leading-6 tracking-[-0.3px] text-white whitespace-nowrap">
-              1h 16m
+              {duration || "--"}
             </span>
           </div>
         </div>
@@ -105,7 +118,7 @@ export default function SelectedDayDetails({ selectedDate, attendanceData }: Sel
                 Routine Focus
               </span>
               <span className="font-sans font-semibold text-[13px] sm:text-[14px] leading-[18px] text-[#E2E8F0]">
-                Upper Body
+                {routineFocus}
               </span>
             </div>
 
@@ -114,10 +127,11 @@ export default function SelectedDayDetails({ selectedDate, attendanceData }: Sel
                 Floor Trainer
               </span>
               <span className="font-sans font-semibold text-[13px] sm:text-[14px] leading-[18px] text-[#E2E8F0]">
-                Rahul Verma (PT)
+                {trainerName}
               </span>
             </div>
 
+            {/* Est. Calories hidden per request
             <div className="flex flex-col items-start p-3 w-full bg-[rgba(17,19,25,0.8)] border border-[rgba(35,39,48,0.6)] rounded-[9px] gap-1">
               <span className="font-mono text-[11px] leading-[17px] uppercase text-[#94A3B8]">
                 Est. Calories
@@ -126,6 +140,7 @@ export default function SelectedDayDetails({ selectedDate, attendanceData }: Sel
                 640 kcal <span className="text-white">🔥</span>
               </span>
             </div>
+            */}
           </div>
         </div>
       )}

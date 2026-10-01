@@ -16,6 +16,17 @@ export function useGymPayments(userId: string | null) {
   });
 }
 
+export function useCustomerSpecificGymPayments(gymId?: string, customerId?: string) {
+  return useQuery({
+    queryKey: ['customerSpecificGymPayments', gymId, customerId],
+    queryFn: async () => {
+      if (!gymId || !customerId) return [];
+      return await fetchGymPayments(gymId, customerId);
+    },
+    enabled: !!gymId && !!customerId,
+  });
+}
+
 export function useGymPaymentsPaginated(userId: string | null, page: number = 1, limit: number = 10, filters?: { tab?: string; searchQuery?: string }) {
   return useQuery({
     queryKey: ['gymPaymentsPaginated', userId, page, limit, filters],

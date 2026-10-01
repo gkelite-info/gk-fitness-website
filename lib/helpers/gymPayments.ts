@@ -32,7 +32,7 @@ export interface SaveGymPaymentParams {
   paymentTakenBy: string;
 }
 
-export async function fetchGymPayments(gymId?: string) {
+export async function fetchGymPayments(gymId?: string, customerId?: string) {
   const supabase = createClient();
   let query = supabase
     .from('gym_payments')
@@ -53,6 +53,10 @@ export async function fetchGymPayments(gymId?: string) {
 
   if (gymId) {
     query = query.eq('gymId', gymId);
+  }
+
+  if (customerId) {
+    query = query.eq('customerId', customerId);
   }
 
   const { data, error } = await query;

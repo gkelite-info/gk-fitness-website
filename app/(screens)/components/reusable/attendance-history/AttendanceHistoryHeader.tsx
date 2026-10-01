@@ -8,7 +8,7 @@ export default function AttendanceHistoryHeader() {
 
   return (
     <div className="flex flex-row items-center w-full pb-2 gap-4">
-      <button 
+      <button
         onClick={() => router.back()}
         className="flex items-center justify-center w-10 h-10 bg-[#14171D] border border-[#232730] rounded-xl hover:bg-white/5 transition-colors shrink-0 cursor-pointer"
       >

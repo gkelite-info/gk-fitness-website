@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 
 interface CustomerProfileHeaderProps {
   onEditMember?: () => void;
+  title?: string;
+  subtitle?: string;
 }
 
-export default function CustomerProfileHeader({ onEditMember }: CustomerProfileHeaderProps) {
+export default function CustomerProfileHeader({ onEditMember, title = "Customer Profile", subtitle = "View and manage member details, membership, trainer and more." }: CustomerProfileHeaderProps) {
   const router = useRouter();
 
   return (
@@ -21,10 +23,10 @@ export default function CustomerProfileHeader({ onEditMember }: CustomerProfileH
         </button>
         <div className="flex flex-col items-start gap-1">
           <h1 className="font-sans font-bold text-2xl sm:text-[30px] leading-9 tracking-tight text-white m-0">
-            Customer Profile
+            {title}
           </h1>
           <p className="font-sans font-normal text-sm leading-5 text-[#9CA3AF] m-0">
-            View and manage member details, membership, trainer and more.
+            {subtitle}
           </p>
         </div>
       </div>

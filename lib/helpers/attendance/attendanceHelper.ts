@@ -240,7 +240,9 @@ export async function markAttendance(qrString: string, customerId: string) {
 }
 
 export async function fetchCustomerAttendance(customerId: string) {
-  const { data, error } = await supabase
+  const { createClient } = await import('@/app/api/supabase/client');
+  const supabaseAuth = createClient();
+  const { data, error } = await supabaseAuth
     .from('gym_attendance')
     .select('*')
     .eq('customerId', customerId)

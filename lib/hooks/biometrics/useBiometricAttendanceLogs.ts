@@ -11,6 +11,7 @@ export function useBiometricAttendanceLogs(
     fromDate?: string;
     toDate?: string;
     searchQuery?: string;
+    customerId?: string;
   }
 ) {
   return useQuery({

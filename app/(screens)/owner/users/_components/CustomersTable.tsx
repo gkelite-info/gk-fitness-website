@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 
 interface Customer {
   id: string;
+  realId?: string;
   name: string;
   status: "Active" | "Inactive";
   phone: string;
@@ -31,7 +32,7 @@ export default function CustomersTable({ customers, userType = "customers" }: Cu
       <h2 className="font-sans font-bold text-[15px] leading-6 text-white tracking-[-0.2px]">
         {title} ({customers.length})
       </h2>
-      
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -47,12 +48,23 @@ export default function CustomersTable({ customers, userType = "customers" }: Cu
         <TableBody>
           {customers.map((customer, index) => {
             const isActive = customer.status === "Active";
-            
+
             return (
-              <TableRow 
-                key={`${customer.id}-${index}`} 
+              <TableRow
+                key={`${customer.id}-${index}`}
                 className="cursor-pointer group hover:bg-[#1B1F24] transition-all duration-200"
-                onClick={() => router.push(`/owner/users/${customer.id}`)}
+                onClick={() => {
+                  const queryParams = new URLSearchParams({
+                    memberCode: customer.id,
+                    name: customer.name,
+                    status: customer.status,
+                    phone: customer.phone,
+                    plan: customer.plan,
+                    joinedDate: customer.joinedDate,
+                    validTill: customer.validTill,
+                  }).toString();
+                  router.push(`/owner/users/${customer.realId || customer.id}?${queryParams}`);
+                }}
               >
                 <TableCell>
                   <div className="flex flex-row items-center gap-3">
@@ -67,29 +79,28 @@ export default function CustomersTable({ customers, userType = "customers" }: Cu
                     </div>
                   </div>
                 </TableCell>
-                
+
                 <TableCell>
-                  <div className={`inline-flex px-2 py-0.5 rounded-full border items-center justify-center ${
-                    isActive ? "bg-[#1C331A] border-[#234D20] text-[#4ADE80]" : "bg-[#2F1B1E] border-[#482025] text-[#F87171]"
-                  }`}>
+                  <div className={`inline-flex px-2 py-0.5 rounded-full border items-center justify-center ${isActive ? "bg-[#1C331A] border-[#234D20] text-[#4ADE80]" : "bg-[#2F1B1E] border-[#482025] text-[#F87171]"
+                    }`}>
                     <span className="font-sans font-semibold text-[10px] leading-[15px]">
                       {customer.status}
                     </span>
                   </div>
                 </TableCell>
-                
+
                 <TableCell>
                   <span className="text-[#848C99]">{customer.phone}</span>
                 </TableCell>
-                
+
                 <TableCell>
                   <span className="font-semibold text-[#FFB931]">{customer.plan}</span>
                 </TableCell>
-                
+
                 <TableCell>
                   <span className="text-[#848C99]">{customer.joinedDate}</span>
                 </TableCell>
-                
+
                 {!isTrainer && (
                   <TableCell>
                     <strong className={`font-normal ${isActive ? "text-white" : "text-[#F87171]"}`}>
@@ -97,7 +108,7 @@ export default function CustomersTable({ customers, userType = "customers" }: Cu
                     </strong>
                   </TableCell>
                 )}
-                
+
                 <TableCell>
                   <CaretRight size={16} className="text-[#656C79] group-hover:text-[#D2F829] transition-colors" weight="bold" />
                 </TableCell>

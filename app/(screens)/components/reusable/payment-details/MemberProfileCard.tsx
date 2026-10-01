@@ -9,16 +9,12 @@ interface MemberProfileCardProps {
 }
 
 export default function MemberProfileCard({ data }: MemberProfileCardProps) {
-  // Extract initials
   const initials = data.memberName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
   return (
     <div className="relative flex flex-col items-start p-6 w-full bg-[#0A0C11] border border-[rgba(31,36,51,0.8)] rounded-2xl shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] group hover:border-[rgba(212,255,0,0.4)] transition-all duration-300 overflow-hidden z-10">
-      
       <div className="absolute w-[176px] h-[176px] -right-[63px] -top-[63px] bg-[rgba(212,255,0,0.05)] blur-[32px] rounded-full z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
       <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center w-full gap-4 z-10">
-        
         <div className="flex flex-col sm:flex-row items-center sm:items-center gap-5 w-full">
           <div className="flex justify-center items-center w-20 h-20 bg-[#0E1118] border-2 border-[rgba(212,255,0,0.6)] rounded-2xl shrink-0 group-hover:shadow-[0_0_25px_rgba(212,255,0,0.3)] transition-shadow duration-300 overflow-hidden p-1 cursor-pointer">
             <Avatar gender="male" className="w-full h-full object-cover" />
@@ -29,13 +25,13 @@ export default function MemberProfileCard({ data }: MemberProfileCardProps) {
               <h3 className="font-sans font-extrabold text-2xl tracking-[-0.6px] text-white m-0 break-words max-w-full text-center sm:text-left">
                 {data.memberName}
               </h3>
-              
-              <div className="flex flex-row items-center px-3 py-1 gap-1 bg-[#131722] border border-[rgba(212,255,0,0.3)] rounded-full min-h-[26px] h-auto shrink-0 w-fit">
+
+              {/* <div className="flex flex-row items-center px-3 py-1 gap-1 bg-[#131722] border border-[rgba(212,255,0,0.3)] rounded-full min-h-[26px] h-auto shrink-0 w-fit">
                 <User size={12} weight="fill" className="text-[#D4FF00]" />
                 <span className="font-sans font-bold text-xs tracking-[0.6px] uppercase text-[#D4FF00] whitespace-nowrap">
                   MEMBER ID: {data.memberCode}
                 </span>
-              </div>
+              </div> */}
             </div>
 
             <div className="flex flex-wrap flex-row justify-center sm:justify-start items-center gap-3 sm:gap-4 mt-1">
@@ -45,7 +41,7 @@ export default function MemberProfileCard({ data }: MemberProfileCardProps) {
                   {data.phone}
                 </span>
               </div>
-              
+
               <div className="flex flex-row items-center px-2.5 py-1 gap-1.5 bg-[rgba(19,23,34,0.8)] border border-[rgba(31,36,51,0.6)] rounded-lg h-[26px]">
                 <EnvelopeSimple size={14} className="text-[#D4FF00]" />
                 <span className="font-sans font-normal text-xs text-[#CBD5E1]">
@@ -62,7 +58,6 @@ export default function MemberProfileCard({ data }: MemberProfileCardProps) {
             {data.memberStatus}
           </span>
         </div>
-
       </div>
     </div>
   );

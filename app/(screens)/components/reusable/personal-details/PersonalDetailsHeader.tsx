@@ -14,7 +14,7 @@ export default function PersonalDetailsHeader({ memberCode, onEdit }: PersonalDe
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full shrink-0">
       <div className="flex flex-row items-center gap-3">
-        <button 
+        <button
           onClick={() => router.back()}
           className="flex items-center justify-center w-9 h-9 bg-[#11151D] border border-[#242C3A] rounded-xl hover:bg-white/5 transition-colors shrink-0 cursor-pointer"
         >
@@ -24,15 +24,15 @@ export default function PersonalDetailsHeader({ memberCode, onEdit }: PersonalDe
           <h1 className="font-sans font-extrabold text-2xl leading-8 tracking-[-0.6px] text-white m-0">
             Personal Details
           </h1>
-          <div className="flex flex-row items-center px-3 py-1 bg-[#11151D] border border-[#242C3A] rounded-full">
+          {/* <div className="flex flex-row items-center px-3 py-1 bg-[#11151D] border border-[#242C3A] rounded-full">
             <span className="font-sans font-bold text-xs leading-4 tracking-[0.3px] text-[#7E8B9F]">
-              CUSTOMER ID: <span className="text-[#CCFF00]">{memberCode}</span>
+              CUSTOMER IDs: <span className="text-[#CCFF00]">{memberCode}</span>
             </span>
-          </div>
+          </div> */}
         </div>
       </div>
-      
-      <button 
+
+      <button
         onClick={onEdit}
         className="flex flex-row items-center px-5 py-2.5 gap-2 bg-[#CCFF00] shadow-[0_0_20px_rgba(204,255,0,0.25)] rounded-xl hover:bg-[#bbf000] transition-colors shrink-0 cursor-pointer"
       >

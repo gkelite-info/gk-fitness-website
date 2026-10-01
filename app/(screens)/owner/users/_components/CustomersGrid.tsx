@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 export interface Customer {
   id: string;
+  realId?: string;
   name: string;
   status: "Active" | "Inactive";
   phone: string;
@@ -41,7 +42,19 @@ export default function CustomersGrid({ customers, userType = "customers" }: Cus
             joinedDate={customer.joinedDate}
             validTill={customer.validTill}
             type={userType === "trainers" ? "trainer" : "customer"}
-            onClick={() => router.push(`/owner/users/${customer.id}`)}
+            onClick={() => {
+              const queryParams = new URLSearchParams({
+                memberCode: customer.id,
+                name: customer.name,
+                status: customer.status,
+                phone: customer.phone,
+                plan: customer.plan,
+                joinedDate: customer.joinedDate,
+                validTill: customer.validTill,
+                userType: userType === "trainers" ? "trainer" : "customer",
+              }).toString();
+              router.push(`/owner/users/${customer.realId || customer.id}?${queryParams}`);
+            }}
           />
         ))}
       </div>

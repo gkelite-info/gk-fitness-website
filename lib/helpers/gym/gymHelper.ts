@@ -2,7 +2,15 @@
 import { supabase } from '@/lib/supabase';
 // import * as ImageManipulator from 'expo-image-manipulator';
 // import * as FileSystem from 'expo-file-system/legacy';
-import { base64ToArrayBuffer } from '@/components/imageCompressor';
+export function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binaryString = typeof window !== 'undefined' ? window.atob(base64) : Buffer.from(base64, 'base64').toString('binary');
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
 
 export interface GymAttributes {
   gymId?: string;

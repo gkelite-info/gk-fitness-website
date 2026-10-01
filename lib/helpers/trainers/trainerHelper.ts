@@ -197,7 +197,7 @@ export async function fetchTrainerById(gymTrainerId: string) {
   const supabase = createClient();
   const { data: trainer, error: trainerErr } = await supabase
     .from('gym_trainers')
-    .select('*, users!gym_trainers_userId_fkey(profilePhoto)')
+    .select('*, user:users!gym_trainers_userId_fkey(address, email, profilePhoto)')
     .eq('gymTrainerId', gymTrainerId)
     .eq('is_deleted', false)
     .maybeSingle();
@@ -335,7 +335,13 @@ export async function saveGymTrainer(params: SaveGymTrainerParams) {
     if (existingUserRecord) {
       const { error: userUpErr } = await supabase
         .from('users')
-        .update({ role: 'trainer', updatedAt: now })
+        .update({ 
+          name: params.fullName.trim(),
+          phone: cleanPhone,
+          dob: formatToPgDate(params.dateOfBirth),
+          role: 'trainer', 
+          updatedAt: now 
+        })
         .eq('userId', targetUserId);
       if (userUpErr) throw new Error(`Table 1 (users) update failed: ${userUpErr.message}`);
     } else {
@@ -345,6 +351,7 @@ export async function saveGymTrainer(params: SaveGymTrainerParams) {
         name: params.fullName.trim(),
         email: cleanEmail,
         phone: cleanPhone,
+        dob: formatToPgDate(params.dateOfBirth),
         role: 'trainer',
       });
       if (!createdUser || !createdUser.userId) {
@@ -384,9 +391,10 @@ export async function saveGymTrainer(params: SaveGymTrainerParams) {
 
     let savedTrainer: GymTrainerAttributes | null = null;
     if (existingTrainer) {
+      const { email: _, ...updatePayload } = trainerPayload;
       const { data, error: updateErr } = await supabase
         .from('gym_trainers')
-        .update(trainerPayload)
+        .update(updatePayload)
         .eq('gymTrainerId', targetUserId)
         .select();
       if (updateErr) throw new Error(`Table 2 (gym_trainers) update failed: ${updateErr.message}`);
