@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Users, CurrencyInr, Compass, User, Barbell, Crown, Wallet, CalendarCheck, Headset, Receipt, Package, Clock, ListChecks, Bell } from "@phosphor-icons/react/dist/ssr";
+import { House, Users, CurrencyInr, Compass, User, Barbell, Crown, Wallet, CalendarCheck, Headset, Receipt, Package, Clock, ListChecks, Bell, Fingerprint } from "@phosphor-icons/react/dist/ssr";
 import LogoutButton from "../../reusable/LogoutButton";
 import { useEffect, useRef } from "react";
 
@@ -20,6 +20,7 @@ const navLinks = [
   { name: "Membership Expiry", href: "/owner/membership-expiry", icon: Clock },
   { name: "Manual Attendance", href: "/owner/manual-attendance", icon: ListChecks },
   { name: "Reminders", href: "/owner/reminders", icon: Bell },
+  { name: "Biometric", href: "/owner/biometric", icon: Fingerprint },
   { name: "Profile", href: "/owner/profile", icon: User },
 ];
 
@@ -62,7 +63,7 @@ export default function OwnerSidebar() {
               ref={isActive ? activeItemRef : null}
               className={`flex flex-row items-center px-4 py-3 gap-3.5 w-full h-[46px] rounded-2xl transition-all shrink-0 ${
                 isActive
-                  ? "bg-gradient-to-r from-[rgba(212,255,50,0.18)] to-[rgba(212,255,50,0.05)] border border-[#D4FF32] shadow-[0_0_16px_rgba(212,255,50,0.12),inset_0_0_12px_1px_rgba(212,255,50,0.15)] text-[#D4FF32]"
+                  ? "bg-gradient-to-r from-[rgba(212,255,50,0.18)] to-[rgba(212,255,50,0.05)] border border-[#D4FF32] sidebar-glow text-[#D4FF32]"
                   : "text-[#94A3B8] hover:text-white"
               }`}
             >

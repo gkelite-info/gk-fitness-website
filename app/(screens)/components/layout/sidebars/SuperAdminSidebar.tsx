@@ -42,7 +42,7 @@ export default function SuperAdminSidebar() {
                 href={link.href}
                 className={`flex flex-row items-center px-4 py-3 gap-3.5 w-full h-[46px] rounded-2xl transition-all ${
                   isActive
-                    ? "bg-gradient-to-r from-[rgba(212,255,50,0.18)] to-[rgba(212,255,50,0.05)] border border-[#D4FF32] shadow-[0_0_16px_rgba(212,255,50,0.12),inset_0_0_12px_1px_rgba(212,255,50,0.15)] text-[#D4FF32]"
+                    ? "bg-gradient-to-r from-[rgba(212,255,50,0.18)] to-[rgba(212,255,50,0.05)] border border-[#D4FF32] sidebar-glow text-[#D4FF32]"
                     : "text-[#94A3B8] hover:text-white"
                 }`}
               >
