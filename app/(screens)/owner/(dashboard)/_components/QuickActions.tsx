@@ -26,7 +26,7 @@ const ACTIONS = [
     iconShadow: "shadow-[0_0_15px_rgba(168,85,247,0.3)]",
   },
   {
-    title: "Leads",
+    title: "Enquiries",
     href: "/owner/enquiries",
     icon: <UsersThree size={24} color="#38BDF8" weight="regular" />,
     baseBg: "bg-[rgba(15,23,42,0.9)]",
@@ -60,7 +60,7 @@ const ACTIONS = [
   },
   {
     title: "Manage Biometric",
-    href: "#",
+    href: "/owner/biometric",
     icon: <Fingerprint size={24} color="#FB7185" weight="regular" />,
     baseBg: "bg-[rgba(34,19,25,0.9)]",
     baseBorder: "border-[rgba(244,63,94,0.3)]",
