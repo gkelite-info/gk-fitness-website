@@ -69,10 +69,13 @@ export async function saveCustomerGoalPreference(params: CustomerGoalPreferenceP
   }
 }
 
+import { createClient } from '@/app/api/supabase/client';
+
 export async function fetchCustomerGoalPreference(userId: string) {
   if (!userId) throw new Error('Missing userId');
 
-  const { data, error } = await supabase
+  const supabaseAuth = createClient();
+  const { data, error } = await supabaseAuth
     .from('customer_goal_preferences')
     .select('*')
     .eq('userId', userId)

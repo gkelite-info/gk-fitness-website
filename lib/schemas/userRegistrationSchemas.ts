@@ -33,6 +33,7 @@ export const customerRegistrationSchema = z.object({
   membershipPlanId: z.string().min(1, "Membership plan is required"),
   planStartDate: z.string().min(1, "Start date is required"),
   planExpiryDate: z.string().min(1, "Expiry date is required"),
+  languagesSpeaks: z.array(z.string()).min(1, "Select at least one language").optional(),
 });
 
 export type CustomerRegistrationData = z.infer<typeof customerRegistrationSchema>;

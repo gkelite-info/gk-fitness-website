@@ -25,6 +25,7 @@ export default function UsersDashboard() {
 
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [planFilter, setPlanFilter] = useState<string>("All");
+  const [sortFilter, setSortFilter] = useState<string>("Newest");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -50,8 +51,8 @@ export default function UsersDashboard() {
   const { data: customerPlansData } = useGymCustomerMembershipPlans(userId || null);
   const customerPlans = customerPlansData || [];
 
-  const customersQuery = useCustomers(gymId || null, apiFilter, debouncedSearch, planFilter);
-  const trainersQuery = useTrainers(gymId || null, apiFilter, debouncedSearch);
+  const customersQuery = useCustomers(gymId || null, apiFilter, debouncedSearch, planFilter, sortFilter);
+  const trainersQuery = useTrainers(gymId || null, apiFilter, debouncedSearch, sortFilter);
 
   useEffect(() => {
     if (activeTab === "customers") {
@@ -67,7 +68,7 @@ export default function UsersDashboard() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, activeFilter, planFilter]);
+  }, [activeTab, activeFilter, planFilter, sortFilter]);
 
   const activeQuery = activeTab === "customers" ? customersQuery : trainersQuery;
 
@@ -104,10 +105,13 @@ export default function UsersDashboard() {
     }
 
     const idPrefix = activeTab === "customers" ? "CUST" : "TRN";
-    const displayId = `${idPrefix}-${String((currentPage - 1) * itemsPerPage + index + 1).padStart(4, '0')}`;
+    const realId = activeTab === "customers" ? (item.customerId || item.id) : (item.gymTrainerId || item.id);
+    const shortUuid = realId ? realId.substring(0, 6).toUpperCase() : "XXXX";
+    const displayId = `${idPrefix}-${shortUuid}`;
 
     return {
       id: displayId,
+      realId,
       name: item.fullName || "?",
       status: isActive ? "Active" : "Inactive",
       phone: item.phone || "No phone",
@@ -137,6 +141,8 @@ export default function UsersDashboard() {
         planFilter={planFilter}
         onPlanFilterChange={setPlanFilter}
         plans={plans}
+        sortFilter={sortFilter}
+        onSortFilterChange={setSortFilter}
       />
 
       {activeQuery.isLoading ? (

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchUsers, UserRole } from '@/lib/helpers/user/userHelper';
+import { fetchUsers, fetchUserById, UserRole } from '@/lib/helpers/user/userHelper';
 
 export function useUsers(role?: UserRole) {
   return useQuery({
@@ -8,5 +8,16 @@ export function useUsers(role?: UserRole) {
       const data = await fetchUsers(role);
       return data;
     },
+  });
+}
+
+export function useUserById(userId?: string) {
+  return useQuery({
+    queryKey: ['user', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      return await fetchUserById(userId);
+    },
+    enabled: !!userId,
   });
 }

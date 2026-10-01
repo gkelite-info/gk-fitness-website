@@ -20,4 +20,10 @@ export interface CustomerProfileData {
     assignedSince: string;
     avatarUrl?: string;
   };
+  assignedList?: {
+    name: string;
+    specialty: string;
+    assignedSince: string;
+    avatarUrl?: string;
+  }[];
 }

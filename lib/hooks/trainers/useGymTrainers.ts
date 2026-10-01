@@ -20,5 +20,6 @@ export function useGymTrainerById(gymTrainerId?: string) {
       return await fetchTrainerById(gymTrainerId);
     },
     enabled: !!gymTrainerId,
+    refetchOnWindowFocus: false,
   });
 }

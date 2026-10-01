@@ -25,13 +25,17 @@ export const getBiometricAttendanceLogs = async (
     fromDate?: string;
     toDate?: string;
     searchQuery?: string;
+    customerId?: string;
   }
 ) => {
   try {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    let query = supabase
+    const { createClient } = await import('@/app/api/supabase/client');
+    const supabaseAuth = createClient();
+
+    let query = supabaseAuth
       .from("gym_biometric_attendance_logs")
       .select(`
         *,
@@ -53,9 +57,12 @@ export const getBiometricAttendanceLogs = async (
     if (filters?.toDate) {
       query = query.lte("scanTimestamp", filters.toDate);
     }
+    if (filters?.customerId) {
+      query = query.eq("customerId", filters.customerId);
+    }
 
     if (filters?.searchQuery?.trim()) {
-      const { data: customersMatch } = await supabase
+      const { data: customersMatch } = await supabaseAuth
         .from("gym_customers")
         .select("customerId")
         .eq("gymId", gymId)

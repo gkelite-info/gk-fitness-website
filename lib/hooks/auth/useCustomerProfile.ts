@@ -10,9 +10,9 @@ export function useCustomerProfile(userId: string | null | undefined) {
       const [customerRes, onboardingRes] = await Promise.all([
         supabase
           .from('gym_customers')
-          .select('*')
+          .select('*, users!gym_customers_userId_fkey(email, profilePhoto)')
           .eq('customerId', userId)
-          .single(),
+          .maybeSingle(),
         supabase
           .from('customer_onboarding')
           .select('*')
@@ -20,10 +20,8 @@ export function useCustomerProfile(userId: string | null | undefined) {
           .maybeSingle()
       ]);
 
-      if (customerRes.error) throw customerRes.error;
-      // It's okay if onboarding throws an error because it's maybeSingle, but if it's a real error we throw
+      if (customerRes.error && customerRes.error.code !== 'PGRST116') throw customerRes.error;
       if (onboardingRes.error && onboardingRes.error.code !== 'PGRST116') {
-        // PGRST116 is multiple rows returned but single expected. maybeSingle handles 0 or 1 rows.
         throw onboardingRes.error;
       }
 
@@ -33,5 +31,6 @@ export function useCustomerProfile(userId: string | null | undefined) {
       };
     },
     enabled: !!userId,
+    refetchOnWindowFocus: false,
   });
 }

@@ -41,6 +41,7 @@ export interface CreateUserParams {
   city?: string | null;
   pincode?: number | null;
   role?: string;
+  dob?: string | null;
 }
 
 export async function createUser(userData: CreateUserParams) {
@@ -54,6 +55,7 @@ export async function createUser(userData: CreateUserParams) {
     city: userData.city || null,
     pincode: userData.pincode || null,
     role: userData.role || 'customer',
+    dob: userData.dob || null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

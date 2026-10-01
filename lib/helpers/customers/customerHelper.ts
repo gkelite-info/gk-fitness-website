@@ -149,7 +149,6 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
       });
 
       if (authError && !authError.message?.toLowerCase().includes('already registered')) {
-        // If signUp failed, we should still try to restore session just in case it wiped it
         if (originalSession) {
           await supabase.auth.setSession({
             access_token: originalSession.access_token,
@@ -192,7 +191,13 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
     if (existingUserRecord) {
       const { error: userUpErr } = await supabase
         .from('users')
-        .update({ role: 'customer', updatedAt: now })
+        .update({ 
+          name: params.fullName.trim(),
+          phone: cleanPhone,
+          dob: formatToPgDate(params.dateOfBirth),
+          role: 'customer', 
+          updatedAt: now 
+        })
         .eq('userId', targetUserId);
       if (userUpErr) throw new Error(`Table 1 (users) update failed: ${userUpErr.message}`);
     } else {
@@ -204,6 +209,7 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
           name: params.fullName.trim(),
           email: cleanEmail,
           phone: cleanPhone,
+          dob: formatToPgDate(params.dateOfBirth),
           role: 'customer',
           status: 'active',
           isEmailVerified: false,
@@ -240,9 +246,10 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
 
     let savedCustomer = null;
     if (existingCustomer) {
+      const { email: _, ...updatePayload } = customerPayload;
       const { data, error: updateErr } = await supabase
         .from('gym_customers')
-        .update(customerPayload)
+        .update(updatePayload)
         .eq('customerId', targetUserId)
         .select();
       if (updateErr) throw new Error(`Table 2 (gym_customers) update failed: ${updateErr.message}`);
@@ -256,7 +263,7 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
       savedCustomer = data ? data[0] : null;
     }
 
-    if (params.membershipPlanId && params.planStartDate && params.planExpiryDate) {
+    if (!existingCustomer && params.membershipPlanId && params.planStartDate && params.planExpiryDate) {
       const planPayload = {
         GymCustomerMembershipPlanId: crypto.randomUUID(),
         customerId: targetUserId,
@@ -270,11 +277,11 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
         createdAt: now,
         updatedAt: now,
       };
-      
+
       const { error: planErr } = await supabase
         .from('gym_customer_membership_plans')
         .insert([planPayload]);
-        
+
       if (planErr) {
         console.error('[customerHelper] Error inserting membership plan:', planErr);
         throw new Error(`Membership plan insertion failed: ${planErr.message}`);
@@ -403,7 +410,7 @@ export async function fetchGymCustomerById(customerId: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('gym_customers')
-    .select('*, user:users(address)')
+    .select('*, user:users!gym_customers_userId_fkey(address, email, profilePhoto)')
     .eq('customerId', customerId)
     .eq('is_deleted', false)
     .maybeSingle();

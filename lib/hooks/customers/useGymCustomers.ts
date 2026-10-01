@@ -43,5 +43,6 @@ export function useGymCustomerById(customerId?: string) {
       return await fetchGymCustomerById(customerId);
     },
     enabled: !!customerId,
+    refetchOnWindowFocus: false,
   });
 }

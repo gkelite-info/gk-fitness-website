@@ -10,7 +10,7 @@ export default function CustomerNavigationCards() {
 
   return (
     <div className="flex flex-col items-start pt-2 gap-4 w-full shrink-0">
-      
+
       <div className="flex flex-row items-center gap-2.5 w-full">
         <FileText size={20} className="text-[#D2F802]" weight="fill" />
         <h3 className="font-sans font-bold text-base leading-6 tracking-wide text-white m-0">
@@ -19,8 +19,8 @@ export default function CustomerNavigationCards() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-        
-        <button 
+
+        <button
           onClick={() => id && router.push(`/owner/users/${id}/personal-details`)}
           className="flex flex-row justify-between items-center p-4 bg-[#10151E] border border-[#1B2433] shadow-md rounded-xl hover:bg-[#151c27] transition-colors group cursor-pointer"
         >
@@ -40,7 +40,7 @@ export default function CustomerNavigationCards() {
           <CaretRight size={16} className="text-[#6B7280] group-hover:text-white transition-colors shrink-0 ml-2" weight="bold" />
         </button>
 
-        <button 
+        <button
           onClick={() => id && router.push(`/owner/users/${id}/membership-payments`)}
           className="flex flex-row justify-between items-center p-4 bg-[#10151E] border border-[#1B2433] shadow-md rounded-xl hover:bg-[#151c27] transition-colors group cursor-pointer"
         >
@@ -60,7 +60,7 @@ export default function CustomerNavigationCards() {
           <CaretRight size={16} className="text-[#6B7280] group-hover:text-white transition-colors shrink-0 ml-2" weight="bold" />
         </button>
 
-        <button 
+        <button
           onClick={() => id && router.push(`/owner/users/${id}/attendance-history`)}
           className="flex flex-row justify-between items-center p-4 bg-[#10151E] border border-[#1B2433] shadow-md rounded-xl hover:bg-[#151c27] transition-colors group cursor-pointer"
         >

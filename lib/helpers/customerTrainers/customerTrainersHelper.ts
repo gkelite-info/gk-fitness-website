@@ -74,7 +74,7 @@ export async function fetchAssignedTrainersByCustomer(customerId: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('customer_trainers')
-    .select('*, trainer:gym_trainers(*, users!gym_trainers_userId_fkey(profilePhoto))')
+    .select('*, trainer:gym_trainers!inner(*, users!gym_trainers_userId_fkey(profilePhoto))')
     .eq('customerId', customerId)
     .eq('is_deleted', false)
     .order('assignedOn', { ascending: false });

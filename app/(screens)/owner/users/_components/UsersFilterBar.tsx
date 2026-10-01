@@ -14,6 +14,8 @@ export interface UsersFilterBarProps {
   planFilter: string;
   onPlanFilterChange: (planId: string) => void;
   plans: any[];
+  sortFilter: string;
+  onSortFilterChange: (sort: string) => void;
 }
 
 export default function UsersFilterBar({
@@ -24,9 +26,12 @@ export default function UsersFilterBar({
   onFilterChange,
   planFilter,
   onPlanFilterChange,
-  plans
+  plans,
+  sortFilter,
+  onSortFilterChange
 }: UsersFilterBarProps) {
   const [isPlanMenuOpen, setIsPlanMenuOpen] = useState(false);
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
   const filters = [
     { name: "All", dot: null },
     { name: "Active", dot: "bg-[#22C55E]" },
@@ -105,12 +110,37 @@ export default function UsersFilterBar({
         </div>
       </div>
       <div className="flex flex-row flex-nowrap items-center justify-between w-full xl:w-auto gap-4 mt-2 xl:mt-0">
-        <button className="flex flex-row items-center justify-center px-4 py-1.5 gap-2 h-8 rounded-full border border-[#262B32] bg-[#1B1F24] text-[#94A3B8] hover:text-white transition-colors cursor-pointer">
-          <span className="font-sans font-medium text-[12px] leading-4">
-            Sort by: <strong className="font-bold text-white ml-0.5">Name (A-Z)</strong>
-          </span>
-          <CaretDown size={14} weight="bold" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setIsSortMenuOpen(!isSortMenuOpen)}
+            className="flex flex-row items-center justify-center px-4 py-1.5 gap-2 h-8 rounded-full border border-[#262B32] bg-[#1B1F24] text-[#94A3B8] hover:text-white transition-colors cursor-pointer"
+          >
+            <span className="font-sans font-medium text-[12px] leading-4">
+              Sort by: <strong className="font-bold text-white ml-0.5">{sortFilter}</strong>
+            </span>
+            <CaretDown size={14} weight="bold" />
+          </button>
+
+          {isSortMenuOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setIsSortMenuOpen(false)} />
+              <div className="absolute top-full right-0 mt-2 w-40 bg-[#1B1F24] border border-[#262B32] rounded-xl shadow-lg overflow-hidden z-50">
+                {["Newest", "Oldest"].map((sortOption) => (
+                  <button
+                    key={sortOption}
+                    onClick={() => {
+                      onSortFilterChange(sortOption);
+                      setIsSortMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2.5 text-[12px] transition-colors ${sortFilter === sortOption ? "text-[#D2F829] bg-[rgba(210,248,41,0.1)] font-semibold" : "text-white hover:bg-[#262B32]"}`}
+                  >
+                    {sortOption}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
         <div className="flex flex-row items-center gap-1.5">
           <button
             onClick={() => onViewModeChange("grid")}

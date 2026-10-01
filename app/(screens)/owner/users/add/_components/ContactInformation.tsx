@@ -3,9 +3,12 @@
 import { Phone } from "@phosphor-icons/react";
 import Dropdown from "../../../../components/reusable/Dropdown";
 import { useFormContext } from "react-hook-form";
+import { useSearchParams } from "next/navigation";
 
 export default function ContactInformation() {
   const { register, watch, setValue, formState: { errors } } = useFormContext();
+  const searchParams = useSearchParams();
+  const isEditMode = !!searchParams.get("editId");
 
   const countryCode = watch("countryCode") || "+91";
 
@@ -63,7 +66,8 @@ export default function ContactInformation() {
               type="email"
               {...register("email")}
               placeholder="Enter email address"
-              className="w-full h-full bg-transparent outline-none font-sans font-normal text-xs leading-[14px] text-white placeholder:text-[#6B7280]"
+              disabled={isEditMode}
+              className={`w-full h-full bg-transparent outline-none font-sans font-normal text-xs leading-[14px] placeholder:text-[#6B7280] ${isEditMode ? 'text-[#9CA3AF] cursor-not-allowed' : 'text-white'}`}
             />
           </div>
           {errors.email && <span className="text-red-500 text-[10px]">{errors.email.message as string}</span>}

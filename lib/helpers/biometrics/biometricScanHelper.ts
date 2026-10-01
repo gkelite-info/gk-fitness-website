@@ -1,5 +1,4 @@
 // @ts-nocheck
-import { supabase } from '@/lib/supabase';
 
 export interface ScanPayload {
   deviceSerialNumber?: string;
@@ -150,6 +149,9 @@ const parseTimeToMinutes = (timeStr: string): number => {
 };
 
 export const processBiometricScan = async (body: ScanPayload) => {
+  const { createClient } = await import('@/app/api/supabase/client');
+  const supabase = createClient();
+  
   try {
     let deviceSerialNumber = body.deviceSerialNumber || body.deviceID || body.serialNo;
     let deviceUserId = body.employeeNo || body.EmployeeNoString || body.deviceUserId;
@@ -511,6 +513,9 @@ export const processBiometricScan = async (body: ScanPayload) => {
 };
 
 export const syncDeviceLogs = async (deviceId: string) => {
+  const { createClient } = await import('@/app/api/supabase/client');
+  const supabase = createClient();
+  
   try {
     const { data: device, error: devErr } = await supabase
       .from("gym_biometric_devices")

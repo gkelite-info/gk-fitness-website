@@ -11,6 +11,9 @@ import { useUser } from "@/app/context/UserContext";
 import { trainerRegistrationSchema, customerRegistrationSchema, TrainerRegistrationData, CustomerRegistrationData } from "@/lib/schemas/userRegistrationSchemas";
 import { useMutateGymTrainer } from "@/lib/hooks/trainers/useMutateGymTrainer";
 import { useMutateGymCustomer } from "@/lib/hooks/customers/useMutateGymCustomer";
+import { useGymTrainerById } from "@/lib/hooks/trainers/useGymTrainers";
+import { useGymCustomerById } from "@/lib/hooks/customers/useGymCustomers";
+import { useGymCustomerMembershipPlans } from "@/lib/hooks/gymCustomerMembershipPlans/useGymCustomerMembershipPlans";
 
 import PersonalInformation from "./_components/PersonalInformation";
 import ProfessionalInformation from "./_components/ProfessionalInformation";
@@ -24,6 +27,8 @@ import MembershipInformation from "./_components/MembershipInformation";
 function AddUserForm() {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type");
+  const editId = searchParams.get("editId");
+  const isEditMode = !!editId;
   const initialTab = typeParam === "trainers" ? "trainers" : "customers";
 
   const [activeTab, setActiveTab] = useState<"customers" | "trainers">(initialTab);
@@ -56,11 +61,75 @@ function AddUserForm() {
     },
   });
 
+  const { data: existingTrainer, isLoading: isLoadingTrainer } = useGymTrainerById(
+    isEditMode && activeTab === "trainers" ? editId : undefined
+  );
+
+  const { data: existingCustomer, isLoading: isLoadingCustomer } = useGymCustomerById(
+    isEditMode && activeTab === "customers" ? editId : undefined
+  );
+
+  const { data: existingPlans } = useGymCustomerMembershipPlans(
+    undefined,
+    isEditMode && activeTab === "customers" ? editId : undefined
+  );
+
+  useEffect(() => {
+    if (isEditMode && activeTab === "trainers" && existingTrainer) {
+      trainerMethods.reset({
+        fullName: existingTrainer.trainer?.fullName || "",
+        dateOfBirth: existingTrainer.trainer?.dateOfBirth ? existingTrainer.trainer.dateOfBirth.split('T')[0] : "",
+        gender: existingTrainer.trainer?.gender || "male",
+        phone: existingTrainer.trainer?.phone || "",
+        alternatePhone: existingTrainer.trainer?.alternatePhone || "",
+        email: existingTrainer.trainer?.email || (existingTrainer.trainer as any)?.user?.email || "",
+        specialization: existingTrainer.trainer?.specialization || "",
+        experienceYears: String(existingTrainer.trainer?.experienceYears || ""),
+        dateOfJoining: existingTrainer.trainer?.dateOfJoining ? existingTrainer.trainer.dateOfJoining.split('T')[0] : "",
+        qualification: existingTrainer.trainer?.qualification || "",
+        bio: existingTrainer.trainer?.bio || "",
+        languagesSpeaks: (existingTrainer.trainer?.languagesSpeaks || ["english"]).map((l: string) => l.toLowerCase()),
+        shiftPreference: existingTrainer.schedules?.[0]?.shiftPreference?.toLowerCase() || "morning",
+        workingDays: existingTrainer.schedules?.[0]?.workingDays || ["MON", "TUE", "WED", "THU", "FRI"],
+        personalTrainingFee: existingTrainer.trainer?.personalTrainingFee ?? "",
+        groupTrainingFee: existingTrainer.trainer?.groupTrainingFee ?? "",
+      });
+    } else if (isEditMode && activeTab === "customers" && existingCustomer) {
+      let recentPlanId = "";
+      let recentPlanStart = "";
+      let recentPlanEnd = "";
+
+      if (existingPlans && existingPlans.length > 0) {
+        const sortedPlans = [...existingPlans].sort((a, b) => new Date(b.startDate || b.createdAt || 0).getTime() - new Date(a.startDate || a.createdAt || 0).getTime());
+        const recentPlan = sortedPlans[0];
+
+        recentPlanId = recentPlan.planId || "";
+        recentPlanStart = recentPlan.startDate ? recentPlan.startDate.split('T')[0] : "";
+        recentPlanEnd = recentPlan.endDate ? recentPlan.endDate.split('T')[0] : "";
+      }
+
+      customerMethods.reset({
+        fullName: existingCustomer.fullName || "",
+        dateOfBirth: existingCustomer.dateOfBirth ? existingCustomer.dateOfBirth.split('T')[0] : "",
+        gender: existingCustomer.gender?.toLowerCase() || "male",
+        phone: existingCustomer.phone || "",
+        email: existingCustomer.email || (existingCustomer as any)?.user?.email || "",
+        emergencyContactName: existingCustomer.emergencyContactName || "",
+        relationship: existingCustomer.relationship?.toLowerCase() || "",
+        emergencyContactNumber: existingCustomer.emergencyContactNumber || "",
+        languagesSpeaks: ((existingCustomer as any)?.languagesSpeaks || ["english"]).map((l: string) => l.toLowerCase()),
+        membershipPlanId: recentPlanId,
+        planStartDate: recentPlanStart,
+        planExpiryDate: recentPlanEnd,
+      });
+    }
+  }, [isEditMode, activeTab, existingTrainer, existingCustomer, existingPlans, trainerMethods, customerMethods]);
+
   const onSubmitTrainer = async (data: TrainerRegistrationData) => {
     if (!userId) return
     try {
-      const result = await createTrainer({ ...data, createdBy: userId });
-      toast.success("Trainer created successfully!");
+      const result = await createTrainer({ ...data, createdBy: userId, gymTrainerId: editId || undefined });
+      toast.success(`Trainer ${isEditMode ? 'updated' : 'created'} successfully!`);
       router.push("/owner/users");
     } catch (error: any) {
       console.error("[AddUserForm] Error creating trainer:", error);
@@ -71,8 +140,8 @@ function AddUserForm() {
   const onSubmitCustomer = async (data: CustomerRegistrationData) => {
     if (!userId) return
     try {
-      const result = await createCustomer({ ...data, createdBy: userId });
-      toast.success("Customer created successfully!");
+      const result = await createCustomer({ ...data, createdBy: userId, customerId: editId || undefined });
+      toast.success(`Customer ${isEditMode ? 'updated' : 'created'} successfully!`);
       router.push("/owner/users");
     } catch (error: any) {
       console.error("[AddUserForm] Error creating customer:", error);
@@ -108,10 +177,10 @@ function AddUserForm() {
 
           <div className="flex flex-col items-start pl-3.5">
             <h1 className="font-sans font-bold text-lg leading-7 tracking-[-0.45px] text-white">
-              Add New {activeTab === "trainers" ? "Trainer" : "Customer"}
+              {isEditMode ? "Edit" : "Add New"} {activeTab === "trainers" ? "Trainer" : "Customer"}
             </h1>
             <p className="font-sans font-normal text-xs leading-4 text-[#9CA3AF]">
-              Fill in the details and create their account
+              {isEditMode ? "Update their details" : "Fill in the details and create their account"}
             </p>
           </div>
         </div>
@@ -221,7 +290,7 @@ function AddUserForm() {
         >
           <div className="absolute inset-0 bg-[rgba(255,255,255,0.002)] shadow-[0_10px_15px_-3px_rgba(212,255,50,0.1),0_4px_6px_-4px_rgba(212,255,50,0.1)] rounded-lg z-0" />
           <span className="relative z-10 font-sans font-bold text-xs leading-4 text-center tracking-[0.6px] uppercase text-black group-hover:scale-[1.02] transition-transform">
-            {isPending ? "Creating..." : `Create ${activeTab === "trainers" ? "Trainer" : "Customer"}`}
+            {isPending ? (isEditMode ? "Updating..." : "Creating...") : `${isEditMode ? "Update" : "Create"} ${activeTab === "trainers" ? "Trainer" : "Customer"}`}
           </span>
         </button>
       </div>

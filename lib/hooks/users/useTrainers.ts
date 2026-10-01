@@ -3,9 +3,9 @@ import { createClient } from '@/app/api/supabase/client';
 
 const PAGE_SIZE = 10;
 
-export function useTrainers(gymId: string | null, filter: string, debouncedSearch: string) {
+export function useTrainers(gymId: string | null, filter: string, debouncedSearch: string, sortFilter: string = "Newest") {
   return useInfiniteQuery({
-    queryKey: ['trainers', gymId, filter, debouncedSearch],
+    queryKey: ['trainers', gymId, filter, debouncedSearch, sortFilter],
     queryFn: async ({ pageParam = 0 }) => {
       if (!gymId) throw new Error('Gym ID is required');
 
@@ -29,7 +29,13 @@ export function useTrainers(gymId: string | null, filter: string, debouncedSearc
         query = query.or(`fullName.ilike.%${q}%,phone.ilike.%${q}%`);
       }
 
-      query = query.order('createdAt', { ascending: false }).range(from, to);
+      if (sortFilter === "Oldest") {
+        query = query.order('createdAt', { ascending: true });
+      } else {
+        query = query.order('createdAt', { ascending: false });
+      }
+
+      query = query.range(from, to);
 
       const { data, count, error } = await query;
       
