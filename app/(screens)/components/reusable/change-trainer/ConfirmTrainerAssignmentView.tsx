@@ -55,7 +55,7 @@ export default function ConfirmTrainerAssignmentView({ customerId, trainerId }: 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full gap-[16px] shrink-0">
           <div className="flex flex-row items-center gap-[16px] w-full sm:w-auto">
             <button
-              onClick={() => router.back()}
+              onClick={() => router.push(`/owner/users/${customerId}/change-trainer`)}
               className="flex justify-center items-center w-[44px] h-[44px] bg-[#141822] border border-[#272E3D] rounded-[12px] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] hover:bg-[#1A1F2B] transition-colors cursor-pointer shrink-0"
             >
               <CaretLeft size={20} className="text-[#E2E8F0]" weight="bold" />
@@ -172,7 +172,7 @@ export default function ConfirmTrainerAssignmentView({ customerId, trainerId }: 
 
           <div className="flex flex-col sm:flex-row justify-end items-center w-full gap-[16px] pt-[24px] border-t border-[#232835] mt-[8px]">
             <button 
-              onClick={() => router.back()}
+              onClick={() => router.push(`/owner/users/${customerId}/change-trainer`)}
               className="flex justify-center items-center px-[24px] py-[12px] bg-transparent border border-[#2C3344] rounded-[12px] w-full sm:w-auto hover:bg-[#1A1F2B] transition-colors cursor-pointer"
             >
               <span className="font-sans font-semibold text-[14px] text-white">Cancel</span>

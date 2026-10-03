@@ -1,16 +1,29 @@
 "use client";
 
 import { TrendUp, Barbell, CalendarBlank } from "@phosphor-icons/react/dist/ssr";
+import { useTrainerSessionsByCustomerTrainerId } from "@/lib/hooks/trainerSessions/useTrainerSessions";
 
-export default function TrainerSessionSummary() {
+interface TrainerSessionSummaryProps {
+  customerTrainerId?: string;
+}
+
+export default function TrainerSessionSummary({ customerTrainerId }: TrainerSessionSummaryProps) {
+  const { data: sessions } = useTrainerSessionsByCustomerTrainerId(customerTrainerId);
+
+  const completedSessions = sessions?.filter((s: any) => s.status === "completed") || [];
+  const totalSessions = completedSessions.length;
+
+  const lastSession = completedSessions.length > 0 ? completedSessions[0] : null;
+  const lastSessionDate = lastSession?.sessionDate
+    ? new Date(lastSession.sessionDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
+    : "-";
+
   const formatCount = (count: number) => {
     if (count >= 1000) {
       return parseFloat((count / 1000).toFixed(count >= 10000 ? 0 : 1)) + "k";
     }
     return count.toString();
   };
-
-  const totalSessions = 24;
 
   return (
     <div className="relative flex flex-col items-start p-[24px_24px_46px] flex-1 w-full min-h-[284px] bg-[#181C25] border border-[#252B38] rounded-[12px] overflow-hidden">
@@ -74,14 +87,14 @@ export default function TrainerSessionSummary() {
                 <div className="flex flex-row items-center px-[8px] py-[2px] gap-[6px] bg-[#202533] border border-[#2C3242] rounded-[6px] w-auto">
                   <TrendUp size={12} className="text-[#CCFF00] shrink-0" />
                   <span className="font-sans font-medium text-[10px] leading-[15px] text-[#D1D5DB]">
-                    Duration: 1h 10m
+                    Duration: -
                   </span>
                 </div>
               </div>
             </div>
             <div className="flex flex-col items-start sm:items-end justify-start sm:justify-end shrink-0 w-full sm:w-auto text-left sm:text-right">
               <span className="font-sans font-bold text-[16px] leading-[24px] tracking-[-0.4px] text-white whitespace-nowrap">
-                15 Jul 2026
+                {lastSessionDate}
               </span>
             </div>
           </div>

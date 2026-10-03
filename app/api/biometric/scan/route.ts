@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     // Safely parse the incoming payload from the biometric device
     let payload = {};
     const contentType = request.headers.get("content-type") || "";
-    
+
     if (contentType.includes("application/json")) {
       try {
         payload = await request.json();
@@ -42,8 +42,8 @@ export async function POST(request: Request) {
     // into the Supabase database.
 
     return NextResponse.json(
-      { 
-        success: true, 
+      {
+        success: true,
         message: "Scan event received successfully",
         deviceId
       },

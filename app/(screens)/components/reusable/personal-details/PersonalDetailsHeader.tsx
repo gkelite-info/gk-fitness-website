@@ -1,7 +1,7 @@
 "use client";
 
 import { CaretLeft, Pen } from "@phosphor-icons/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 interface PersonalDetailsHeaderProps {
   memberCode: string;
@@ -10,12 +10,14 @@ interface PersonalDetailsHeaderProps {
 
 export default function PersonalDetailsHeader({ memberCode, onEdit }: PersonalDetailsHeaderProps) {
   const router = useRouter();
+  const params = useParams();
+  const id = params?.id as string;
 
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full shrink-0">
       <div className="flex flex-row items-center gap-3">
         <button
-          onClick={() => router.back()}
+          onClick={() => id && router.push(`/owner/users/${id}`)}
           className="flex items-center justify-center w-9 h-9 bg-[#11151D] border border-[#242C3A] rounded-xl hover:bg-white/5 transition-colors shrink-0 cursor-pointer"
         >
           <CaretLeft size={20} className="text-[#7E8B9F]" weight="bold" />

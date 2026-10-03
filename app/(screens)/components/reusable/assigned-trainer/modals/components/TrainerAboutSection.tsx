@@ -2,7 +2,15 @@
 
 import { User, IdentificationCard, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
 
-export default function TrainerAboutSection() {
+interface TrainerAboutSectionProps {
+  trainerData?: any;
+}
+
+export default function TrainerAboutSection({ trainerData }: TrainerAboutSectionProps) {
+  const description = trainerData?.bio || "-";
+  const certifications = trainerData?.qualification || "-";
+  const specialization = trainerData?.specialization || "-";
+
   return (
     <div className="flex flex-col justify-between items-start p-[24px] flex-[1.5] w-full min-h-[302px] bg-[#181C25] border border-[#252B38] rounded-[12px]">
       <div className="flex flex-col items-start gap-[11px] w-full">
@@ -15,7 +23,7 @@ export default function TrainerAboutSection() {
           </h4>
         </div>
         <p className="font-sans font-normal text-[14px] leading-[23px] text-[#D1D5DB] m-0 pb-[12px]">
-          Certified strength and conditioning specialist with 6+ years of experience in helping clients achieve their fitness goals through progressive overload, nutrition alignment, and customized biomechanical assessments.
+          {description}
         </p>
       </div>
 
@@ -31,7 +39,7 @@ export default function TrainerAboutSection() {
               CERTIFICATIONS
             </h5>
             <span className="font-sans font-medium text-[14px] leading-[20px] text-white">
-              ACE Certified, ISSA Sports Nutrition
+              {certifications}
             </span>
           </div>
         </div>
@@ -46,7 +54,7 @@ export default function TrainerAboutSection() {
               SPECIALIZATION
             </h5>
             <span className="font-sans font-medium text-[14px] leading-[20px] text-white">
-              Strength Training, Weight Gain, Body Transformation
+              {specialization}
             </span>
           </div>
         </div>

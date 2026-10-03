@@ -21,9 +21,9 @@ export default function AssignedTrainerHeader() {
           <h1 className="font-sans font-bold text-[24px] leading-[32px] tracking-[-0.6px] text-white m-0">
             Trainer Details
           </h1>
-          <span className="font-mono font-medium text-[14px] leading-[20px] text-[#9CA3AF]">
+          {/* <span className="font-mono font-medium text-[14px] leading-[20px] text-[#9CA3AF]">
             Customer ID: <span className="text-[#C8FF00]">MEM-000124</span>
-          </span>
+          </span> */}
         </div>
       </div>
     </div>

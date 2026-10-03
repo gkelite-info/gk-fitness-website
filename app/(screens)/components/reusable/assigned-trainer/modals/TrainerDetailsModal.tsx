@@ -13,9 +13,12 @@ import TrainerSessionSummary from "./components/TrainerSessionSummary";
 interface TrainerDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  trainerData?: any;
+  customer?: any;
+  activeTrainerAssignment?: any;
 }
 
-export default function TrainerDetailsModal({ isOpen, onClose }: TrainerDetailsModalProps) {
+export default function TrainerDetailsModal({ isOpen, onClose, trainerData, customer, activeTrainerAssignment }: TrainerDetailsModalProps) {
   const [mounted, setMounted] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -44,6 +47,9 @@ export default function TrainerDetailsModal({ isOpen, onClose }: TrainerDetailsM
   }, [isOpen]);
 
   if (!mounted) return null;
+
+  const trainerName = trainerData?.fullName || "-";
+  const customerId = customer?.customerId ? customer.customerId.substring(0, 8).toUpperCase() : "-";
 
   const modalContent = (
     <AnimatePresence>
@@ -84,7 +90,7 @@ export default function TrainerDetailsModal({ isOpen, onClose }: TrainerDetailsM
                     </div>
                   </div>
                   <span className="font-mono font-normal text-[12px] sm:text-[14px] leading-[18px] sm:leading-[20px] text-[#9CA3AF]">
-                    Customer ID: <span className="text-[#CCFF00]">MEM-000124</span>
+                    Customer ID: <span className="text-[#CCFF00]">{customerId}</span>
                   </span>
                 </div>
               </div>
@@ -98,11 +104,11 @@ export default function TrainerDetailsModal({ isOpen, onClose }: TrainerDetailsM
 
             <div className="flex flex-col w-full flex-1 overflow-y-auto scrollbar-themed">
               <div className="flex flex-col items-start p-[20px] sm:p-[32px] gap-[24px] w-full shrink-0">
-                <TrainerProfileInfo />
+                <TrainerProfileInfo trainerData={trainerData} activeTrainerAssignment={activeTrainerAssignment} />
 
                 <div className="flex flex-col lg:flex-row items-stretch gap-[24px] w-full shrink-0">
-                  <TrainerAboutSection />
-                  <TrainerSessionSummary />
+                  <TrainerAboutSection trainerData={trainerData} />
+                  <TrainerSessionSummary customerTrainerId={activeTrainerAssignment?.customerTrainerId} />
                 </div>
               </div>
 
@@ -153,7 +159,7 @@ export default function TrainerDetailsModal({ isOpen, onClose }: TrainerDetailsM
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleRemoveTrainer}
         title="Remove Assigned Trainer"
-        message="Are you sure you want to remove Rahul Verma from this member's profile? This action cannot be undone and you will need to manually reassign a trainer if needed."
+        message={`Are you sure you want to remove ${trainerName} from this member's profile? This action cannot be undone and you will need to manually reassign a trainer if needed.`}
         confirmText="Yes, Remove Trainer"
         cancelText="Keep Trainer"
         isConfirming={isConfirming}
