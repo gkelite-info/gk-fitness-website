@@ -2,9 +2,12 @@
 
 import Pagination from "@/app/(screens)/components/reusable/Pagination";
 import { Table, TableHeader, TableBody, TableRow, TableHeadCell, TableCell } from "@/app/(screens)/components/reusable/table";
-import { Eye, ShareNetwork, UserPlus, Pen } from "@phosphor-icons/react";
+import { Eye, ShareNetwork, UserPlus, Pen, Trash } from "@phosphor-icons/react";
 import { useState } from "react";
 import ViewEnquiryModal from "./ViewEnquiryModal";
+import ConfirmationModal from "@/app/(screens)/components/reusable/ConfirmationModal";
+import { useDeleteGymEnquiry } from "@/lib/hooks/gymEnquiries/useGymEnquiries";
+import toast from "react-hot-toast";
 
 const mockData = [
   {
@@ -119,10 +122,33 @@ const mockData = [
   }
 ];
 
-export default function EnquiriesTable() {
+export default function EnquiriesTable({ enquiries = [], isLoading = false }: { enquiries?: any[], isLoading?: boolean }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEnquiry, setSelectedEnquiry] = useState<any>(null);
+  
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [enquiryToDelete, setEnquiryToDelete] = useState<string | null>(null);
+
+  const deleteEnquiryMutation = useDeleteGymEnquiry();
+  
+  const handleDeleteConfirm = async () => {
+    if (!enquiryToDelete) return;
+    try {
+      await deleteEnquiryMutation.mutateAsync(enquiryToDelete);
+      toast.success("Enquiry deleted successfully");
+      setIsDeleteModalOpen(false);
+      setEnquiryToDelete(null);
+    } catch (error) {
+      toast.error("Failed to delete enquiry");
+    }
+  };
+  
+  const itemsPerPage = 10;
+  const totalItems = enquiries.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentEnquiries = enquiries.slice(startIndex, startIndex + itemsPerPage);
 
   const getAddedViaBadge = (addedVia: string) => {
     if (addedVia === "Social Media") {
@@ -159,34 +185,36 @@ export default function EnquiriesTable() {
   };
 
   const getCategoryBadge = (category: string) => {
-    switch (category) {
-      case "Hot":
+    switch (category?.toLowerCase()) {
+      case "hot":
         return <div className="flex justify-center items-center px-4 py-1 w-[48px] bg-[#321317] rounded-full font-sans font-semibold text-[9px] text-[#EF4444] leading-[14px]">Hot</div>;
-      case "Warm":
+      case "warm":
         return <div className="flex justify-center items-center px-4 py-1 w-[48px] bg-[#2E2012] rounded-full font-sans font-semibold text-[9px] text-[#F59E0B] leading-[14px]">Warm</div>;
-      case "Cold":
+      case "cold":
         return <div className="flex justify-center items-center px-4 py-1 w-[48px] bg-[#0C2433] rounded-full font-sans font-semibold text-[9px] text-[#0EA5E9] leading-[14px]">Cold</div>;
       default:
-        return <div className="flex justify-center items-center px-4 py-1 w-[48px] bg-[#1C2631] rounded-full font-sans font-semibold text-[9px] text-[#94A3B8] leading-[14px]">{category}</div>;
+        return <div className="flex justify-center items-center px-4 py-1 w-[48px] bg-[#1C2631] rounded-full font-sans font-semibold text-[9px] text-[#94A3B8] leading-[14px] capitalize">{category}</div>;
     }
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "New":
-        return <div className="flex justify-center items-center px-4 py-1 w-[60px] bg-[#0B2545] rounded-full font-sans font-medium text-[9px] text-[#38BDF8] leading-[14px]">New</div>;
-      case "Follow-up":
-        return <div className="flex justify-center items-center px-2.5 py-1 w-[60px] bg-[#33240F] rounded-full font-sans font-medium text-[9px] text-[#F59E0B] leading-[14px] whitespace-nowrap">Follow-up</div>;
-      case "In Progress":
-        return <div className="flex justify-center items-center px-2.5 py-1 w-[70px] bg-[#2C103D] rounded-full font-sans font-medium text-[9px] text-[#C084FC] leading-[14px] whitespace-nowrap">In Progress</div>;
+    switch (status?.toLowerCase()) {
+      case "new":
+        return <div className="flex justify-center items-center px-4 py-1 w-[60px] bg-[#0B2545] rounded-full font-sans font-medium text-[9px] text-[#38BDF8] leading-[14px] capitalize">New</div>;
+      case "followup":
+        return <div className="flex justify-center items-center px-2.5 py-1 w-[70px] bg-[#33240F] rounded-full font-sans font-medium text-[9px] text-[#F59E0B] leading-[14px] whitespace-nowrap capitalize">Follow-up</div>;
+      case "converted":
+        return <div className="flex justify-center items-center px-2.5 py-1 w-[70px] bg-[#0C2419] rounded-full font-sans font-medium text-[9px] text-[#10B981] leading-[14px] whitespace-nowrap capitalize">Converted</div>;
+      case "notinterested":
+        return <div className="flex justify-center items-center px-2.5 py-1 w-[80px] bg-[#321317] rounded-full font-sans font-medium text-[9px] text-[#EF4444] leading-[14px] whitespace-nowrap capitalize">Not Interested</div>;
       default:
-        return <div className="flex justify-center items-center px-4 py-1 w-[60px] bg-[#1C2631] rounded-full font-sans font-medium text-[9px] text-[#94A3B8] leading-[14px]">{status}</div>;
+        return <div className="flex justify-center items-center px-4 py-1 w-max bg-[#1C2631] rounded-full font-sans font-medium text-[9px] text-[#94A3B8] leading-[14px] capitalize">{status}</div>;
     }
   };
 
   return (
-    <div className="flex flex-col w-full min-w-0 bg-[#10161C] border border-[#1C2631] rounded-[13px] shrink-0 overflow-hidden">
-      <Table className="border-none bg-transparent rounded-none">
+    <div className="flex flex-col w-full min-w-0 bg-[#10161C] border border-[#1C2631] rounded-[13px] shrink-0 overflow-hidden flex-1">
+      <Table className="border-none bg-transparent rounded-none flex-1 flex flex-col mb-2">
         <TableHeader className="bg-transparent border-[#18212B]">
           <TableRow className="hover:bg-transparent border-b border-[#18212B]">
             <TableHeadCell className="text-[9px] text-[#627282] px-3.5 py-5 text-center">#</TableHeadCell>
@@ -202,77 +230,112 @@ export default function EnquiriesTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockData.map((row, idx) => (
-            <TableRow key={row.id} className={`${idx !== 0 ? 'border-t border-[#18212B]' : ''} hover:bg-[rgba(255,255,255,0.02)]`}>
-              <TableCell className="px-3.5 py-3.5 text-center">
-                <span className="font-sans text-[10.6px] text-[#556475]">{row.id}</span>
-              </TableCell>
-              <TableCell className="px-3.5 py-3.5">
-                <span className="font-sans font-semibold text-[10.6px] text-white whitespace-nowrap">{row.name}</span>
-              </TableCell>
-              <TableCell className="px-3.5 py-3.5">
-                <span className="font-sans text-[10.6px] text-[#A8B7C7]">{row.phone}</span>
-              </TableCell>
-              <TableCell className="px-3.5 py-3.5">
-                <span className="font-sans text-[10.6px] text-[#A8B7C7] whitespace-nowrap">{row.interestedIn}</span>
-              </TableCell>
-              <TableCell className="px-3.5 py-3.5">
-                {getAddedViaBadge(row.addedVia)}
-              </TableCell>
-              <TableCell className="px-3.5 py-3.5">
-                {getSourceBadge(row.source)}
-              </TableCell>
-              <TableCell className="px-3.5 py-3.5">
-                <div className="flex justify-center w-full">
-                  {getCategoryBadge(row.enquiryCategory)}
-                </div>
-              </TableCell>
-              <TableCell className="px-3.5 py-3.5 text-center">
-                <span className="font-sans text-[10.6px] text-[#CCD5E0] whitespace-nowrap">{row.followUpDate}</span>
-              </TableCell>
-              <TableCell className="px-3.5 py-3.5">
-                <div className="flex justify-center w-full">
-                  {getStatusBadge(row.status)}
-                </div>
-              </TableCell>
-              <TableCell className="px-3.5 py-3.5">
-                <div className="flex justify-center items-center w-full gap-3">
-                  <Eye 
-                    size={18} 
-                    className="text-[#556475] cursor-pointer hover:text-white transition-colors" 
-                    onClick={() => {
-                      setSelectedEnquiry(row);
-                      setIsModalOpen(true);
-                    }}
-                  />
-                  <Pen 
-                    size={16} 
-                    className="text-[#556475] cursor-pointer hover:text-white transition-colors" 
-                    onClick={() => {
-                      window.location.href = "/owner/enquiries/add?edit=true";
-                    }}
-                  />
-                </div>
-              </TableCell>
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={10} className="h-[300px] text-center text-[#556475]">Loading enquiries...</TableCell>
             </TableRow>
-          ))}
+          ) : currentEnquiries.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={10} className="h-[300px] text-center text-[#556475]">No enquiries found.</TableCell>
+            </TableRow>
+          ) : (
+            currentEnquiries.map((row, idx) => (
+              <TableRow key={row.gymEnquiryId} className={`${idx !== 0 ? 'border-t border-[#18212B]' : ''} hover:bg-[rgba(255,255,255,0.02)]`}>
+                <TableCell className="px-3.5 py-3.5 text-center">
+                  <span className="font-sans text-[10.6px] text-[#556475]">{startIndex + idx + 1}</span>
+                </TableCell>
+                <TableCell className="px-3.5 py-3.5">
+                  <span className="font-sans font-semibold text-[10.6px] text-white whitespace-nowrap">{row.fullName}</span>
+                </TableCell>
+                <TableCell className="px-3.5 py-3.5">
+                  <span className="font-sans text-[10.6px] text-[#A8B7C7]">{row.mobile}</span>
+                </TableCell>
+                <TableCell className="px-3.5 py-3.5">
+                  <span className="font-sans text-[10.6px] text-[#A8B7C7] whitespace-nowrap capitalize">{row.interestedIn}</span>
+                </TableCell>
+                <TableCell className="px-3.5 py-3.5">
+                  {getAddedViaBadge(row.addedThrough === 'socialmedia' ? 'Social Media' : 'Owner Added')}
+                </TableCell>
+                <TableCell className="px-3.5 py-3.5">
+                  {getSourceBadge(row.enquirySource?.charAt(0).toUpperCase() + row.enquirySource?.slice(1))}
+                </TableCell>
+                <TableCell className="px-3.5 py-3.5">
+                  <div className="flex justify-center w-full">
+                    {getCategoryBadge(row.enquiryCategory)}
+                  </div>
+                </TableCell>
+                <TableCell className="px-3.5 py-3.5 text-center">
+                  <span className="font-sans text-[10.6px] text-[#CCD5E0] whitespace-nowrap">
+                    {row.followUpDate ? new Date(row.followUpDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                  </span>
+                </TableCell>
+                <TableCell className="px-3.5 py-3.5">
+                  <div className="flex justify-center w-full">
+                    {getStatusBadge(row.status)}
+                  </div>
+                </TableCell>
+                <TableCell className="px-3.5 py-3.5">
+                  <div className="flex justify-center items-center w-full gap-3">
+                    <Eye 
+                      size={18} 
+                      className="text-[#556475] cursor-pointer hover:text-white transition-colors" 
+                      onClick={() => {
+                        setSelectedEnquiry(row);
+                        setIsModalOpen(true);
+                      }}
+                    />
+                    <Pen 
+                      size={16} 
+                      className="text-[#556475] cursor-pointer hover:text-white transition-colors" 
+                      onClick={() => {
+                        window.location.href = `/owner/enquiries/add?edit=true&id=${row.gymEnquiryId}`;
+                      }}
+                    />
+                    <Trash 
+                      size={18} 
+                      className="text-[#556475] cursor-pointer hover:text-red-500 transition-colors" 
+                      onClick={() => {
+                        setEnquiryToDelete(row.gymEnquiryId);
+                        setIsDeleteModalOpen(true);
+                      }}
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+          {currentEnquiries.length > 0 && (
+            <TableRow className="border-none hover:bg-transparent pointer-events-none h-full" style={{ height: "100%" }}>
+              <TableCell colSpan={10}></TableCell>
+            </TableRow>
+          )}
         </TableBody>
       </Table>
-      
-      <div className="px-6 w-full">
+      <div className="flex flex-col px-6 py-4 w-full gap-4 border-t border-[#18212B]">
         <Pagination
           currentPage={currentPage}
-          totalPages={5}
-          totalItems={48}
-          itemsPerPage={10}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
           onPageChange={setCurrentPage}
         />
       </div>
-
+      
       <ViewEnquiryModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         enquiry={selectedEnquiry} 
+      />
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Enquiry"
+        message="Are you sure you want to delete this enquiry? This action cannot be undone."
+        confirmText={deleteEnquiryMutation.isPending ? "Deleting..." : "Delete"}
+        cancelText="Cancel"
+        isDestructive={true}
       />
     </div>
   );

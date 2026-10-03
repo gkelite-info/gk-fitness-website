@@ -95,7 +95,7 @@ export default function PaymentDetailsView({ userId, paymentId }: PaymentDetails
 
   return (
     <div className="flex flex-col items-start px-4 sm:px-6 py-8 gap-6 w-full max-w-[1024px] mx-auto overflow-y-auto scrollbar-themed h-full bg-[#111319]">
-      <PaymentDetailsHeader />
+      <PaymentDetailsHeader data={data} />
       <div id="payment-invoice-content" className="flex flex-col gap-6 w-full relative">
         <InvoiceTemplate data={data} />
       </div>

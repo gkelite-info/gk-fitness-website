@@ -1,23 +1,24 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { User, Phone, EnvelopeSimple, GenderIntersex, ArrowsLeftRight, ClipboardText, TrendUp, ShareNetwork, Clock, ChatCenteredText, Info } from "@phosphor-icons/react";
+import { User, Phone, EnvelopeSimple, GenderIntersex, ArrowsLeftRight, ClipboardText, TrendUp, ShareNetwork, Clock, Info } from "@phosphor-icons/react";
+import { useEnquiryForm } from "./EnquiryContext";
 
 export default function EnquirySidebar() {
   const router = useRouter();
+  const { formData } = useEnquiryForm();
 
   const previewItems = [
-    { label: "Name", icon: <User size={14} className="text-[#94A3B8]" />, value: "—", valueColor: "text-[#CBD5E1]" },
-    { label: "Mobile", icon: <Phone size={14} className="text-[#94A3B8]" />, value: "—", valueColor: "text-[#CBD5E1]" },
-    { label: "Email", icon: <EnvelopeSimple size={14} className="text-[#94A3B8]" />, value: "—", valueColor: "text-[#CBD5E1]" },
-    { label: "Gender", icon: <GenderIntersex size={14} className="text-[#94A3B8]" />, value: "—", valueColor: "text-[#CBD5E1]" },
-    { label: "Interested In", icon: <ArrowsLeftRight size={14} className="text-[#94A3B8]" />, value: "Membership", valueColor: "text-[#34D399]" },
-    { label: "Preferred Plan", icon: <ClipboardText size={14} className="text-[#94A3B8]" />, value: "—", valueColor: "text-[#CBD5E1]" },
-    { label: "Added Via", icon: <TrendUp size={14} className="text-[#94A3B8]" />, value: "Social Media", valueColor: "text-[#CBD5E1]" },
-    { label: "Source", icon: <ShareNetwork size={14} className="text-[#94A3B8]" />, value: "Google", valueColor: "text-[#CBD5E1]" },
-    { label: "Category", icon: <Info size={14} className="text-[#94A3B8]" />, value: "—", valueColor: "text-[#CBD5E1]" },
-    { label: "Follow-up Date", icon: <Clock size={14} className="text-[#94A3B8]" />, value: "—", valueColor: "text-[#CBD5E1]" },
-    { label: "Notes", icon: <ChatCenteredText size={14} className="text-[#94A3B8]" />, value: "—", valueColor: "text-[#CBD5E1]" },
+    { label: "Name", icon: <User size={14} className="text-[#94A3B8]" />, value: formData.fullName || "—", valueColor: formData.fullName ? "text-white" : "text-[#CBD5E1]" },
+    { label: "Mobile", icon: <Phone size={14} className="text-[#94A3B8]" />, value: formData.mobile || "—", valueColor: formData.mobile ? "text-white" : "text-[#CBD5E1]" },
+    { label: "Email", icon: <EnvelopeSimple size={14} className="text-[#94A3B8]" />, value: formData.email || "—", valueColor: formData.email ? "text-white" : "text-[#CBD5E1]" },
+    { label: "Gender", icon: <GenderIntersex size={14} className="text-[#94A3B8]" />, value: formData.gender ? formData.gender.charAt(0).toUpperCase() + formData.gender.slice(1) : "—", valueColor: formData.gender ? "text-white" : "text-[#CBD5E1]" },
+    { label: "Interested In", icon: <ArrowsLeftRight size={14} className="text-[#94A3B8]" />, value: formData.interestedIn ? formData.interestedIn.charAt(0).toUpperCase() + formData.interestedIn.slice(1) : "Membership", valueColor: "text-[#34D399]" },
+    { label: "Preferred Plan", icon: <ClipboardText size={14} className="text-[#94A3B8]" />, value: formData.planName || "—", valueColor: formData.planName ? "text-[#38BDF8]" : "text-[#CBD5E1]" },
+    { label: "Added Via", icon: <TrendUp size={14} className="text-[#94A3B8]" />, value: formData.addedThrough ? formData.addedThrough.charAt(0).toUpperCase() + formData.addedThrough.slice(1) : "Owner", valueColor: formData.addedThrough ? "text-white" : "text-[#CBD5E1]" },
+    { label: "Source", icon: <ShareNetwork size={14} className="text-[#94A3B8]" />, value: formData.enquirySource ? formData.enquirySource.charAt(0).toUpperCase() + formData.enquirySource.slice(1) : "Owner", valueColor: formData.enquirySource ? "text-white" : "text-[#CBD5E1]" },
+    { label: "Category", icon: <Info size={14} className="text-[#94A3B8]" />, value: formData.enquiryCategory ? formData.enquiryCategory.charAt(0).toUpperCase() + formData.enquiryCategory.slice(1) : "Cold", valueColor: formData.enquiryCategory === 'hot' ? "text-[#EF4444]" : formData.enquiryCategory === 'warm' ? "text-[#F59E0B]" : "text-[#3B82F6]" },
+    { label: "Follow-up Date", icon: <Clock size={14} className="text-[#94A3B8]" />, value: formData.followUpDate || "—", valueColor: formData.followUpDate ? "text-white" : "text-[#CBD5E1]" },
   ];
 
   return (

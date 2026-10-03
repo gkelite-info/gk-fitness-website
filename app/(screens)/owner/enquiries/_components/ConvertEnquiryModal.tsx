@@ -1,18 +1,94 @@
 import Avatar from "@/app/(screens)/components/reusable/Avatar";
 import { X, UserPlus, Phone, InstagramLogo, ShareNetwork, User, Barbell, CheckCircle } from "@phosphor-icons/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useUpdateGymEnquiryStatus } from "@/lib/hooks/gymEnquiries/useGymEnquiries";
+import { useSaveGymEnquiryFollowup } from "@/lib/hooks/gymEnquiries/useGymEnquiryFollowups";
+import { useUser } from "@/app/context/UserContext";
+import toast from "react-hot-toast";
 
 interface ConvertEnquiryModalProps {
   onClose: () => void;
+  onConvertSuccess?: () => void;
+  enquiry: any;
 }
 
-export default function ConvertEnquiryModal({ onClose }: ConvertEnquiryModalProps) {
+export default function ConvertEnquiryModal({ onClose, onConvertSuccess, enquiry }: ConvertEnquiryModalProps) {
+  const [isConverting, setIsConverting] = useState(false);
+  const updateStatusMutation = useUpdateGymEnquiryStatus();
+  const saveFollowupMutation = useSaveGymEnquiryFollowup();
+  const { user } = useUser();
+
+  const handleConvertConfirm = async () => {
+    if (!enquiry) return;
+    setIsConverting(true);
+    try {
+      await updateStatusMutation.mutateAsync({
+        gymEnquiryId: enquiry.gymEnquiryId,
+        status: "converted",
+        category: enquiry.enquiryCategory
+      });
+      await saveFollowupMutation.mutateAsync({
+        gymEnquiryId: enquiry.gymEnquiryId,
+        gymId: enquiry.gymId,
+        actionType: "converted",
+        followUpnotes: "Converted to Member",
+        createdBy: user?.id || null,
+      });
+      toast.success("Member converted successfully");
+      onClose();
+      if (onConvertSuccess) {
+        onConvertSuccess();
+      }
+    } catch (error) {
+      toast.error("Failed to convert member");
+      setIsConverting(false);
+    }
+  };
+
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "auto";
     };
   }, []);
+
+  const formatSource = (source?: string) => {
+    if (!source) return "Unknown";
+    return source.charAt(0).toUpperCase() + source.slice(1);
+  };
+
+  const formatCategory = (category?: string) => {
+    if (!category) return "Unknown";
+    return category.charAt(0).toUpperCase() + category.slice(1);
+  };
+
+  const formatInterestedIn = (interest?: string) => {
+    if (!interest) return "Unknown";
+    switch (interest) {
+      case 'membership': return 'Gym Membership';
+      case 'personaltraining': return 'Personal Training';
+      case 'groupclass': return 'Group Class';
+      default: return interest.charAt(0).toUpperCase() + interest.slice(1);
+    }
+  };
+
+  const getSourceIcon = (source?: string) => {
+    switch (source?.toLowerCase()) {
+      case 'instagram': return <InstagramLogo size={12} className="text-[#E1306C]" />;
+      case 'facebook': return <ShareNetwork size={12} className="text-[#2563EB]" />;
+      case 'google': return <ShareNetwork size={12} className="text-[#38BDF8]" />;
+      default: return <ShareNetwork size={12} className="text-[#34D399]" />;
+    }
+  };
+
+  const getSourceStyle = (source?: string) => {
+    switch (source?.toLowerCase()) {
+      case 'instagram': return "bg-fuchsia-900/30 border-fuchsia-600/30 text-[#E1306C]";
+      case 'facebook': return "bg-blue-900/30 border-blue-600/30 text-[#2563EB]";
+      case 'google': return "bg-sky-900/30 border-sky-600/30 text-[#38BDF8]";
+      default: return "bg-emerald-900/30 border-emerald-500/30 text-[#34D399]";
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm">
@@ -33,7 +109,7 @@ export default function ConvertEnquiryModal({ onClose }: ConvertEnquiryModalProp
           background-color: #CCFF00 !important;
         }
       `}</style>
-      <div 
+      <div
         className="flex flex-col bg-[#10141A] border border-[#232B35] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] w-full max-w-[530px] max-h-[90vh] sm:max-h-[85vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -44,7 +120,7 @@ export default function ConvertEnquiryModal({ onClose }: ConvertEnquiryModalProp
             </div>
             <h2 className="font-sans font-semibold text-[22px] leading-7 text-white tracking-tight">Convert Enquiry to Member</h2>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#94A3B8]/30 hover:bg-white/5 transition-colors cursor-pointer shrink-0"
           >
@@ -54,30 +130,32 @@ export default function ConvertEnquiryModal({ onClose }: ConvertEnquiryModalProp
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 custom-scrollbar">
           <div className="flex flex-col p-4 bg-[#161C24] border border-[#232B35] rounded-xl gap-4">
-            
+
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
               <div className="flex items-center justify-center w-14 h-14 rounded-full bg-[#0E171B] border-2 border-[#10B981] shadow-[0_0_10px_rgba(212,255,0,0.25)] shrink-0 p-0.5">
-                <Avatar className="w-12 h-12" gender="male" />
+                <Avatar className="w-12 h-12" gender={enquiry?.gender || "male"} />
               </div>
-              
+
               <div className="flex flex-col items-center sm:items-start gap-1.5 w-full min-w-0">
-                <h3 className="font-sans font-semibold text-base text-white text-center sm:text-left truncate max-w-full">Rahul Sharma</h3>
-                
+                <h3 className="font-sans font-semibold text-base text-white text-center sm:text-left truncate max-w-full">{enquiry?.fullName || 'Unknown User'}</h3>
+
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
                   <div className="flex items-center gap-1.5">
                     <Phone size={14} className="text-[#94A3B8]" />
-                    <span className="font-sans text-xs text-[#CBD5E1]">9876543210</span>
+                    <span className="font-sans text-xs text-[#CBD5E1]">{enquiry?.mobile || 'No mobile'}</span>
                   </div>
-                  
-                  <div className="flex items-center gap-1 px-2.5 py-0.5 bg-fuchsia-900/30 border border-fuchsia-600/30 rounded-full">
-                    <InstagramLogo size={12} className="text-[#E1306C]" />
-                    <span className="font-sans font-medium text-[11px] text-[#E1306C]">Instagram</span>
+
+                  <div className={`flex items-center gap-1 px-2.5 py-0.5 border rounded-full ${getSourceStyle(enquiry?.enquirySource)}`}>
+                    {getSourceIcon(enquiry?.enquirySource)}
+                    <span className="font-sans font-medium text-[11px]">{formatSource(enquiry?.enquirySource)}</span>
                   </div>
-                  
-                  <div className="flex items-center gap-1 px-2.5 py-0.5 bg-emerald-900/30 border border-emerald-500/30 rounded-full">
-                    <ShareNetwork size={12} className="text-[#34D399]" />
-                    <span className="font-sans font-medium text-[11px] text-[#34D399]">Social Media</span>
-                  </div>
+
+                  {enquiry?.addedThrough && (
+                    <div className="flex items-center gap-1 px-2.5 py-0.5 bg-emerald-900/30 border border-emerald-500/30 rounded-full">
+                      <ShareNetwork size={12} className="text-[#34D399]" />
+                      <span className="font-sans font-medium text-[11px] text-[#34D399]">{formatSource(enquiry?.addedThrough)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -88,12 +166,12 @@ export default function ConvertEnquiryModal({ onClose }: ConvertEnquiryModalProp
                   <span className="font-sans text-xs text-[#94A3B8] whitespace-nowrap">Current Category</span>
                   <div className="flex items-center gap-1.5 px-3 py-1 bg-[#3D2A14] border border-[#B4530B]/50 rounded-full">
                     <User size={12} weight="fill" className="text-[#F59E0B]" />
-                    <span className="font-sans font-medium text-[11px] text-[#F59E0B]">Warm</span>
+                    <span className="font-sans font-medium text-[11px] text-[#F59E0B]">{formatCategory(enquiry?.enquiryCategory)}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-sans text-xs text-[#94A3B8] whitespace-nowrap">Interested In</span>
-                  <span className="font-sans font-medium text-xs text-white whitespace-nowrap">Gym Membership</span>
+                  <span className="font-sans font-medium text-xs text-white whitespace-nowrap">{formatInterestedIn(enquiry?.interestedIn)}</span>
                 </div>
               </div>
             </div>
@@ -105,7 +183,7 @@ export default function ConvertEnquiryModal({ onClose }: ConvertEnquiryModalProp
             </div>
             <div className="flex flex-col min-w-0">
               <span className="font-sans font-medium text-xs text-[#94A3B8]">Selected Plan</span>
-              <span className="font-sans font-semibold text-base text-white truncate">Gold Membership</span>
+              <span className="font-sans font-semibold text-base text-white truncate">{enquiry?.plan?.planName || 'None'}</span>
             </div>
           </div>
 
@@ -131,19 +209,22 @@ export default function ConvertEnquiryModal({ onClose }: ConvertEnquiryModalProp
             </ul>
           </div>
         </div>
-          
+
         <div className="flex flex-col-reverse sm:flex-row items-center justify-between px-6 py-4 border-t border-[#232B35] gap-3 shrink-0 bg-[#10141A]">
-          <button 
+          <button
             onClick={onClose}
             className="flex items-center justify-center py-2.5 sm:py-2.5 px-4 bg-[#161C24] border border-[#2B3542] rounded-xl hover:bg-[#1E2530] transition-colors w-full sm:w-auto min-w-[150px]"
           >
-            <span className="font-sans font-medium text-sm text-[#CBD5E1] whitespace-nowrap">Cancel</span>
+            <span className="font-sans font-medium text-sm text-[#CBD5E1] whitespace-nowrap cursor-pointer">Cancel</span>
           </button>
-          <button 
-            onClick={onClose}
-            className="flex items-center justify-center py-2.5 sm:py-2.5 px-5 bg-[#D4FF00] shadow-[0_10px_15px_-3px_rgba(212,255,0,0.15),0_4px_6px_-4px_rgba(212,255,0,0.15)] rounded-xl hover:brightness-105 transition-all w-full sm:flex-1"
+          <button
+            onClick={handleConvertConfirm}
+            disabled={isConverting}
+            className="flex items-center justify-center py-2.5 sm:py-2.5 px-5 bg-[#D4FF00] shadow-[0_10px_15px_-3px_rgba(212,255,0,0.15),0_4px_6px_-4px_rgba(212,255,0,0.15)] rounded-xl hover:brightness-105 transition-all w-full sm:flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span className="font-sans font-bold text-sm text-black whitespace-nowrap">Confirm Conversion</span>
+            <span className="font-sans font-bold text-sm text-black whitespace-nowrap cursor-pointer">
+              {isConverting ? "Converting..." : "Confirm Conversion"}
+            </span>
           </button>
         </div>
       </div>

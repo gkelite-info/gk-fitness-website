@@ -1,7 +1,9 @@
 import { getCategoryBadge, getStatusBadge, getAddedViaBadge, getSourceBadge } from "./EnquiryBadges";
 import { ChartBar } from "@phosphor-icons/react";
 
-export default function EnquiryStatusSource() {
+export default function EnquiryStatusSource({ enquiry }: { enquiry: any }) {
+  if (!enquiry) return null;
+
   return (
     <div className="flex flex-col p-5 bg-[#141B24] border border-[#202938] rounded-2xl gap-4">
       <div className="flex items-center gap-2 pb-3 border-b border-[#1E2634]">
@@ -14,19 +16,19 @@ export default function EnquiryStatusSource() {
       <div className="flex flex-col">
         <div className="flex items-center justify-between py-2 border-b border-[#1C2430]">
           <span className="font-sans font-medium text-xs text-[#9CA3AF]">Current Category</span>
-          {getCategoryBadge("Warm")}
+          {getCategoryBadge(enquiry.enquiryCategory)}
         </div>
         <div className="flex items-center justify-between py-2 border-b border-[#1C2430]">
           <span className="font-sans font-medium text-xs text-[#9CA3AF]">Current Status</span>
-          {getStatusBadge("Follow-up")}
+          {getStatusBadge(enquiry.status)}
         </div>
         <div className="flex items-center justify-between py-2 border-b border-[#1C2430]">
           <span className="font-sans font-medium text-xs text-[#9CA3AF]">Added Via</span>
-          {getAddedViaBadge("Social Media")}
+          {getAddedViaBadge(enquiry.addedThrough)}
         </div>
         <div className="flex items-center justify-between py-2">
           <span className="font-sans font-medium text-xs text-[#9CA3AF]">Source</span>
-          {getSourceBadge("Instagram")}
+          {getSourceBadge(enquiry.enquirySource)}
         </div>
       </div>
     </div>
