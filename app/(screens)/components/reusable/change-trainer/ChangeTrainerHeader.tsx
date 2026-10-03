@@ -1,7 +1,7 @@
 "use client";
 
 import { CaretLeft } from "@phosphor-icons/react/dist/ssr";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 interface ChangeTrainerHeaderProps {
   customerName: string;
@@ -16,7 +16,7 @@ export default function ChangeTrainerHeader({ customerName, customerId, onBack }
     if (onBack) {
       onBack();
     } else {
-      router.back();
+      router.push(`/owner/users/${customerId}/assigned-trainer`);
     }
   };
 

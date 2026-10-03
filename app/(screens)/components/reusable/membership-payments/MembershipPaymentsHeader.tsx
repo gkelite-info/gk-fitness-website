@@ -1,7 +1,7 @@
 "use client";
 
 import { CaretLeft, Pen } from "@phosphor-icons/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 interface MembershipPaymentsHeaderProps {
   memberCode: string;
@@ -10,6 +10,8 @@ interface MembershipPaymentsHeaderProps {
 
 export default function MembershipPaymentsHeader({ memberCode, onEditPlan }: MembershipPaymentsHeaderProps) {
   const router = useRouter();
+  const params = useParams();
+  const id = params?.id as string;
 
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-4 w-full shrink-0">
@@ -19,7 +21,7 @@ export default function MembershipPaymentsHeader({ memberCode, onEditPlan }: Mem
 
           <div className="flex flex-row items-center gap-3">
             <button
-              onClick={() => router.back()}
+              onClick={() => id && router.push(`/owner/users/${id}`)}
               className="flex items-center justify-center w-10 h-10 bg-[#1D2025] shadow-sm rounded-lg hover:bg-white/5 transition-colors shrink-0 cursor-pointer"
             >
               <CaretLeft size={20} className="text-white" weight="bold" />

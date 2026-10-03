@@ -1,15 +1,17 @@
 "use client";
 
 import { CaretLeft } from "@phosphor-icons/react/dist/ssr";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 export default function AttendanceHistoryHeader() {
   const router = useRouter();
+  const params = useParams();
+  const id = params?.id as string;
 
   return (
     <div className="flex flex-row items-center w-full pb-2 gap-4">
       <button
-        onClick={() => router.back()}
+        onClick={() => id && router.push(`/owner/users/${id}`)}
         className="flex items-center justify-center w-10 h-10 bg-[#14171D] border border-[#232730] rounded-xl hover:bg-white/5 transition-colors shrink-0 cursor-pointer"
       >
         <CaretLeft size={20} className="text-[#CBD5E1]" />

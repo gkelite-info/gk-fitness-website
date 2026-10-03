@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-export type PaymentMethod = "GPay" | "PhonePe" | "Paytm";
+export type PaymentMethod = "GPay" | "PhonePe" | "Paytm" | "UPI" | "Card" | "Cash" | string;
 
 interface PaymentMethodBadgeProps {
   method: PaymentMethod;
@@ -43,6 +43,12 @@ export default function PaymentMethodBadge({ method }: PaymentMethodBadgeProps) 
     );
   }
 
-  return null;
+  return (
+    <div className="box-border flex flex-row items-center px-2 py-0.5 h-[26px] w-fit bg-[#1E2330] border border-[#2B3345] rounded-[4px]">
+      <span className="font-['Plus_Jakarta_Sans'] font-[500] text-[11px] leading-[20px] text-white capitalize">
+        {method}
+      </span>
+    </div>
+  );
 }
 

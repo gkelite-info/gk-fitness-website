@@ -78,14 +78,29 @@ export default function UserProfileClient({
 
     let duration = "0 Months";
     let remainingDays = 0;
+    let actualPlanName = initialPlan || "No Plan";
+    let actualStartDate = initialJoinedDate || "-";
+    let actualExpiryDate = initialValidTill || "-";
 
     if (plansData && plansData.length > 0) {
-      const activePlan = plansData.find(p => !p.is_deleted && p.is_Active) || plansData.find(p => !p.is_deleted) || plansData[0];
+      const activePlan = plansData.find((p: any) => !p.is_deleted && p.is_Active) || plansData.find((p: any) => !p.is_deleted) || plansData[0];
+
+      if (activePlan.plan?.planName) {
+        actualPlanName = activePlan.plan.planName;
+      }
 
       const start = new Date(activePlan.startDate || activePlan.createdAt);
+      if (!initialJoinedDate || initialJoinedDate === "-") {
+        actualStartDate = start.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      }
+      
       const end = activePlan.endDate ? new Date(activePlan.endDate) : null;
 
       if (end) {
+        if (!initialValidTill || initialValidTill === "-") {
+          actualExpiryDate = end.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        
         const timeDiff = end.getTime() - start.getTime();
         const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
@@ -114,9 +129,9 @@ export default function UserProfileClient({
       email: email,
       avatarUrl: avatarUrl,
       membership: {
-        planName: initialPlan || "No Plan",
-        startDate: initialJoinedDate || "-",
-        expiryDate: initialValidTill || "-",
+        planName: actualPlanName,
+        startDate: actualStartDate,
+        expiryDate: actualExpiryDate,
         duration: duration,
         status: initialStatus as any,
         remainingDays: remainingDays,
