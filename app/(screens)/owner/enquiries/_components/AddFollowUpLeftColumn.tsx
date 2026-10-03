@@ -8,10 +8,28 @@ import {
   Notepad, 
   CalendarBlank 
 } from "@phosphor-icons/react";
-import { useState } from "react";
 
-export default function AddFollowUpLeftColumn() {
-  const [outcome, setOutcome] = useState("Interested");
+interface AddFollowUpLeftColumnProps {
+  outcome: string;
+  setOutcome: (val: string) => void;
+  notes: string;
+  setNotes: (val: string) => void;
+  nextDate: string;
+  setNextDate: (val: string) => void;
+  nextTime: string;
+  setNextTime: (val: string) => void;
+}
+
+export default function AddFollowUpLeftColumn({
+  outcome,
+  setOutcome,
+  notes,
+  setNotes,
+  nextDate,
+  setNextDate,
+  nextTime,
+  setNextTime
+}: AddFollowUpLeftColumnProps) {
 
   return (
     <div className="flex flex-col gap-5 w-full h-full">
@@ -28,9 +46,9 @@ export default function AddFollowUpLeftColumn() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           <button 
-            onClick={() => setOutcome("Interested")}
+            onClick={() => setOutcome("interested")}
             className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border transition-colors ${
-              outcome === "Interested" 
+              outcome === "interested" 
                 ? "bg-[#CCFF00] border-[#CCFF00] text-black shadow-sm" 
                 : "bg-[#0D131A] border-[#212D3B] text-[#CBD5E1] hover:border-[#94A3B8]/50"
             }`}
@@ -40,9 +58,9 @@ export default function AddFollowUpLeftColumn() {
           </button>
           
           <button 
-            onClick={() => setOutcome("Call Later")}
+            onClick={() => setOutcome("calllater")}
             className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border transition-colors ${
-              outcome === "Call Later" 
+              outcome === "calllater" 
                 ? "bg-[#CCFF00] border-[#CCFF00] text-black shadow-sm" 
                 : "bg-[#0D131A] border-[#212D3B] text-[#CBD5E1] hover:border-[#94A3B8]/50"
             }`}
@@ -52,9 +70,9 @@ export default function AddFollowUpLeftColumn() {
           </button>
           
           <button 
-            onClick={() => setOutcome("Not Interested")}
+            onClick={() => setOutcome("notinterested")}
             className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border transition-colors ${
-              outcome === "Not Interested" 
+              outcome === "notinterested" 
                 ? "bg-[#CCFF00] border-[#CCFF00] text-black shadow-sm" 
                 : "bg-[#0D131A] border-[#212D3B] text-[#CBD5E1] hover:border-[#94A3B8]/50"
             }`}
@@ -64,9 +82,9 @@ export default function AddFollowUpLeftColumn() {
           </button>
 
           <button 
-            onClick={() => setOutcome("No Response")}
+            onClick={() => setOutcome("noresponse")}
             className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border transition-colors ${
-              outcome === "No Response" 
+              outcome === "noresponse" 
                 ? "bg-[#CCFF00] border-[#CCFF00] text-black shadow-sm" 
                 : "bg-[#0D131A] border-[#212D3B] text-[#CBD5E1] hover:border-[#94A3B8]/50"
             }`}
@@ -76,9 +94,9 @@ export default function AddFollowUpLeftColumn() {
           </button>
 
           <button 
-            onClick={() => setOutcome("Visited Gym")}
+            onClick={() => setOutcome("visitedgym")}
             className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border transition-colors ${
-              outcome === "Visited Gym" 
+              outcome === "visitedgym" 
                 ? "bg-[#CCFF00] border-[#CCFF00] text-black shadow-sm" 
                 : "bg-[#0D131A] border-[#212D3B] text-[#CBD5E1] hover:border-[#94A3B8]/50"
             }`}
@@ -88,9 +106,9 @@ export default function AddFollowUpLeftColumn() {
           </button>
 
           <button 
-            onClick={() => setOutcome("Converted")}
+            onClick={() => setOutcome("converted")}
             className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border transition-colors ${
-              outcome === "Converted" 
+              outcome === "converted" 
                 ? "bg-[#CCFF00] border-[#CCFF00] text-black shadow-sm" 
                 : "bg-[#0D131A] border-[#212D3B] text-[#CBD5E1] hover:border-[#94A3B8]/50"
             }`}
@@ -114,10 +132,13 @@ export default function AddFollowUpLeftColumn() {
         
         <div className="relative w-full">
           <textarea 
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
             placeholder="Add notes about the conversation, customer interest, objections, or next steps..."
-            className="w-full h-[92px] bg-[#0D131A] border border-[#212D3B] rounded-lg p-3 pt-3 pb-8 font-sans text-xs text-[#E2E8F0] placeholder:text-[#64748B] resize-none outline-none focus:border-[#38BDF8] transition-colors"
+            className="w-full h-[92px] bg-[#0D131A] border border-[#212D3B] rounded-lg p-3 pt-3 pb-8 font-sans text-xs text-[#E2E8F0] placeholder:text-[#64748B] resize-none outline-none focus:border-[#38BDF8] transition-colors custom-scrollbar"
+            maxLength={1000}
           />
-          <span className="absolute bottom-2 right-3 font-mono text-[10px] text-[#64748B]">0/1000</span>
+          <span className="absolute bottom-2 right-3 font-mono text-[10px] text-[#64748B]">{notes.length}/1000</span>
         </div>
       </div>
 
@@ -140,9 +161,11 @@ export default function AddFollowUpLeftColumn() {
                 <CalendarBlank size={14} className="text-[#94A3B8]" />
               </div>
               <input 
-                type="text" 
-                defaultValue="24 Sep 2026"
+                type="date" 
+                value={nextDate}
+                onChange={(e) => setNextDate(e.target.value)}
                 className="w-full bg-[#0D131A] border border-[#212D3B] rounded-lg py-2.5 pl-9 pr-3 font-sans font-medium text-xs text-[#E2E8F0] outline-none focus:border-[#38BDF8] transition-colors"
+                style={{ colorScheme: 'dark' }}
               />
             </div>
           </div>
@@ -154,9 +177,11 @@ export default function AddFollowUpLeftColumn() {
                 <Clock size={14} className="text-[#94A3B8]" />
               </div>
               <input 
-                type="text" 
-                defaultValue="06:00 PM"
+                type="time" 
+                value={nextTime}
+                onChange={(e) => setNextTime(e.target.value)}
                 className="w-full bg-[#0D131A] border border-[#212D3B] rounded-lg py-2.5 pl-9 pr-3 font-sans font-medium text-xs text-[#E2E8F0] outline-none focus:border-[#38BDF8] transition-colors"
+                style={{ colorScheme: 'dark' }}
               />
             </div>
           </div>

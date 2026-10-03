@@ -2,10 +2,10 @@
 
 import { CaretDown } from "@phosphor-icons/react";
 import Dropdown from "@/app/(screens)/components/reusable/Dropdown";
-import { useState } from "react";
+import { useEnquiryForm } from "./EnquiryContext";
 
 export default function EnquiryBasicDetails() {
-  const [gender, setGender] = useState("");
+  const { formData, updateFormData } = useEnquiryForm();
 
   const genderOptions = [
     { label: "Male", value: "male" },
@@ -39,6 +39,8 @@ export default function EnquiryBasicDetails() {
             <input 
               type="text" 
               placeholder="Enter full name"
+              value={formData.fullName}
+              onChange={(e) => updateFormData({ fullName: e.target.value })}
               className="w-full h-full bg-[#0C1017] border border-[#232E40] rounded-lg pl-10 pr-3.5 font-sans font-normal text-sm text-white placeholder-[#64748B] outline-none focus:border-[#38BDF8] transition-colors"
             />
           </div>
@@ -61,6 +63,8 @@ export default function EnquiryBasicDetails() {
               <input 
                 type="text" 
                 placeholder="Enter mobile number"
+                value={formData.mobile}
+                onChange={(e) => updateFormData({ mobile: e.target.value })}
                 className="w-full h-full bg-transparent border-none rounded-r-lg pl-9 pr-3.5 font-sans font-normal text-sm text-white placeholder-[#64748B] outline-none"
               />
             </div>
@@ -83,6 +87,8 @@ export default function EnquiryBasicDetails() {
             <input 
               type="email" 
               placeholder="Enter email address"
+              value={formData.email}
+              onChange={(e) => updateFormData({ email: e.target.value })}
               className="w-full h-full bg-[#0C1017] border border-[#232E40] rounded-lg pl-10 pr-3.5 font-sans font-normal text-sm text-white placeholder-[#64748B] outline-none focus:border-[#38BDF8] transition-colors"
             />
           </div>
@@ -99,8 +105,8 @@ export default function EnquiryBasicDetails() {
             </div>
             <Dropdown 
               options={genderOptions}
-              value={gender}
-              onChange={setGender}
+              value={formData.gender}
+              onChange={(val) => updateFormData({ gender: val })}
               placeholder="Select gender"
               triggerClassName="flex flex-row items-center justify-between pl-10 pr-3 w-full h-[42px] bg-[#0C1017] border border-[#232E40] rounded-lg cursor-pointer"
             />

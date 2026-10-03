@@ -11,10 +11,30 @@ import {
   Barbell,
   Crown
 } from "@phosphor-icons/react";
-import { useState } from "react";
+import Dropdown from "@/app/(screens)/components/reusable/Dropdown";
 
-export default function AddFollowUpRightColumn() {
-  const [category, setCategory] = useState("Hot");
+interface AddFollowUpRightColumnProps {
+  enquiry: any;
+  category: string;
+  setCategory: (val: string) => void;
+  status: string;
+  setStatus: (val: string) => void;
+}
+
+export default function AddFollowUpRightColumn({
+  enquiry,
+  category,
+  setCategory,
+  status,
+  setStatus
+}: AddFollowUpRightColumnProps) {
+
+  const statusOptions = [
+    { label: "New", value: "new" },
+    { label: "Follow-up", value: "followup" },
+    { label: "Converted", value: "converted" },
+    { label: "Not Interested", value: "notinterested" },
+  ];
 
   return (
     <div className="flex flex-col gap-5 w-full h-full">
@@ -31,18 +51,18 @@ export default function AddFollowUpRightColumn() {
 
         <div className="grid grid-cols-2 gap-3">
           <button 
-            onClick={() => setCategory("Hot")}
+            onClick={() => setCategory("hot")}
             className={`flex items-center justify-between py-2.5 px-3 sm:px-4 gap-1 sm:gap-2 rounded-lg border transition-colors ${
-              category === "Hot" 
+              category === "hot" 
                 ? "bg-red-950/40 border-red-500/80 shadow-[0_1px_3px_rgba(0,0,0,0.1)]" 
                 : "bg-[#0D131A] border-[#212D3B] hover:border-[#94A3B8]/50"
             }`}
           >
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <Fire size={14} weight={category === "Hot" ? "fill" : "regular"} className="text-red-400 shrink-0" />
-              <span className={`font-sans font-semibold text-xs truncate ${category === "Hot" ? "text-red-400" : "text-[#CBD5E1]"}`}>Hot</span>
+              <Fire size={14} weight={category === "hot" ? "fill" : "regular"} className="text-red-400 shrink-0" />
+              <span className={`font-sans font-semibold text-xs truncate ${category === "hot" ? "text-red-400" : "text-[#CBD5E1]"}`}>Hot</span>
             </div>
-            {category === "Hot" && (
+            {category === "hot" && (
               <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center shrink-0">
                 <span className="w-2.5 h-2.5 border-2 border-white rounded-full"></span>
               </div>
@@ -50,18 +70,18 @@ export default function AddFollowUpRightColumn() {
           </button>
           
           <button 
-            onClick={() => setCategory("Warm")}
+            onClick={() => setCategory("warm")}
             className={`flex items-center justify-between py-2.5 px-3 sm:px-4 gap-1 sm:gap-2 rounded-lg border transition-colors ${
-              category === "Warm" 
+              category === "warm" 
                 ? "bg-amber-950/40 border-amber-500/80 shadow-[0_1px_3px_rgba(0,0,0,0.1)]" 
                 : "bg-[#0D131A] border-[#212D3B] hover:border-[#94A3B8]/50"
             }`}
           >
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <User size={14} weight={category === "Warm" ? "fill" : "regular"} className="text-amber-400 shrink-0" />
-              <span className={`font-sans font-medium text-xs truncate ${category === "Warm" ? "text-amber-400" : "text-[#CBD5E1]"}`}>Warm</span>
+              <User size={14} weight={category === "warm" ? "fill" : "regular"} className="text-amber-400 shrink-0" />
+              <span className={`font-sans font-medium text-xs truncate ${category === "warm" ? "text-amber-400" : "text-[#CBD5E1]"}`}>Warm</span>
             </div>
-            {category === "Warm" && (
+            {category === "warm" && (
               <div className="w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center shrink-0">
                 <span className="w-2.5 h-2.5 border-2 border-white rounded-full"></span>
               </div>
@@ -69,18 +89,18 @@ export default function AddFollowUpRightColumn() {
           </button>
           
           <button 
-            onClick={() => setCategory("Cold")}
+            onClick={() => setCategory("cold")}
             className={`flex items-center justify-between py-2.5 px-3 sm:px-4 gap-1 sm:gap-2 rounded-lg border transition-colors ${
-              category === "Cold" 
+              category === "cold" 
                 ? "bg-sky-950/40 border-sky-500/80 shadow-[0_1px_3px_rgba(0,0,0,0.1)]" 
                 : "bg-[#0D131A] border-[#212D3B] hover:border-[#94A3B8]/50"
             }`}
           >
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <Snowflake size={14} weight={category === "Cold" ? "fill" : "regular"} className="text-sky-400 shrink-0" />
-              <span className={`font-sans font-medium text-xs truncate ${category === "Cold" ? "text-sky-400" : "text-[#CBD5E1]"}`}>Cold</span>
+              <Snowflake size={14} weight={category === "cold" ? "fill" : "regular"} className="text-sky-400 shrink-0" />
+              <span className={`font-sans font-medium text-xs truncate ${category === "cold" ? "text-sky-400" : "text-[#CBD5E1]"}`}>Cold</span>
             </div>
-            {category === "Cold" && (
+            {category === "cold" && (
               <div className="w-4 h-4 bg-sky-500 rounded-full flex items-center justify-center shrink-0">
                 <span className="w-2.5 h-2.5 border-2 border-white rounded-full"></span>
               </div>
@@ -88,18 +108,18 @@ export default function AddFollowUpRightColumn() {
           </button>
 
           <button 
-            onClick={() => setCategory("Other")}
+            onClick={() => setCategory("other")}
             className={`flex items-center justify-between py-2.5 px-3 sm:px-4 gap-1 sm:gap-2 rounded-lg border transition-colors ${
-              category === "Other" 
+              category === "other" 
                 ? "bg-slate-800/40 border-slate-500/80 shadow-[0_1px_3px_rgba(0,0,0,0.1)]" 
                 : "bg-[#0D131A] border-[#212D3B] hover:border-[#94A3B8]/50"
             }`}
           >
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
               <DotsThree size={14} weight="bold" className="text-slate-400 shrink-0" />
-              <span className={`font-sans font-medium text-xs truncate ${category === "Other" ? "text-slate-300" : "text-[#CBD5E1]"}`}>Other</span>
+              <span className={`font-sans font-medium text-xs truncate ${category === "other" ? "text-slate-300" : "text-[#CBD5E1]"}`}>Other</span>
             </div>
-            {category === "Other" && (
+            {category === "other" && (
               <div className="w-4 h-4 bg-slate-500 rounded-full flex items-center justify-center shrink-0">
                 <span className="w-2.5 h-2.5 border-2 border-white rounded-full"></span>
               </div>
@@ -119,13 +139,12 @@ export default function AddFollowUpRightColumn() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between px-3 py-2.5 bg-[#0D131A] border border-[#212D3B] rounded-lg cursor-pointer">
-          <div className="flex items-center gap-2">
-            <Clock size={14} className="text-amber-400" />
-            <span className="font-sans font-medium text-xs text-[#E2E8F0]">Follow-up</span>
-          </div>
-          <CaretDown size={14} className="text-[#94A3B8]" />
-        </div>
+        <Dropdown 
+          options={statusOptions}
+          value={status}
+          onChange={setStatus}
+          triggerClassName="flex flex-row items-center justify-between px-3 w-full h-[38px] bg-[#0D131A] border border-[#212D3B] rounded-lg cursor-pointer"
+        />
       </div>
 
       <div className="flex flex-col p-4 sm:p-5 bg-[#151D28] border border-[#212D3B] rounded-xl gap-4 flex-1">
@@ -143,16 +162,14 @@ export default function AddFollowUpRightColumn() {
           <div className="flex items-center justify-between">
             <span className="font-sans text-[11px] text-[#94A3B8]">Source</span>
             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-fuchsia-900/40 border border-fuchsia-800/40 rounded">
-              <InstagramLogo size={12} className="text-fuchsia-400" />
-              <span className="font-sans font-semibold text-[11px] text-fuchsia-300">Instagram</span>
+              <span className="font-sans font-semibold text-[11px] text-fuchsia-300 capitalize">{enquiry?.enquirySource || 'Unknown'}</span>
             </div>
           </div>
           
           <div className="flex items-center justify-between">
             <span className="font-sans text-[11px] text-[#94A3B8]">Added via</span>
             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-900/40 border border-emerald-800/40 rounded">
-              <ShareNetwork size={12} className="text-emerald-400" />
-              <span className="font-sans font-semibold text-[11px] text-emerald-300">Social Media</span>
+              <span className="font-sans font-semibold text-[11px] text-emerald-300 capitalize">{enquiry?.addedThrough || 'Unknown'}</span>
             </div>
           </div>
 
@@ -160,7 +177,7 @@ export default function AddFollowUpRightColumn() {
             <span className="font-sans text-[11px] text-[#94A3B8]">Interested in</span>
             <div className="flex items-center gap-1.5">
               <Barbell size={12} className="text-emerald-400" />
-              <span className="font-sans font-semibold text-[11px] text-emerald-400">Gym Membership</span>
+              <span className="font-sans font-semibold text-[11px] text-emerald-400 capitalize">{enquiry?.interestedIn || 'Unknown'}</span>
             </div>
           </div>
 
@@ -168,7 +185,9 @@ export default function AddFollowUpRightColumn() {
             <span className="font-sans text-[11px] text-[#94A3B8]">Preferred plan</span>
             <div className="flex items-center gap-1.5">
               <Crown size={12} className="text-amber-400" />
-              <span className="font-sans font-semibold text-[11px] text-amber-200">Gold Plan</span>
+              <span className="font-sans font-semibold text-[11px] text-amber-200">
+                {enquiry?.plan ? enquiry.plan.planName : "None"}
+              </span>
             </div>
           </div>
         </div>

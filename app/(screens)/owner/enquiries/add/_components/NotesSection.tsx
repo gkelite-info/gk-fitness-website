@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEnquiryForm } from "./EnquiryContext";
 
 export default function NotesSection() {
-  const [notes, setNotes] = useState("");
+  const { formData, updateFormData } = useEnquiryForm();
 
   return (
     <div className="flex flex-col items-start p-6 gap-5 w-full h-full bg-[#10151F] border border-[#1D2636] shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-xl">
@@ -23,14 +23,14 @@ export default function NotesSection() {
         <div className="flex flex-col w-full h-full min-h-[126px] bg-[#0C1017] border border-[#232E40] focus-within:border-[#38BDF8] rounded-lg transition-colors overflow-hidden">
           <textarea 
             placeholder="Enter notes, customer requirements or any other relevant details..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            value={formData.notes || ""}
+            onChange={(e) => updateFormData({ notes: e.target.value })}
             className="w-full h-full min-h-[100px] p-3 bg-transparent border-none font-sans font-normal text-sm text-white placeholder-[#64748B] outline-none resize-none"
             maxLength={500}
           />
           <div className="flex flex-row justify-end items-center px-3 py-1.5 w-full bg-[#0C1017]">
             <span className="font-mono font-normal text-xs text-[#64748B] text-right">
-              {notes.length}/500
+              {(formData.notes || "").length}/500
             </span>
           </div>
         </div>

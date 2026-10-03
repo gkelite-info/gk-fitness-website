@@ -3,9 +3,19 @@ import { UsersThree, Users, ShareNetwork, PersonSimpleWalk } from "@phosphor-ico
 interface ConvertedMetricsCardsProps {
   activeFilter: string;
   onFilterChange: (filter: string) => void;
+  counts: {
+    total: number;
+    thisMonth: number;
+    social: number;
+    walkin: number;
+    totalTrend: number;
+    thisMonthTrend: number;
+    socialTrend: number;
+    walkinTrend: number;
+  }
 }
 
-export default function ConvertedMetricsCards({ activeFilter, onFilterChange }: ConvertedMetricsCardsProps) {
+export default function ConvertedMetricsCards({ activeFilter, onFilterChange, counts }: ConvertedMetricsCardsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full gap-4 shrink-0">
       
@@ -19,9 +29,11 @@ export default function ConvertedMetricsCards({ activeFilter, onFilterChange }: 
         <div className="flex flex-col">
           <span className="font-sans font-medium text-xs text-[#94A3B8]">Total Converted</span>
           <span className="font-sans font-medium text-xs text-[#94A3B8] mb-0.5">Members</span>
-          <span className="font-sans font-black text-2xl text-white leading-none">32</span>
+          <span className="font-sans font-black text-2xl text-white leading-none">{counts.total}</span>
           <div className="flex items-center gap-1 mt-1">
-            <span className="font-sans font-semibold text-[11px] text-[#34D399]">↑ 14%</span>
+            <span className={`font-sans font-semibold text-[11px] ${counts.totalTrend >= 0 ? "text-[#34D399]" : "text-[#EF4444]"}`}>
+              {counts.totalTrend >= 0 ? "↑" : "↓"} {Math.abs(counts.totalTrend)}%
+            </span>
             <span className="font-sans text-[11px] text-[#64748B]">vs last month</span>
           </div>
         </div>
@@ -37,9 +49,11 @@ export default function ConvertedMetricsCards({ activeFilter, onFilterChange }: 
         <div className="flex flex-col">
           <span className="font-sans font-medium text-xs text-[#94A3B8]">Converted This Month</span>
           <div className="h-4"></div>
-          <span className="font-sans font-black text-2xl text-white leading-none">11</span>
+          <span className="font-sans font-black text-2xl text-white leading-none">{counts.thisMonth}</span>
           <div className="flex items-center gap-1 mt-1">
-            <span className="font-sans font-semibold text-[11px] text-[#34D399]">↑ 3</span>
+            <span className={`font-sans font-semibold text-[11px] ${counts.thisMonthTrend >= 0 ? "text-[#34D399]" : "text-[#EF4444]"}`}>
+              {counts.thisMonthTrend >= 0 ? "↑" : "↓"} {Math.abs(counts.thisMonthTrend)}
+            </span>
             <span className="font-sans text-[11px] text-[#64748B]">vs last month</span>
           </div>
         </div>
@@ -55,9 +69,11 @@ export default function ConvertedMetricsCards({ activeFilter, onFilterChange }: 
         <div className="flex flex-col">
           <span className="font-sans font-medium text-xs text-[#94A3B8]">Converted from Social</span>
           <span className="font-sans font-medium text-xs text-[#94A3B8] mb-0.5">Media</span>
-          <span className="font-sans font-black text-2xl text-white leading-none">18</span>
+          <span className="font-sans font-black text-2xl text-white leading-none">{counts.social}</span>
           <div className="flex items-center gap-1 mt-1">
-            <span className="font-sans font-semibold text-[11px] text-[#34D399]">↑ 6</span>
+            <span className={`font-sans font-semibold text-[11px] ${counts.socialTrend >= 0 ? "text-[#34D399]" : "text-[#EF4444]"}`}>
+              {counts.socialTrend >= 0 ? "↑" : "↓"} {Math.abs(counts.socialTrend)}
+            </span>
             <span className="font-sans text-[11px] text-[#64748B]">vs last month</span>
           </div>
         </div>
@@ -73,9 +89,11 @@ export default function ConvertedMetricsCards({ activeFilter, onFilterChange }: 
         <div className="flex flex-col">
           <span className="font-sans font-medium text-xs text-[#94A3B8]">Converted from Walk-in</span>
           <span className="font-sans font-medium text-xs text-[#94A3B8] mb-0.5">/ Owner Added</span>
-          <span className="font-sans font-black text-2xl text-white leading-none">14</span>
+          <span className="font-sans font-black text-2xl text-white leading-none">{counts.walkin}</span>
           <div className="flex items-center gap-1 mt-1">
-            <span className="font-sans font-semibold text-[11px] text-[#34D399]">↑ 5</span>
+            <span className={`font-sans font-semibold text-[11px] ${counts.walkinTrend >= 0 ? "text-[#34D399]" : "text-[#EF4444]"}`}>
+              {counts.walkinTrend >= 0 ? "↑" : "↓"} {Math.abs(counts.walkinTrend)}
+            </span>
             <span className="font-sans text-[11px] text-[#64748B]">vs last month</span>
           </div>
         </div>

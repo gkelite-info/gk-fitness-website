@@ -8,7 +8,7 @@ export interface TableProps {
 export function Table({ children, className = "" }: TableProps) {
   return (
     <div className={`w-full overflow-x-auto rounded-[16px] border border-[#22262D] bg-[#14161A] scrollbar-themed ${className}`}>
-      <table className="w-full text-left border-collapse">
+      <table className="w-full h-full text-left border-collapse">
         {children}
       </table>
     </div>

@@ -3,12 +3,40 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AddFollowUpModal from "./AddFollowUpModal";
 import ConvertEnquiryModal from "./ConvertEnquiryModal";
+import { useGymEnquiryFollowups } from "@/lib/hooks/gymEnquiries/useGymEnquiryFollowups";
 
-export default function EnquiryFollowUpHistory() {
+export default function EnquiryFollowUpHistory({ enquiry, onConvertSuccess }: { enquiry: any, onConvertSuccess?: () => void }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isAddFollowUpOpen, setIsAddFollowUpOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
   const router = useRouter();
+
+  const gymEnquiryId = enquiry?.gymEnquiryId;
+  const { data: followups, isLoading } = useGymEnquiryFollowups(gymEnquiryId);
+
+  const getActionColor = (actionType: string) => {
+    switch(actionType) {
+      case 'interested': return 'emerald';
+      case 'calllater': return 'amber';
+      case 'notinterested': return 'rose';
+      case 'noresponse': return 'slate';
+      case 'visitedgym': return 'purple';
+      case 'converted': return 'sky';
+      default: return 'slate';
+    }
+  };
+
+  const formatActionType = (actionType: string) => {
+    switch(actionType) {
+      case 'interested': return 'Interested';
+      case 'calllater': return 'Call Later';
+      case 'notinterested': return 'Not Interested';
+      case 'noresponse': return 'No Response';
+      case 'visitedgym': return 'Visited Gym';
+      case 'converted': return 'Converted';
+      default: return actionType;
+    }
+  };
 
   return (
     <>
@@ -26,13 +54,15 @@ export default function EnquiryFollowUpHistory() {
           </div>
           
           <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3" onClick={(e) => e.stopPropagation()}>
-            <button 
-              onClick={() => setIsAddFollowUpOpen(true)}
-              className="flex items-center px-4 py-2 sm:py-1.5 gap-1.5 bg-[#131926] border border-[#1E2638] rounded-lg hover:bg-[#1E2638] transition-colors cursor-pointer w-full sm:w-auto justify-center"
-            >
-              <span className="text-[#CCFF00]">+</span>
-              <span className="font-sans font-semibold text-sm text-slate-200">Add Follow-up</span>
-            </button>
+            {enquiry?.status?.toLowerCase() !== 'converted' && (
+              <button 
+                onClick={() => setIsAddFollowUpOpen(true)}
+                className="flex items-center px-4 py-2 sm:py-1.5 gap-1.5 bg-[#131926] border border-[#1E2638] rounded-lg hover:bg-[#1E2638] transition-colors cursor-pointer w-full sm:w-auto justify-center"
+              >
+                <span className="text-[#CCFF00]">+</span>
+                <span className="font-sans font-semibold text-sm text-slate-200">Add Follow-up</span>
+              </button>
+            )}
             <button 
             className="flex items-center justify-center w-10 h-10 sm:w-9 sm:h-9 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 cursor-pointer shrink-0"
             onClick={() => setIsExpanded(!isExpanded)}
@@ -57,7 +87,9 @@ export default function EnquiryFollowUpHistory() {
                 </div>
                 <div className="flex flex-col">
                   <span className="font-sans font-semibold text-[11px] text-slate-400 tracking-wide uppercase">Next Follow-up Date</span>
-                  <span className="font-sans font-bold text-base text-white">23 Sep 2026, 06:00 PM</span>
+                  <span className="font-sans font-bold text-base text-white">
+                    {enquiry?.followUpDate ? new Date(enquiry.followUpDate).toLocaleString('en-US', { dateStyle: 'medium' }) : 'Not set'}
+                  </span>
                 </div>
               </div>
               <div className="flex-1 flex items-center p-4 gap-4 bg-[#191924]/90 border border-amber-500/20 rounded-xl">
@@ -66,7 +98,9 @@ export default function EnquiryFollowUpHistory() {
                 </div>
                 <div className="flex flex-col">
                   <span className="font-sans font-semibold text-[11px] text-slate-400 tracking-wide uppercase">Last Follow-up Date</span>
-                  <span className="font-sans font-bold text-base text-white">20 Sep 2026, 04:15 PM</span>
+                  <span className="font-sans font-bold text-base text-white">
+                    {followups && followups.length > 0 ? new Date(followups[0].createdAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : 'No follow-ups yet'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -77,77 +111,43 @@ export default function EnquiryFollowUpHistory() {
               <div className="relative flex flex-col pl-7 gap-7 ml-2">
                 <div className="absolute left-0 top-3 bottom-5 w-0.5 bg-slate-800"></div>
 
-                <div className="relative flex flex-col bg-[#131926]/80 border border-[#1E2638]/70 rounded-xl p-4 gap-2.5">
-                  <div className="absolute -left-[37px] top-4 flex items-center justify-center w-5 h-5 bg-[#0F141F] rounded-full">
-                    <div className="w-2.5 h-2.5 bg-amber-400 rounded-full shadow-[0_0_0_4px_rgba(251,191,36,0.2)]"></div>
-                  </div>
-                  
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-white/5 gap-3 sm:gap-0">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                      <span className="font-sans font-semibold text-xs sm:text-sm text-amber-400 tracking-tight">20 Sep 2026, 04:15 PM</span>
-                      <div className="flex items-center px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded w-fit">
-                        <span className="font-sans font-bold text-[10px] text-amber-400 uppercase tracking-wide">Pricing Shared</span>
+                {isLoading ? (
+                  <span className="text-slate-400 text-sm">Loading...</span>
+                ) : followups && followups.length > 0 ? (
+                  followups.map((fu: any) => {
+                    const color = getActionColor(fu.actionType);
+                    return (
+                      <div key={fu.followupId} className="relative flex flex-col bg-[#131926]/80 border border-[#1E2638]/70 rounded-xl p-4 gap-2.5">
+                        <div className="absolute -left-[37px] top-4 flex items-center justify-center w-5 h-5 bg-[#0F141F] rounded-full">
+                          <div className={`w-2.5 h-2.5 bg-${color}-400 rounded-full shadow-[0_0_0_4px_rgba(251,191,36,0.2)]`}></div>
+                        </div>
+                        
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-white/5 gap-3 sm:gap-0">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                            <span className={`font-sans font-semibold text-xs sm:text-sm text-${color}-400 tracking-tight`}>
+                              {new Date(fu.createdAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+                            </span>
+                            <div className={`flex items-center px-2 py-0.5 bg-${color}-500/10 border border-${color}-500/20 rounded w-fit`}>
+                              <span className={`font-sans font-bold text-[10px] text-${color}-400 uppercase tracking-wide`}>
+                                {formatActionType(fu.actionType)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                            <span className="font-sans text-xs text-slate-500">By</span>
+                            <span className="font-sans font-medium text-xs text-slate-300">{fu.user?.name || 'Unknown'}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col gap-1">
+                          <p className="font-sans text-sm text-slate-300">{fu.followUpnotes}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 self-start sm:self-auto">
-                      <span className="font-sans text-xs text-slate-500">By</span>
-                      <span className="font-sans font-medium text-xs text-slate-300">Amit Gupta</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col gap-1">
-                    <h3 className="font-sans font-semibold text-sm text-white">Asked for membership pricing</h3>
-                    <p className="font-sans text-sm text-slate-300">Shared membership plans. He will check and revert.</p>
-                  </div>
-                </div>
-
-                <div className="relative flex flex-col bg-[#131926]/80 border border-[#1E2638]/70 rounded-xl p-4 gap-2.5">
-                  <div className="absolute -left-[37px] top-4 flex items-center justify-center w-5 h-5 bg-[#0F141F] rounded-full">
-                    <div className="w-2.5 h-2.5 bg-sky-400 rounded-full shadow-[0_0_0_4px_rgba(56,189,248,0.2)]"></div>
-                  </div>
-                  
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-white/5 gap-3 sm:gap-0">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                      <span className="font-sans font-semibold text-xs sm:text-sm text-sky-400 tracking-tight">18 Sep 2026, 11:30 AM</span>
-                      <div className="flex items-center px-2 py-0.5 bg-sky-500/10 border border-sky-500/20 rounded w-fit">
-                        <span className="font-sans font-bold text-[10px] text-sky-400 uppercase tracking-wide">Call Scheduled</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 self-start sm:self-auto">
-                      <span className="font-sans text-xs text-slate-500">By</span>
-                      <span className="font-sans font-medium text-xs text-slate-300">Amit Gupta</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col gap-1">
-                    <h3 className="font-sans font-semibold text-sm text-white">Requested callback in evening</h3>
-                    <p className="font-sans text-sm text-slate-300">Busy at the moment. Requested to call after 6 PM.</p>
-                  </div>
-                </div>
-
-                <div className="relative flex flex-col bg-[#131926]/80 border border-[#1E2638]/70 rounded-xl p-4 gap-2.5">
-                  <div className="absolute -left-[37px] top-4 flex items-center justify-center w-5 h-5 bg-[#0F141F] rounded-full">
-                    <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full shadow-[0_0_0_4px_rgba(52,211,153,0.2)]"></div>
-                  </div>
-                  
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-white/5 gap-3 sm:gap-0">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                      <span className="font-sans font-semibold text-xs sm:text-sm text-emerald-400 tracking-tight">15 Sep 2026, 02:20 PM</span>
-                      <div className="flex items-center px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded w-fit">
-                        <span className="font-sans font-bold text-[10px] text-emerald-400 uppercase tracking-wide">Gym Visit</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 self-start sm:self-auto">
-                      <span className="font-sans text-xs text-slate-500">By</span>
-                      <span className="font-sans font-medium text-xs text-slate-300">Amit Gupta</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col gap-1">
-                    <h3 className="font-sans font-semibold text-sm text-white">Interested in PT + Gold plan</h3>
-                    <p className="font-sans text-sm text-slate-300">Visited the gym. Showed around the facilities. Seemed very interested.</p>
-                  </div>
-                </div>
+                    );
+                  })
+                ) : (
+                  <span className="text-slate-400 text-sm">No interaction history found.</span>
+                )}
 
               </div>
             </div>
@@ -155,31 +155,37 @@ export default function EnquiryFollowUpHistory() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-[#0C1018] border-t border-[#1E2638]/90 gap-4 sm:gap-0 sticky bottom-0 z-10">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+      {enquiry?.status?.toLowerCase() !== 'converted' && (
+        <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-[#0C1018] border-t border-[#1E2638]/90 gap-4 sm:gap-0 sticky bottom-0 z-10">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button 
+              onClick={() => router.push(`/owner/enquiries/add?edit=true&id=${gymEnquiryId}`)}
+              className="flex items-center justify-center px-4 py-2.5 gap-2 bg-slate-800/80 border border-slate-700/70 shadow-sm rounded-xl flex-1 sm:flex-none hover:bg-slate-700 transition-colors cursor-pointer"
+            >
+              <Pen size={16} className="text-slate-400" />
+              <span className="font-sans font-medium text-[15px] text-slate-200">Edit Enquiry</span>
+            </button>
+          </div>
           <button 
-            onClick={() => router.push('/owner/enquiries/add?edit=true')}
-            className="flex items-center justify-center px-4 py-2.5 gap-2 bg-slate-800/80 border border-slate-700/70 shadow-sm rounded-xl flex-1 sm:flex-none hover:bg-slate-700 transition-colors cursor-pointer"
+            onClick={() => setIsConvertOpen(true)}
+            className="flex items-center justify-center px-6 py-2.5 gap-2 bg-[#CCFF00] rounded-xl shadow-[0_0_21px_-3px_rgba(204,255,0,0.35)] hover:brightness-110 transition-all w-full sm:w-auto cursor-pointer"
           >
-            <Pen size={16} className="text-slate-400" />
-            <span className="font-sans font-medium text-[15px] text-slate-200">Edit Enquiry</span>
+            <span className="font-sans font-bold text-[15px] text-black tracking-tight">Convert to Member</span>
           </button>
         </div>
-        <button 
-          onClick={() => setIsConvertOpen(true)}
-          className="flex items-center justify-center px-6 py-2.5 gap-2 bg-[#CCFF00] rounded-xl shadow-[0_0_21px_-3px_rgba(204,255,0,0.35)] hover:brightness-110 transition-all w-full sm:w-auto cursor-pointer"
-        >
-          <span className="font-sans font-bold text-[15px] text-black tracking-tight">Convert to Member</span>
-        </button>
-      </div>
+      )}
     </div>
     
     {isAddFollowUpOpen && (
-      <AddFollowUpModal onClose={() => setIsAddFollowUpOpen(false)} />
+      <AddFollowUpModal onClose={() => setIsAddFollowUpOpen(false)} enquiry={enquiry} />
     )}
 
     {isConvertOpen && (
-      <ConvertEnquiryModal onClose={() => setIsConvertOpen(false)} />
+      <ConvertEnquiryModal 
+        onClose={() => setIsConvertOpen(false)} 
+        onConvertSuccess={onConvertSuccess}
+        enquiry={enquiry} 
+      />
     )}
     </>
   );

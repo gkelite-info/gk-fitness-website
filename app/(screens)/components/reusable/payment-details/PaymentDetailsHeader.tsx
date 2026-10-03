@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { CaretLeft, DownloadSimple, Spinner } from "@phosphor-icons/react/dist/ssr";
+import { CaretLeft, DownloadSimple, Spinner, PaperPlaneRight } from "@phosphor-icons/react/dist/ssr";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { downloadPdf } from "./utils/downloadPdf";
+import { PaymentDetailsData } from "./types";
+import { sendPaymentSuccessEmail } from "@/lib/helpers/emailService";
 
-export default function PaymentDetailsHeader() {
+export default function PaymentDetailsHeader({ data }: { data?: PaymentDetailsData & { gymName?: string } }) {
   const router = useRouter();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   const handleDownload = async () => {
     if (isDownloading) return;
@@ -20,6 +23,37 @@ export default function PaymentDetailsHeader() {
       toast.error(error.message || "Failed to download invoice.");
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!data || !data.email || data.email === "--") {
+      toast.error("Customer does not have a valid email address.");
+      return;
+    }
+    
+    setIsSendingEmail(true);
+    try {
+      const result = await sendPaymentSuccessEmail({
+        email: data.email,
+        name: data.memberName,
+        memberCode: data.memberCode,
+        amount: data.amountPaid,
+        transactionId: data.transactionId,
+        planName: data.membershipPlan,
+        date: data.paymentDate + (data.paymentTime !== "--" ? " " + data.paymentTime : ""),
+        gymName: data.gymName
+      });
+
+      if (result.success) {
+        toast.success("Receipt sent to customer successfully!");
+      } else {
+        toast.error(result.error || "Failed to send email.");
+      }
+    } catch (error: any) {
+      toast.error("Failed to send email.");
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -44,7 +78,22 @@ export default function PaymentDetailsHeader() {
         </div>
       </div>
 
-      <div className="flex flex-row items-center gap-2.5 w-full sm:w-auto">
+      <div className="flex flex-row flex-wrap sm:flex-nowrap items-center gap-2.5 w-full sm:w-auto">
+        <button 
+          onClick={handleSendEmail}
+          disabled={isSendingEmail || !data || !data.email || data.email === "--"}
+          className={`flex flex-row justify-center items-center px-4 py-2 gap-2 bg-[#131722] border border-[#1E2638] rounded-xl hover:bg-[#1E2638] transition-colors h-8 w-full sm:w-auto ${isSendingEmail || !data || !data.email || data.email === "--" ? "opacity-70 cursor-not-allowed" : "cursor-pointer"}`}
+        >
+          {isSendingEmail ? (
+            <Spinner size={14} weight="bold" className="text-[#CBD5E1] shrink-0 animate-spin" />
+          ) : (
+            <PaperPlaneRight size={14} weight="bold" className="text-[#CBD5E1] shrink-0" />
+          )}
+          <span className="font-sans font-semibold text-xs text-[#CBD5E1] text-center whitespace-nowrap">
+            {isSendingEmail ? "Sending..." : "Send via Email"}
+          </span>
+        </button>
+
         <button 
           onClick={handleDownload}
           disabled={isDownloading}

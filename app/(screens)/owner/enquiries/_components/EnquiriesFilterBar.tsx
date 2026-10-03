@@ -3,12 +3,26 @@ import { useState } from "react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import Dropdown from "@/app/(screens)/components/reusable/Dropdown";
 
-export default function EnquiriesFilterBar() {
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
-  const [source, setSource] = useState("all");
-  const [status, setStatus] = useState("all");
-  const [dateRange, setDateRange] = useState("all");
+interface EnquiriesFilterBarProps {
+  search: string;
+  setSearch: (val: string) => void;
+  category: string;
+  setCategory: (val: string) => void;
+  source: string;
+  setSource: (val: string) => void;
+  status: string;
+  setStatus: (val: string) => void;
+  dateRange: string;
+  setDateRange: (val: string) => void;
+}
+
+export default function EnquiriesFilterBar({
+  search, setSearch,
+  category, setCategory,
+  source, setSource,
+  status, setStatus,
+  dateRange, setDateRange
+}: EnquiriesFilterBarProps) {
 
   const categoryOptions = [
     { label: "All Categories", value: "all" },
@@ -29,7 +43,8 @@ export default function EnquiriesFilterBar() {
     { label: "All Statuses", value: "all" },
     { label: "New", value: "new" },
     { label: "Follow-up", value: "followup" },
-    { label: "In Progress", value: "inprogress" },
+    { label: "Converted", value: "converted" },
+    { label: "Not Interested", value: "notinterested" },
   ];
 
   const dateOptions = [
