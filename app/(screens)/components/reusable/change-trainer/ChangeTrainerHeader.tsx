@@ -4,14 +4,17 @@ import { CaretLeft } from "@phosphor-icons/react/dist/ssr";
 import { useRouter } from "next/navigation";
 
 interface ChangeTrainerHeaderProps {
-  customerName: string;
   customerId: string;
   onBack?: () => void;
 }
 
-export default function ChangeTrainerHeader({ customerName, customerId, onBack }: ChangeTrainerHeaderProps) {
+import { useGymCustomerById } from "@/lib/hooks/customers/useGymCustomers";
+
+export default function ChangeTrainerHeader({ customerId, onBack }: ChangeTrainerHeaderProps) {
   const router = useRouter();
-  
+  const { data: customer } = useGymCustomerById(customerId);
+  const customerName = customer?.fullName || "Loading...";
+
   const handleBack = () => {
     if (onBack) {
       onBack();
@@ -34,7 +37,7 @@ export default function ChangeTrainerHeader({ customerName, customerId, onBack }
             Change Trainer
           </h1>
           <span className="font-sans font-normal text-[12px] sm:text-[14px] leading-[16px] sm:leading-[20px] text-[#94A3B8]">
-            Customer: <span className="text-[#CCFF00]">{customerName} ({customerId})</span>
+            Customer: <span className="text-[#CCFF00]">{customerName}</span>
           </span>
         </div>
       </div>

@@ -9,6 +9,9 @@ import ConfirmationModal from "../../ConfirmationModal";
 import TrainerProfileInfo from "./components/TrainerProfileInfo";
 import TrainerAboutSection from "./components/TrainerAboutSection";
 import TrainerSessionSummary from "./components/TrainerSessionSummary";
+import { useGymCustomerById } from "@/lib/hooks/customers/useGymCustomers";
+import { useAssignedTrainersByCustomer, useDeleteCustomerTrainer } from "@/lib/hooks/customerTrainers/useCustomerTrainers";
+import toast from "react-hot-toast";
 
 interface TrainerDetailsModalProps {
   isOpen: boolean;
@@ -21,14 +24,28 @@ export default function TrainerDetailsModal({ isOpen, onClose }: TrainerDetailsM
   const [isConfirming, setIsConfirming] = useState(false);
   const router = useRouter();
   const params = useParams();
+  const customerId = params?.id as string;
+  const { data: customer } = useGymCustomerById(customerId);
+  const { data: assignedTrainers } = useAssignedTrainersByCustomer(customerId);
+  const currentTrainerAssignment = assignedTrainers?.find((t: any) => t.isActive);
+  const trainer = currentTrainerAssignment?.trainer;
+  const { mutateAsync: removeTrainer } = useDeleteCustomerTrainer();
 
-  const handleRemoveTrainer = () => {
+  const handleRemoveTrainer = async () => {
     setIsConfirming(true);
-    setTimeout(() => {
-      setIsConfirming(false);
+    try {
+      if (currentTrainerAssignment?.customerTrainerId) {
+        await removeTrainer(currentTrainerAssignment.customerTrainerId);
+        toast.success("Trainer removed successfully");
+      }
       setShowConfirmModal(false);
-      onClose(); // Close the trainer modal too after removing
-    }, 1500);
+      onClose();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to remove trainer");
+    } finally {
+      setIsConfirming(false);
+    }
   };
 
   useEffect(() => {
@@ -84,7 +101,7 @@ export default function TrainerDetailsModal({ isOpen, onClose }: TrainerDetailsM
                     </div>
                   </div>
                   <span className="font-mono font-normal text-[12px] sm:text-[14px] leading-[18px] sm:leading-[20px] text-[#9CA3AF]">
-                    Customer ID: <span className="text-[#CCFF00]">MEM-000124</span>
+                    Customer: <span className="text-[#CCFF00] font-sans">{customer?.fullName || "Loading..."}</span>
                   </span>
                 </div>
               </div>
@@ -98,11 +115,14 @@ export default function TrainerDetailsModal({ isOpen, onClose }: TrainerDetailsM
 
             <div className="flex flex-col w-full flex-1 overflow-y-auto scrollbar-themed">
               <div className="flex flex-col items-start p-[20px] sm:p-[32px] gap-[24px] w-full shrink-0">
-                <TrainerProfileInfo />
+                <TrainerProfileInfo trainer={trainer} assignment={currentTrainerAssignment} />
 
                 <div className="flex flex-col lg:flex-row items-stretch gap-[24px] w-full shrink-0">
-                  <TrainerAboutSection />
-                  <TrainerSessionSummary />
+                  <TrainerAboutSection trainer={trainer} />
+                  <TrainerSessionSummary 
+                    customerTrainerId={currentTrainerAssignment?.customerTrainerId} 
+                    gymTrainerId={currentTrainerAssignment?.gymTrainerId} 
+                  />
                 </div>
               </div>
 
@@ -114,29 +134,29 @@ export default function TrainerDetailsModal({ isOpen, onClose }: TrainerDetailsM
                   </span>
                 </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-[12px] w-full sm:w-auto">
-                <button 
-                  onClick={() => setShowConfirmModal(true)}
-                  className="flex flex-row items-center justify-center px-[20px] py-[10px] gap-[8px] bg-[#1E1315] border border-[#682528] rounded-[12px] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] hover:bg-[#25171a] transition-colors cursor-pointer w-full sm:w-auto flex-1 sm:flex-none"
-                >
-                  <Trash size={16} className="text-[#FF4D4F]" weight="bold" />
-                  <span className="font-sans font-semibold text-[14px] leading-[20px] tracking-[0.35px] text-[#FF4D4F]">
-                    Remove Trainer
-                  </span>
-                </button>
-                <button 
-                  onClick={() => {
-                    onClose();
-                    router.push(`/owner/users/${params.id}/change-trainer`);
-                  }}
-                  className="flex flex-row items-center justify-center px-[20px] py-[10px] gap-[8px] bg-[#1A2215] border border-[#CCFF00] rounded-[12px] shadow-[0px_4px_6px_-1px_rgba(204,255,0,0.1),0px_2px_4px_-2px_rgba(204,255,0,0.1)] hover:bg-[#202a1a] transition-colors cursor-pointer w-full sm:w-auto flex-1 sm:flex-none"
-                >
-                  <ArrowsLeftRight size={16} className="text-[#CCFF00]" weight="bold" />
-                  <span className="font-sans font-bold text-[14px] leading-[20px] tracking-[0.35px] text-[#CCFF00]">
-                    Change Trainer
-                  </span>
-                </button>
-              </div>
+                <div className="flex flex-col sm:flex-row items-center gap-[12px] w-full sm:w-auto">
+                  <button
+                    onClick={() => setShowConfirmModal(true)}
+                    className="flex flex-row items-center justify-center px-[20px] py-[10px] gap-[8px] bg-[#1E1315] border border-[#682528] rounded-[12px] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] hover:bg-[#25171a] transition-colors cursor-pointer w-full sm:w-auto flex-1 sm:flex-none"
+                  >
+                    <Trash size={16} className="text-[#FF4D4F]" weight="bold" />
+                    <span className="font-sans font-semibold text-[14px] leading-[20px] tracking-[0.35px] text-[#FF4D4F]">
+                      Remove Trainer
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onClose();
+                      router.push(`/owner/users/${params.id}/change-trainer`);
+                    }}
+                    className="flex flex-row items-center justify-center px-[20px] py-[10px] gap-[8px] bg-[#1A2215] border border-[#CCFF00] rounded-[12px] shadow-[0px_4px_6px_-1px_rgba(204,255,0,0.1),0px_2px_4px_-2px_rgba(204,255,0,0.1)] hover:bg-[#202a1a] transition-colors cursor-pointer w-full sm:w-auto flex-1 sm:flex-none"
+                  >
+                    <ArrowsLeftRight size={16} className="text-[#CCFF00]" weight="bold" />
+                    <span className="font-sans font-bold text-[14px] leading-[20px] tracking-[0.35px] text-[#CCFF00]">
+                      Change Trainer
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -148,7 +168,7 @@ export default function TrainerDetailsModal({ isOpen, onClose }: TrainerDetailsM
   return (
     <>
       {createPortal(modalContent, document.body)}
-      <ConfirmationModal 
+      <ConfirmationModal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleRemoveTrainer}

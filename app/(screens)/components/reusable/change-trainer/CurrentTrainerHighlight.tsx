@@ -2,8 +2,31 @@
 
 import { User, CalendarBlank, Star } from "@phosphor-icons/react/dist/ssr";
 import Avatar from "../Avatar";
+import { useAssignedTrainersByCustomer } from "@/lib/hooks/customerTrainers/useCustomerTrainers";
+import { useTrainerSessionsByCustomerTrainerId } from "@/lib/hooks/trainerSessions/useTrainerSessions";
 
-export default function CurrentTrainerHighlight() {
+export default function CurrentTrainerHighlight({ customerId }: { customerId: string }) {
+  const { data: assignedTrainers, isLoading } = useAssignedTrainersByCustomer(customerId);
+  const activeTrainerAssignment = assignedTrainers?.find((t: any) => t.isActive);
+  const trainer = activeTrainerAssignment?.trainer;
+
+  const { data: trainerSessions } = useTrainerSessionsByCustomerTrainerId(activeTrainerAssignment?.customerTrainerId);
+  const completedSessionsCount = trainerSessions?.filter((s: any) => s.status?.toLowerCase() === 'completed')?.length || 0;
+
+  if (isLoading) {
+    return <div className="text-[#94A3B8] p-4 text-sm font-medium border border-[#242A38] bg-[#12161F] rounded-[16px]">Loading current trainer...</div>;
+  }
+
+  if (!trainer) {
+    return (
+      <div className="flex flex-col items-center justify-center p-[24px] w-full bg-[#12161F] border border-[#242A38] rounded-[16px]">
+        <span className="text-[#94A3B8] text-[14px]">No active trainer assigned to this member.</span>
+      </div>
+    );
+  }
+
+  const assignedSince = new Date(activeTrainerAssignment.assignedOn).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
   return (
     <div className="relative flex flex-col items-start p-[20px] sm:p-[24px] w-full bg-[#12161F] border border-[#242A38] shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)] rounded-[16px] overflow-hidden isolate">
       <div className="absolute top-[-63px] right-[-63px] w-[224px] h-[224px] bg-[#CCFF00]/5 blur-[32px] rounded-full pointer-events-none -z-10" />
@@ -11,7 +34,7 @@ export default function CurrentTrainerHighlight() {
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center w-full gap-[24px] z-10">
         <div className="flex flex-row items-center gap-[16px] sm:gap-[20px] w-full xl:w-auto">
           <div className="w-[72px] h-[72px] sm:w-[96px] sm:h-[96px] shrink-0 border-[2px] border-[#2C3344] shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)] rounded-[16px] overflow-hidden">
-             <Avatar src={undefined} alt="Rahul Verma" className="w-full h-full" />
+             <Avatar src={trainer.users?.profilePhoto || undefined} alt={trainer.fullName} className="w-full h-full" />
           </div>
           
           <div className="flex flex-col items-start gap-[6px] min-w-0">
@@ -25,12 +48,12 @@ export default function CurrentTrainerHighlight() {
             </div>
             
             <h2 className="font-sans font-bold text-[18px] sm:text-[20px] leading-[24px] sm:leading-[28px] tracking-[0.3px] text-white truncate w-full max-w-[200px] sm:max-w-none">
-              Rahul Verma
+              {trainer.fullName}
             </h2>
             
             <div className="flex flex-row items-center px-[10px] sm:px-[12px] py-[4px] bg-[#1A2312] border border-[#344B1C] rounded-[6px]">
               <span className="font-sans font-semibold text-[11px] sm:text-[12px] leading-[16px] text-[#CCFF00] whitespace-nowrap">
-                Strength & Conditioning
+                {trainer.specialization || "General Training"}
               </span>
             </div>
           </div>
@@ -46,7 +69,7 @@ export default function CurrentTrainerHighlight() {
                 Assigned Since
               </span>
               <span className="font-sans font-bold text-[13px] sm:text-[14px] leading-[20px] tracking-[0.2px] text-white whitespace-nowrap">
-                03 Jul 2026
+                {assignedSince}
               </span>
             </div>
           </div>
@@ -57,7 +80,7 @@ export default function CurrentTrainerHighlight() {
                 Completed Sessions
               </span>
               <span className="font-sans font-bold text-[13px] sm:text-[14px] leading-[20px] text-[#F1F5F9] whitespace-nowrap">
-                32 Sessions
+                {completedSessionsCount} Sessions
               </span>
             </div>
             
@@ -69,7 +92,7 @@ export default function CurrentTrainerHighlight() {
               </span>
               <div className="flex flex-row items-center gap-[4px]">
                 <span className="font-sans font-bold text-[13px] sm:text-[14px] leading-[20px] text-[#CCFF00]">
-                  4.9
+                  -
                 </span>
                 <div className="flex flex-row items-center gap-[2px]">
                   {[1,2,3,4,5].map((i) => (

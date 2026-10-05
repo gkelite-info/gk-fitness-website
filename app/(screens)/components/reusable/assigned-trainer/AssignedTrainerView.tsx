@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
+import { useAssignedTrainersByCustomer } from "@/lib/hooks/customerTrainers/useCustomerTrainers";
 import AssignedTrainerHeader from "./AssignedTrainerHeader";
 import TrainerMemberBanner from "./TrainerMemberBanner";
 import NoTrainerPanel from "./NoTrainerPanel";
@@ -10,8 +12,12 @@ import CurrentAssignedTrainerCard from "./CurrentAssignedTrainerCard";
 import TrainerDetailsModal from "./modals/TrainerDetailsModal";
 
 export default function AssignedTrainerView() {
-  // Temporary state for demonstration
-  const [isTrainerAssigned, setIsTrainerAssigned] = useState(true);
+  const params = useParams();
+  const customerId = params?.id as string;
+  const { data: assignedTrainers } = useAssignedTrainersByCustomer(customerId);
+  
+  const currentTrainerAssignment = assignedTrainers?.find((t: any) => t.isActive);
+  const isTrainerAssigned = !!currentTrainerAssignment;
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (

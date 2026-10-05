@@ -47,7 +47,7 @@ export async function fetchCustomerTrainersByGym(gymId?: string) {
 
   if (error) {
     console.error('[customerTrainersHelper] fetchCustomerTrainersByGym Error:', error);
-    throw error;
+    return [];
   }
 
   return data ?? [];
@@ -64,7 +64,7 @@ export async function fetchCustomerTrainerById(customerTrainerId: string) {
 
   if (error) {
     console.error('[customerTrainersHelper] fetchCustomerTrainerById Error:', error);
-    throw error;
+    return null;
   }
 
   return data;
@@ -81,7 +81,7 @@ export async function fetchAssignedTrainersByCustomer(customerId: string) {
 
   if (error) {
     console.error('[customerTrainersHelper] fetchAssignedTrainersByCustomer Error:', error);
-    throw error;
+    return [];
   }
 
   return data ?? [];
@@ -100,7 +100,7 @@ export async function fetchAssignedCustomersByTrainer(gymTrainerId: string) {
 
   if (error) {
     console.error('[customerTrainersHelper] fetchAssignedCustomersByTrainer Error:', error);
-    throw error;
+    return [];
   }
 
   return data ?? [];
@@ -133,7 +133,10 @@ export async function fetchAssignedCustomersByTrainerPaginated(
 
   if (error) {
     console.error('[customerTrainersHelper] fetchAssignedCustomersByTrainerPaginated Error:', error);
-    throw error;
+    return {
+      data: [],
+      total: 0,
+    };
   }
 
   return {
@@ -173,6 +176,42 @@ export async function saveCustomerTrainer(assignmentData: SaveCustomerTrainerPar
 
     return data ? data[0] : null;
   } else {
+    // Check if a non-deleted assignment already exists for this customer and trainer
+    const { data: existingData } = await supabase
+      .from('customer_trainers')
+      .select('customerTrainerId')
+      .eq('customerId', assignmentData.customerId)
+      .eq('gymTrainerId', assignmentData.gymTrainerId)
+      .eq('is_deleted', false)
+      .maybeSingle();
+
+    if (existingData) {
+      // Reactivate existing record
+      const updatePayload: any = {
+        weekDays: assignmentData.weekDays,
+        timings: assignmentData.timings,
+        assignedBy: assignmentData.assignedBy,
+        isActive: assignmentData.isActive ?? true,
+        assignedOn: now,
+        updatedAt: now,
+      };
+      if (assignmentData.renewalOn !== undefined) updatePayload.renewalOn = assignmentData.renewalOn;
+      if (assignmentData.expiryOn !== undefined) updatePayload.expiryOn = assignmentData.expiryOn;
+
+      const { data, error } = await supabase
+        .from('customer_trainers')
+        .update(updatePayload)
+        .eq('customerTrainerId', existingData.customerTrainerId)
+        .select();
+
+      if (error) {
+        console.error('[customerTrainersHelper] saveCustomerTrainer Reactivate Error:', error);
+        throw error;
+      }
+
+      return data ? data[0] : null;
+    }
+
     const generatedId = assignmentData.customerTrainerId || crypto.randomUUID();
     const insertPayload: any = {
           customerTrainerId: generatedId,
@@ -243,6 +282,28 @@ export async function toggleCustomerTrainerActiveStatus(customerTrainerId: strin
 
   if (error) {
     console.error('[customerTrainersHelper] toggleCustomerTrainerActiveStatus Error:', error);
+    throw error;
+  }
+
+  return data ? data[0] : null;
+}
+
+export async function reassignTrainerOnly(customerTrainerId: string, newTrainerId: string) {
+  const supabase = createClient();
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('customer_trainers')
+    .update({
+      gymTrainerId: newTrainerId,
+      assignedOn: now,
+      updatedAt: now,
+    })
+    .eq('customerTrainerId', customerTrainerId)
+    .select();
+
+  if (error) {
+    console.error('[customerTrainersHelper] reassignTrainerOnly Error:', error);
     throw error;
   }
 

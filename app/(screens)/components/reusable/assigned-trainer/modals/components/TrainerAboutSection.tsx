@@ -1,8 +1,13 @@
 "use client";
 
 import { User, IdentificationCard, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
+import { useGymTrainerById } from "@/lib/hooks/trainers/useGymTrainers";
 
-export default function TrainerAboutSection() {
+export default function TrainerAboutSection({ trainer }: { trainer: any }) {
+  const { data: trainerData } = useGymTrainerById(trainer?.gymTrainerId || trainer?.id);
+  const activeTrainer = trainerData?.trainer || trainer;
+
+  if (!activeTrainer) return null;
   return (
     <div className="flex flex-col justify-between items-start p-[24px] flex-[1.5] w-full min-h-[302px] bg-[#181C25] border border-[#252B38] rounded-[12px]">
       <div className="flex flex-col items-start gap-[11px] w-full">
@@ -15,7 +20,7 @@ export default function TrainerAboutSection() {
           </h4>
         </div>
         <p className="font-sans font-normal text-[14px] leading-[23px] text-[#D1D5DB] m-0 pb-[12px]">
-          Certified strength and conditioning specialist with 6+ years of experience in helping clients achieve their fitness goals through progressive overload, nutrition alignment, and customized biomechanical assessments.
+          {activeTrainer?.bio || "Certified fitness specialist focused on helping clients achieve their goals through customized workout plans."}
         </p>
       </div>
 
@@ -31,7 +36,7 @@ export default function TrainerAboutSection() {
               CERTIFICATIONS
             </h5>
             <span className="font-sans font-medium text-[14px] leading-[20px] text-white">
-              ACE Certified, ISSA Sports Nutrition
+              {activeTrainer?.qualification || "No certifications listed"}
             </span>
           </div>
         </div>
@@ -46,7 +51,7 @@ export default function TrainerAboutSection() {
               SPECIALIZATION
             </h5>
             <span className="font-sans font-medium text-[14px] leading-[20px] text-white">
-              Strength Training, Weight Gain, Body Transformation
+              {activeTrainer?.specialization || "General Fitness, Strength Training"}
             </span>
           </div>
         </div>
