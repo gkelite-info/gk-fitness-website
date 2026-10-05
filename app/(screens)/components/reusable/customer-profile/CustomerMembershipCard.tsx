@@ -11,7 +11,7 @@ interface CustomerMembershipCardProps {
 export default function CustomerMembershipCard({ membership, onEditPlan }: CustomerMembershipCardProps) {
   return (
     <div className="flex flex-col justify-between items-start p-4 sm:p-6 w-full md:flex-[7] bg-[#10151E] border border-[#1B2433] shadow-lg rounded-2xl h-full min-h-[274px]">
-      
+
       <div className="flex flex-row justify-between items-start w-full gap-4">
         <div className="flex flex-row items-center gap-3.5">
           <div className="flex items-center justify-center w-11 h-11 bg-[#1C2214] border border-[#3B4C12] rounded-full shrink-0">
@@ -26,7 +26,7 @@ export default function CustomerMembershipCard({ membership, onEditPlan }: Custo
             </h3>
           </div>
         </div>
-        <button 
+        <button
           onClick={onEditPlan}
           className="flex flex-row items-center px-3.5 py-1.5 gap-2 border border-[rgba(210,248,2,0.6)] rounded-xl hover:bg-white/5 transition-colors shrink-0 cursor-pointer"
         >
@@ -77,7 +77,7 @@ export default function CustomerMembershipCard({ membership, onEditPlan }: Custo
           {membership?.remainingDays || 0} <span className="text-sm font-bold">Days</span>
         </div>
       </div>
-      
+
     </div>
   );
 }

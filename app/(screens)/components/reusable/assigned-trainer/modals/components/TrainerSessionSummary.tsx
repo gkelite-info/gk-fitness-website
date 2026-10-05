@@ -3,13 +3,17 @@
 import { TrendUp, Barbell, CalendarBlank } from "@phosphor-icons/react/dist/ssr";
 import { useTrainerSessionsByCustomerTrainerId } from "@/lib/hooks/trainerSessions/useTrainerSessions";
 
-export default function TrainerSessionSummary({ customerTrainerId, gymTrainerId }: { customerTrainerId?: string, gymTrainerId?: string }) {
+interface TrainerSessionSummaryProps {
+  customerTrainerId?: string;
+}
+
+export default function TrainerSessionSummary({ customerTrainerId }: TrainerSessionSummaryProps) {
   const { data: allSessions } = useTrainerSessionsByCustomerTrainerId(customerTrainerId);
-  const trainerSessions = allSessions?.filter((s: any) => s.gymTrainerId === gymTrainerId) || [];
+  const trainerSessions = allSessions?.filter((s: any) => s.status?.toLowerCase() === 'completed' || s.status?.toLowerCase() === 'attended') || [];
   const totalSessions = trainerSessions.length;
 
   const sortedSessions = trainerSessions ? [...trainerSessions].sort((a: any, b: any) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime()) : [];
-  const lastSession = sortedSessions.find((s: any) => s.status?.toLowerCase() === 'completed' || s.status?.toLowerCase() === 'attended');
+  const lastSession = sortedSessions.length > 0 ? sortedSessions[0] : null;
 
   const formatCount = (count: number) => {
     if (count >= 1000) {

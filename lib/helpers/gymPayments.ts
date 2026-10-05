@@ -38,12 +38,12 @@ export async function fetchGymPayments(gymId?: string, customerId?: string) {
     .from('gym_payments')
     .select(`
       *,
-      gym_customers (
+      gym_customers!customerId (
         fullName,
         phone,
         userAccount:users!gym_customers_userId_fkey(profilePhoto)
       ),
-      gym_membership_plans!inner (
+      gym_membership_plans!planId (
         planName,
         durationMonths
       )
@@ -80,12 +80,12 @@ export async function fetchGymPaymentsPaginated(
     .from('gym_payments')
     .select(`
       *,
-      gym_customers!inner (
+      gym_customers!customerId (
         fullName,
         phone,
         userAccount:users!gym_customers_userId_fkey(profilePhoto)
       ),
-      gym_membership_plans!inner (
+      gym_membership_plans!planId (
         planName,
         durationMonths
       )

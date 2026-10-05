@@ -9,6 +9,8 @@ import { useAssignedTrainersByCustomer } from "@/lib/hooks/customerTrainers/useC
 
 interface CurrentAssignedTrainerCardProps {
   onViewDetails: () => void;
+  trainerData?: any;
+  isLoading?: boolean;
 }
 
 export default function CurrentAssignedTrainerCard({ onViewDetails }: CurrentAssignedTrainerCardProps) {

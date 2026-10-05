@@ -31,10 +31,10 @@ export default function TrainerProfileInfo({ trainer, assignment }: { trainer: a
           {/* <div className="flex flex-row items-center gap-[8px] w-full justify-center sm:justify-start">
             <div className="flex flex-row items-center gap-[6px]">
               <Star size={16} className="text-[#CCFF00]" weight="fill" />
-              <span className="font-sans font-bold text-[14px] sm:text-[16px] leading-[20px] sm:leading-[24px] text-white">4.8</span>
+              <span className="font-sans font-bold text-[14px] sm:text-[16px] leading-[20px] sm:leading-[24px] text-white">{rating}</span>
             </div>
             <span className="font-sans font-medium text-[13px] sm:text-[14px] leading-[20px] text-[#9CA3AF]">
-              (124 Reviews)
+              ({reviewCount} Reviews)
             </span>
           </div> */}
 

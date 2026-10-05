@@ -41,7 +41,7 @@ export default function AssessmentCard() {
             Weekly Commitment:
           </span>
           <span className="font-sans font-semibold text-[12px] leading-[16px] text-[#CCFF00] whitespace-nowrap text-right">
-            4 Days / Week
+            -
           </span>
         </div> */}
       </div>

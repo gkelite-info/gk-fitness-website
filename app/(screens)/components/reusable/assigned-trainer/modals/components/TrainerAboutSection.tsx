@@ -28,7 +28,7 @@ export default function TrainerAboutSection({ trainer }: { trainer: any }) {
         <div className="flex flex-row items-start gap-[12px] w-full">
           <div className="flex flex-col items-center p-[8px] w-[34px] h-[34px] bg-[#202533] border border-[#2D3446] rounded-[8px] mt-[2px] shrink-0">
             <div className="w-[16px] h-[16px] text-[#CCFF00] flex justify-center items-center">
-               <IdentificationCard size={16} weight="regular" />
+              <IdentificationCard size={16} weight="regular" />
             </div>
           </div>
           <div className="flex flex-col items-start gap-[2px]">
@@ -43,7 +43,7 @@ export default function TrainerAboutSection({ trainer }: { trainer: any }) {
         <div className="flex flex-row items-start gap-[12px] w-full">
           <div className="flex flex-col items-center p-[8px] w-[34px] h-[34px] bg-[#202533] border border-[#2D3446] rounded-[8px] mt-[2px] shrink-0">
             <div className="w-[16px] h-[16px] text-[#CCFF00] flex justify-center items-center">
-               <ShieldCheck size={16} weight="regular" />
+              <ShieldCheck size={16} weight="regular" />
             </div>
           </div>
           <div className="flex flex-col items-start gap-[2px]">
