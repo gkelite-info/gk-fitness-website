@@ -3,7 +3,7 @@
 import { MagnifyingGlass, UsersThree, Bell, Gear, List } from "@phosphor-icons/react";
 import { useUser } from "@/app/context/UserContext";
 import Avatar from "../reusable/Avatar";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
 import AnnouncementsModal from "@/app/(screens)/owner/(dashboard)/_components/AnnouncementsModal";
 
@@ -14,6 +14,7 @@ interface TopHeaderProps {
 export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
   const { profile, roleData, loading } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
   const [isAnnouncementsModalOpen, setIsAnnouncementsModalOpen] = useState(false);
   const [hasUnreadAnnouncements, setHasUnreadAnnouncements] = useState(true);
 
@@ -90,10 +91,18 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
 
         <div className="flex items-center gap-2 flex-shrink-0">
           <button 
-            onClick={() => router.push('/owner/users')}
-            className="cursor-pointer w-10 h-10 flex items-center justify-center bg-[#15161C] border border-[#232631] rounded-xl hover:bg-[#1f212a] transition-colors"
+            onClick={() => router.push('/owner/community')}
+            className={`cursor-pointer w-10 h-10 flex items-center justify-center rounded-xl transition-all ${
+              pathname.startsWith('/owner/community')
+                ? "bg-[rgba(212,255,50,0.1)] border border-[#D4FF32] shadow-[0_0_16px_rgba(212,255,50,0.2),inset_0_0_8px_rgba(212,255,50,0.2)]"
+                : "bg-[#15161C] border border-[#232631] hover:bg-[#1f212a]"
+            }`}
           >
-            <UsersThree size={16} className="text-[#CBD5E1]" weight="regular" />
+            <UsersThree 
+              size={16} 
+              className={pathname.startsWith('/owner/community') ? "text-[#D4FF32]" : "text-[#CBD5E1]"} 
+              weight={pathname.startsWith('/owner/community') ? "fill" : "regular"} 
+            />
           </button>
           <button
             onClick={() => {
