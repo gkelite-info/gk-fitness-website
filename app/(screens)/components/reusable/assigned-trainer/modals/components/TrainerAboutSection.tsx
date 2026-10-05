@@ -1,16 +1,13 @@
 "use client";
 
 import { User, IdentificationCard, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
+import { useGymTrainerById } from "@/lib/hooks/trainers/useGymTrainers";
 
-interface TrainerAboutSectionProps {
-  trainerData?: any;
-}
+export default function TrainerAboutSection({ trainer }: { trainer: any }) {
+  const { data: trainerData } = useGymTrainerById(trainer?.gymTrainerId || trainer?.id);
+  const activeTrainer = trainerData?.trainer || trainer;
 
-export default function TrainerAboutSection({ trainerData }: TrainerAboutSectionProps) {
-  const description = trainerData?.bio || "-";
-  const certifications = trainerData?.qualification || "-";
-  const specialization = trainerData?.specialization || "-";
-
+  if (!activeTrainer) return null;
   return (
     <div className="flex flex-col justify-between items-start p-[24px] flex-[1.5] w-full min-h-[302px] bg-[#181C25] border border-[#252B38] rounded-[12px]">
       <div className="flex flex-col items-start gap-[11px] w-full">
@@ -23,7 +20,7 @@ export default function TrainerAboutSection({ trainerData }: TrainerAboutSection
           </h4>
         </div>
         <p className="font-sans font-normal text-[14px] leading-[23px] text-[#D1D5DB] m-0 pb-[12px]">
-          {description}
+          {activeTrainer?.bio || "Certified fitness specialist focused on helping clients achieve their goals through customized workout plans."}
         </p>
       </div>
 
@@ -31,7 +28,7 @@ export default function TrainerAboutSection({ trainerData }: TrainerAboutSection
         <div className="flex flex-row items-start gap-[12px] w-full">
           <div className="flex flex-col items-center p-[8px] w-[34px] h-[34px] bg-[#202533] border border-[#2D3446] rounded-[8px] mt-[2px] shrink-0">
             <div className="w-[16px] h-[16px] text-[#CCFF00] flex justify-center items-center">
-               <IdentificationCard size={16} weight="regular" />
+              <IdentificationCard size={16} weight="regular" />
             </div>
           </div>
           <div className="flex flex-col items-start gap-[2px]">
@@ -39,14 +36,14 @@ export default function TrainerAboutSection({ trainerData }: TrainerAboutSection
               CERTIFICATIONS
             </h5>
             <span className="font-sans font-medium text-[14px] leading-[20px] text-white">
-              {certifications}
+              {activeTrainer?.qualification || "No certifications listed"}
             </span>
           </div>
         </div>
         <div className="flex flex-row items-start gap-[12px] w-full">
           <div className="flex flex-col items-center p-[8px] w-[34px] h-[34px] bg-[#202533] border border-[#2D3446] rounded-[8px] mt-[2px] shrink-0">
             <div className="w-[16px] h-[16px] text-[#CCFF00] flex justify-center items-center">
-               <ShieldCheck size={16} weight="regular" />
+              <ShieldCheck size={16} weight="regular" />
             </div>
           </div>
           <div className="flex flex-col items-start gap-[2px]">
@@ -54,7 +51,7 @@ export default function TrainerAboutSection({ trainerData }: TrainerAboutSection
               SPECIALIZATION
             </h5>
             <span className="font-sans font-medium text-[14px] leading-[20px] text-white">
-              {specialization}
+              {activeTrainer?.specialization || "General Fitness, Strength Training"}
             </span>
           </div>
         </div>

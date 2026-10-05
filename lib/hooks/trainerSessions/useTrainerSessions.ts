@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchTrainerSessionsByCustomerTrainerId,
+  fetchTrainerSessionsByGymTrainerId,
   fetchTrainerSessionsByDateRange,
   fetchTrainerSessionsForDate,
   saveTrainerSession,
@@ -24,6 +25,18 @@ export function useTrainerSessionsByCustomerTrainerId(customerTrainerId?: string
       return data;
     },
     enabled: !!customerTrainerId,
+  });
+}
+
+export function useTrainerSessionsByGymTrainerId(gymTrainerId?: string) {
+  return useQuery({
+    queryKey: ['trainerSessions', 'gymTrainer', gymTrainerId],
+    queryFn: async () => {
+      if (!gymTrainerId) return [];
+      const data = await fetchTrainerSessionsByGymTrainerId(gymTrainerId);
+      return data;
+    },
+    enabled: !!gymTrainerId,
   });
 }
 

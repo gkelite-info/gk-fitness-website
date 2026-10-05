@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchCustomerTrainersByGym, fetchAssignedTrainersByCustomer, fetchAssignedCustomersByTrainer, fetchAssignedCustomersByTrainerPaginated, fetchCustomerTrainerById, saveCustomerTrainer, deleteCustomerTrainer, toggleCustomerTrainerActiveStatus, SaveCustomerTrainerParams } from '@/lib/helpers/customerTrainers/customerTrainersHelper';
+import { fetchCustomerTrainersByGym, fetchAssignedTrainersByCustomer, fetchAssignedCustomersByTrainer, fetchAssignedCustomersByTrainerPaginated, fetchCustomerTrainerById, saveCustomerTrainer, deleteCustomerTrainer, toggleCustomerTrainerActiveStatus, reassignTrainerOnly, SaveCustomerTrainerParams } from '@/lib/helpers/customerTrainers/customerTrainersHelper';
 
 export function useCustomerTrainersByGym(gymId?: string) {
   return useQuery({
@@ -90,6 +90,18 @@ export function useToggleCustomerTrainerStatus() {
   return useMutation({
     mutationFn: async ({ customerTrainerId, currentStatus }: { customerTrainerId: string; currentStatus: boolean }) => {
       return await toggleCustomerTrainerActiveStatus(customerTrainerId, currentStatus);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customerTrainers'] });
+    },
+  });
+}
+
+export function useReassignTrainerOnly() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ customerTrainerId, newTrainerId }: { customerTrainerId: string; newTrainerId: string }) => {
+      return await reassignTrainerOnly(customerTrainerId, newTrainerId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customerTrainers'] });

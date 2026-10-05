@@ -350,7 +350,7 @@ export async function fetchGymCustomers(gymId?: string) {
   const { data, error } = await query;
   if (error) {
     console.error('[customerHelper] fetchGymCustomers Error:', error);
-    throw error;
+    return [];
   }
   return data ?? [];
 }
@@ -368,7 +368,7 @@ export async function fetchPastGymCustomers(gymId: string) {
 
   if (error) {
     console.error('[customerHelper] fetchPastGymCustomers Error:', error);
-    throw error;
+    return [];
   }
   return data ?? [];
 }
@@ -401,7 +401,7 @@ export async function fetchGymCustomersPaginated(
   const { data, error, count } = await query;
   if (error) {
     console.error('[customerHelper] fetchGymCustomersPaginated Error:', error);
-    throw error;
+    return { data: [], total: 0 };
   }
   return { data: data ?? [], total: count || 0 };
 }
@@ -417,7 +417,7 @@ export async function fetchGymCustomerById(customerId: string) {
 
   if (error) {
     console.error('[customerHelper] fetchGymCustomerById Error:', error);
-    throw error;
+    return null;
   }
   return data;
 }

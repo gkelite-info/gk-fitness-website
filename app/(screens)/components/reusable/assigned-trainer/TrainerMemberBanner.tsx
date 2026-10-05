@@ -13,9 +13,9 @@ export default function TrainerMemberBanner({ customer, activeTrainerAssignment 
   const memberName = customer?.fullName || "-";
   const email = customer?.email || "-";
   const phone = customer?.phone || "-";
-  
-  const joinedDate = customer?.createdAt 
-    ? new Date(customer.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) 
+
+  const joinedDate = customer?.createdAt
+    ? new Date(customer.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
     : "-";
   const status = customer?.is_Active ? "Active" : "Inactive";
   const memberStatusColor = customer?.is_Active ? "text-[#34D399]" : "text-gray-400";
@@ -24,10 +24,9 @@ export default function TrainerMemberBanner({ customer, activeTrainerAssignment 
 
   return (
     <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-6 w-full bg-[#15181E] border border-[#212630] rounded-2xl gap-6 lg:gap-4 mt-6 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.2),0px_4px_6px_-4px_rgba(0,0,0,0.2)]">
-      
       <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 w-full lg:w-auto flex-1">
         <Avatar className="w-[56px] h-[56px]" alt={memberName} />
-        
+
         <div className="flex flex-col items-center sm:items-start gap-2 min-w-0 flex-1 w-full sm:w-auto">
           <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 w-full">
             <h3 className="font-sans font-bold text-[18px] leading-[28px] text-white m-0 break-words text-center sm:text-left">
@@ -47,7 +46,7 @@ export default function TrainerMemberBanner({ customer, activeTrainerAssignment 
               </div>
             </div>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center sm:justify-start gap-1 sm:gap-3 text-[12px] leading-[16px] text-[#9CA3AF] w-full text-center sm:text-left">
             <span className="break-all sm:break-words">{email}</span>
             <div className="w-1 h-1 bg-[#9CA3AF] rounded-full shrink-0 hidden sm:block" />
@@ -69,7 +68,7 @@ export default function TrainerMemberBanner({ customer, activeTrainerAssignment 
             {onboardingData?.primaryGoal || "-"}
           </span>
         </div>
-        
+
         <div className="flex flex-col items-start lg:items-end gap-0.5 w-full sm:w-auto">
           <span className="font-sans font-medium text-[11px] leading-[16px] uppercase text-[#9CA3AF] tracking-[0.55px]">
             Preferred Slot
@@ -79,7 +78,7 @@ export default function TrainerMemberBanner({ customer, activeTrainerAssignment 
           </span>
         </div>
       </div>
-      
+
     </div>
   );
 }

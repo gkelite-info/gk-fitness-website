@@ -5,58 +5,47 @@ import { useState } from "react";
 import Avatar from "../Avatar";
 import Pagination from "../Pagination";
 
-interface Trainer {
-  id: string;
-  name: string;
-  specialty: string;
-  phone: string;
-  email: string;
-  image: string;
+// We can use any for now or define a proper type
+interface AvailableTrainersGridProps {
+  trainers: any[];
+  isLoading?: boolean;
+  customerId: string;
 }
 
-const trainers: Trainer[] = [
-  { id: "1", name: "Amit Sharma", specialty: "Weight Loss", phone: "+91 98765 43211", email: "amit.sharma@fitzor.com", image: "" },
-  { id: "2", name: "Sneha Kapoor", specialty: "Strength", phone: "+91 98765 43212", email: "sneha.kapoor@fitzor.com", image: "" },
-  { id: "3", name: "Vikram Singh", specialty: "Cardio & Endurance", phone: "+91 98765 43213", email: "vikram.singh@fitzor.com", image: "" },
-  { id: "4", name: "Neha Patel", specialty: "Yoga & Flexibility", phone: "+91 98765 43214", email: "neha.patel@fitzor.com", image: "" },
-  { id: "5", name: "Karan Mehta", specialty: "CrossFit", phone: "+91 98765 43215", email: "karan.mehta@fitzor.com", image: "" },
-];
-
-function TrainerCard({ trainer }: { trainer: Trainer }) {
+function TrainerCard({ trainer, customerId }: { trainer: any, customerId: string }) {
   const router = useRouter();
-  const params = useParams();
 
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-[16px] sm:p-[20px] gap-[16px] w-full bg-[#121620] border border-[#232938] rounded-[16px]">
       <div className="flex flex-row items-center gap-[16px] min-w-0 w-full sm:w-auto">
         <div className="w-[64px] h-[64px] sm:w-[80px] sm:h-[80px] border border-[#272E3F] shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] rounded-[12px] overflow-hidden shrink-0">
-          <Avatar src={trainer.image || undefined} alt={trainer.name} className="w-full h-full" />
+          <Avatar src={trainer.users?.profilePhoto || trainer.image || undefined} alt={trainer.fullName || trainer.name} className="w-full h-full" />
         </div>
         <div className="flex flex-col items-start gap-[2px] sm:gap-[4px] min-w-0">
           <h3 className="font-sans font-bold text-[15px] sm:text-[16px] leading-[22px] sm:leading-[24px] text-white truncate w-full">
-            {trainer.name}
+            {trainer.fullName || trainer.name}
           </h3>
           <span className="font-sans font-semibold text-[12px] sm:text-[14px] leading-[18px] sm:leading-[20px] text-[#CCFF00] truncate w-full">
-            {trainer.specialty}
+            {trainer.specialization || trainer.specialty || "General Training"}
           </span>
           <div className="flex flex-col items-start gap-[2px] mt-[2px]">
             <div className="flex flex-row items-center gap-[6px] min-w-0">
               <Phone size={14} className="text-[#64748B] shrink-0" weight="fill" />
               <span className="font-sans font-normal text-[11px] sm:text-[12px] leading-[16px] text-[#94A3B8] truncate">
-                {trainer.phone}
+                {trainer.users?.phone || trainer.phone || "No phone"}
               </span>
             </div>
             <div className="flex flex-row items-center gap-[6px] min-w-0">
               <EnvelopeSimple size={14} className="text-[#64748B] shrink-0" weight="fill" />
               <span className="font-sans font-normal text-[11px] sm:text-[12px] leading-[16px] text-[#94A3B8] truncate">
-                {trainer.email}
+                {trainer.users?.email || trainer.email || "No email"}
               </span>
             </div>
           </div>
         </div>
       </div>
-      <button 
-        onClick={() => router.push(`/owner/users/${params.id}/change-trainer/${trainer.id}`)}
+      <button
+        onClick={() => router.push(`/owner/users/${customerId}/change-trainer/${trainer.gymTrainerId || trainer.id}`)}
         className="flex flex-row items-center justify-center px-[20px] sm:px-[24px] py-[10px] gap-[8px] h-[40px] sm:h-[42px] bg-[#121808]/40 border border-[#CCFF00] rounded-[12px] w-full sm:w-auto hover:bg-[#1a230b]/60 transition-colors shrink-0 cursor-pointer"
       >
         <span className="font-sans font-semibold text-[13px] sm:text-[14px] leading-[20px] tracking-[0.35px] text-[#CCFF00]">
@@ -68,8 +57,12 @@ function TrainerCard({ trainer }: { trainer: Trainer }) {
   );
 }
 
-export default function AvailableTrainersGrid() {
+export default function AvailableTrainersGrid({ trainers, isLoading, customerId }: AvailableTrainersGridProps) {
   const [currentPage, setCurrentPage] = useState(1);
+
+  const itemsPerPage = 6;
+  const totalPages = Math.max(1, Math.ceil(trainers.length / itemsPerPage));
+  const displayedTrainers = trainers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="flex flex-col items-start gap-[16px] sm:gap-[20px] w-full pb-[8px]">
@@ -80,7 +73,7 @@ export default function AvailableTrainersGrid() {
           </h2>
           <div className="flex items-center px-[10px] py-[2px] bg-[#1B2230] border border-[#273247] rounded-full shrink-0">
             <span className="font-sans font-semibold text-[11px] sm:text-[12px] leading-[16px] text-[#CCFF00]">
-              24 Available
+              {trainers.length} Available
             </span>
           </div>
         </div>
@@ -96,16 +89,24 @@ export default function AvailableTrainersGrid() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-[16px] sm:gap-[20px] w-full">
-        {trainers.map(t => <TrainerCard key={t.id} trainer={t} />)}
+        {isLoading ? (
+          <div className="text-[#94A3B8] p-4 col-span-1 lg:col-span-2 text-center">Loading trainers...</div>
+        ) : displayedTrainers.length === 0 ? (
+          <div className="text-[#94A3B8] p-4 col-span-1 lg:col-span-2 text-center">No trainers available.</div>
+        ) : (
+          displayedTrainers.map(t => <TrainerCard key={t.gymTrainerId || t.id} trainer={t} customerId={customerId} />)
+        )}
       </div>
 
-      <Pagination 
-        currentPage={currentPage}
-        totalPages={5}
-        totalItems={24}
-        itemsPerPage={5}
-        onPageChange={setCurrentPage}
-      />
+      {!isLoading && trainers.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={trainers.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+        />
+      )}
     </div>
   );
 }

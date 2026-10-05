@@ -1,20 +1,19 @@
 "use client";
 
 import { FileText } from "@phosphor-icons/react/dist/ssr";
+import { useParams } from "next/navigation";
+import { useGymCustomerById } from "@/lib/hooks/customers/useGymCustomers";
 import { useCustomerOnboardingData } from "@/lib/hooks/customers/useCustomerOnboardingData";
 
-interface AssessmentCardProps {
-  customer?: any;
-}
-
-export default function AssessmentCard({ customer }: AssessmentCardProps) {
-  const { data: onboardingData } = useCustomerOnboardingData(customer?.id);
-  const targetWeight = onboardingData?.targetWeight ? `${onboardingData.targetWeight} kg` : "-";
-  const currentWeight = onboardingData?.weight ? `${onboardingData.weight} kg` : "-";
-
+export default function AssessmentCard() {
+  const params = useParams();
+  const customerId = params?.id as string;
+  const { data: customer } = useGymCustomerById(customerId);
+  const userId = customer?.userId || customer?.users?.userId;
+  const { data: onboarding } = useCustomerOnboardingData(userId);
   return (
     <div className="flex flex-col items-start p-[24px] w-full bg-[#15181E] border border-[#212630] rounded-[16px] shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)] gap-[16px]">
-      
+
       <div className="flex flex-row items-center gap-[8px] w-full">
         <FileText size={16} className="text-[#CCFF00]" weight="fill" />
         <h4 className="font-sans font-bold text-[14px] leading-[20px] tracking-[0.7px] uppercase text-white m-0">
@@ -29,10 +28,10 @@ export default function AssessmentCard({ customer }: AssessmentCardProps) {
           </span>
           <div className="flex flex-row items-baseline gap-[4px] text-right">
             <span className="font-sans font-semibold text-[12px] leading-[16px] text-white whitespace-nowrap">
-              {targetWeight}
+              {onboarding?.targetWeight ? `${onboarding.targetWeight} kg` : '-'}
             </span>
             <span className="font-sans font-normal text-[12px] leading-[16px] text-[#64748B] whitespace-nowrap">
-              (Current: {currentWeight})
+              (Current: {onboarding?.weight ? `${onboarding.weight} kg` : '-'})
             </span>
           </div>
         </div>
@@ -46,7 +45,6 @@ export default function AssessmentCard({ customer }: AssessmentCardProps) {
           </span>
         </div> */}
       </div>
-      
     </div>
   );
 }

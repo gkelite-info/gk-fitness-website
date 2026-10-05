@@ -8,15 +8,12 @@ interface TrainerSessionSummaryProps {
 }
 
 export default function TrainerSessionSummary({ customerTrainerId }: TrainerSessionSummaryProps) {
-  const { data: sessions } = useTrainerSessionsByCustomerTrainerId(customerTrainerId);
+  const { data: allSessions } = useTrainerSessionsByCustomerTrainerId(customerTrainerId);
+  const trainerSessions = allSessions?.filter((s: any) => s.status?.toLowerCase() === 'completed' || s.status?.toLowerCase() === 'attended') || [];
+  const totalSessions = trainerSessions.length;
 
-  const completedSessions = sessions?.filter((s: any) => s.status === "completed") || [];
-  const totalSessions = completedSessions.length;
-
-  const lastSession = completedSessions.length > 0 ? completedSessions[0] : null;
-  const lastSessionDate = lastSession?.sessionDate
-    ? new Date(lastSession.sessionDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
-    : "-";
+  const sortedSessions = trainerSessions ? [...trainerSessions].sort((a: any, b: any) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime()) : [];
+  const lastSession = sortedSessions.length > 0 ? sortedSessions[0] : null;
 
   const formatCount = (count: number) => {
     if (count >= 1000) {
@@ -28,7 +25,7 @@ export default function TrainerSessionSummary({ customerTrainerId }: TrainerSess
   return (
     <div className="relative flex flex-col items-start p-[24px_24px_46px] flex-1 w-full min-h-[284px] bg-[#181C25] border border-[#252B38] rounded-[12px] overflow-hidden">
       <div className="absolute -top-[39px] -right-[39px] w-[144px] h-[144px] bg-[#CCFF00]/5 blur-[20px] rounded-full pointer-events-none z-0" />
-      
+
       <div className="flex flex-col items-start gap-[16px] w-full z-10">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full gap-3 sm:gap-2">
           <div className="flex flex-row items-center gap-[10px]">
@@ -67,10 +64,10 @@ export default function TrainerSessionSummary({ customerTrainerId }: TrainerSess
             </div>
             <div className="flex flex-row items-baseline justify-start sm:justify-end gap-1 shrink-0 w-full sm:w-auto text-left sm:text-right">
               <span className="font-sans font-bold text-[28px] sm:text-[30px] leading-[28px] sm:leading-[32px] tracking-[-0.75px] text-white">
-                {formatCount(totalSessions)}
+                {totalSessions > 0 ? formatCount(totalSessions) : "-"}
               </span>
               <span className="font-sans font-bold text-[10px] leading-[15px] tracking-[0.5px] uppercase text-[#CCFF00]">
-                DONE
+                {totalSessions > 0 ? "DONE" : ""}
               </span>
             </div>
           </div>
@@ -84,18 +81,23 @@ export default function TrainerSessionSummary({ customerTrainerId }: TrainerSess
                 <span className="font-sans font-semibold text-[11px] leading-[16px] tracking-[0.55px] uppercase text-[#9CA3AF]">
                   LAST SESSION
                 </span>
-                <div className="flex flex-row items-center px-[8px] py-[2px] gap-[6px] bg-[#202533] border border-[#2C3242] rounded-[6px] w-auto">
+                {/* <div className="flex flex-row items-center px-[8px] py-[2px] gap-[6px] bg-[#202533] border border-[#2C3242] rounded-[6px] w-auto">
                   <TrendUp size={12} className="text-[#CCFF00] shrink-0" />
                   <span className="font-sans font-medium text-[10px] leading-[15px] text-[#D1D5DB]">
-                    Duration: -
+                    Duration: {lastSession?.durationMinutes || 60}m
                   </span>
-                </div>
+                </div> */}
               </div>
             </div>
             <div className="flex flex-col items-start sm:items-end justify-start sm:justify-end shrink-0 w-full sm:w-auto text-left sm:text-right">
               <span className="font-sans font-bold text-[16px] leading-[24px] tracking-[-0.4px] text-white whitespace-nowrap">
-                {lastSessionDate}
+                {lastSession ? new Date(lastSession.sessionDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : "-"}
               </span>
+              {lastSession && (
+                <span className="font-sans font-medium text-[12px] leading-[16px] text-[#9CA3AF] mt-1">
+                  {new Date(lastSession.sessionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })} (IST)
+                </span>
+              )}
             </div>
           </div>
         </div>

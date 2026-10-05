@@ -5,6 +5,7 @@ export type SessionStatus = 'pending' | 'completed' | 'cancelled';
 export interface TrainerSessionAttributes {
   trainerSessionId?: string;
   customerTrainerId: string;
+  gymTrainerId: string;
   sessionDate: string | Date;
   status: SessionStatus;
   createdAt?: string | Date;
@@ -14,6 +15,7 @@ export interface TrainerSessionAttributes {
 export interface SaveTrainerSessionParams {
   trainerSessionId?: string;
   customerTrainerId: string;
+  gymTrainerId: string;
   sessionDate: string | Date;
   status?: SessionStatus;
 }
@@ -24,6 +26,21 @@ export async function fetchTrainerSessionsByCustomerTrainerId(customerTrainerId:
     .from('trainer_sessions')
     .select('*')
     .eq('customerTrainerId', customerTrainerId)
+    .order('sessionDate', { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+export async function fetchTrainerSessionsByGymTrainerId(gymTrainerId: string) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('trainer_sessions')
+    .select('*')
+    .eq('gymTrainerId', gymTrainerId)
     .order('sessionDate', { ascending: false });
 
   if (error) {
@@ -106,6 +123,7 @@ export async function saveTrainerSession(params: SaveTrainerSessionParams) {
     const payload = {
       trainerSessionId: crypto.randomUUID(),
       customerTrainerId: params.customerTrainerId,
+      gymTrainerId: params.gymTrainerId,
       sessionDate: params.sessionDate instanceof Date
         ? params.sessionDate.toISOString()
         : params.sessionDate,

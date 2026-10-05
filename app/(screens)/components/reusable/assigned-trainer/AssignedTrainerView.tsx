@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
+import { useAssignedTrainersByCustomer } from "@/lib/hooks/customerTrainers/useCustomerTrainers";
 import AssignedTrainerHeader from "./AssignedTrainerHeader";
 import TrainerMemberBanner from "./TrainerMemberBanner";
 import NoTrainerPanel from "./NoTrainerPanel";
@@ -8,7 +10,6 @@ import AssessmentCard from "./AssessmentCard";
 import MatchingTrainersCard from "./MatchingTrainersCard";
 import CurrentAssignedTrainerCard from "./CurrentAssignedTrainerCard";
 import TrainerDetailsModal from "./modals/TrainerDetailsModal";
-import { useAssignedTrainersByCustomer } from "@/lib/hooks/customerTrainers/useCustomerTrainers";
 import { useGymCustomerById } from "@/lib/hooks/customers/useGymCustomers";
 
 interface AssignedTrainerViewProps {
@@ -17,7 +18,7 @@ interface AssignedTrainerViewProps {
 
 export default function AssignedTrainerView({ userId }: AssignedTrainerViewProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   const { data: trainers, isLoading } = useAssignedTrainersByCustomer(userId);
   const { data: customer, isLoading: isCustomerLoading } = useGymCustomerById(userId);
 
@@ -29,15 +30,15 @@ export default function AssignedTrainerView({ userId }: AssignedTrainerViewProps
   return (
     <div className="flex flex-col items-center w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-6 sm:gap-8 pb-12">
       <div className="w-full max-w-[960px]">
-        
+
         <AssignedTrainerHeader />
         <TrainerMemberBanner customer={customer} activeTrainerAssignment={activeTrainerAssignment} />
-        
+
         <div className="flex flex-col lg:flex-row items-stretch gap-6 mt-6 w-full">
           {isTrainerAssigned ? (
             <div className="flex w-full lg:w-1/2 flex-1">
-              <CurrentAssignedTrainerCard 
-                onViewDetails={() => setIsModalOpen(true)} 
+              <CurrentAssignedTrainerCard
+                onViewDetails={() => setIsModalOpen(true)}
                 trainerData={trainerData}
                 isLoading={isLoading}
               />
@@ -48,15 +49,15 @@ export default function AssignedTrainerView({ userId }: AssignedTrainerViewProps
             </div>
           )}
           <div className="flex flex-col gap-6 w-full lg:w-1/2 flex-1">
-            <AssessmentCard customer={customer} />
+            <AssessmentCard />
             <MatchingTrainersCard customer={customer} />
           </div>
         </div>
       </div>
 
-      <TrainerDetailsModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <TrainerDetailsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         trainerData={trainerData}
         customer={customer}
         activeTrainerAssignment={activeTrainerAssignment}
