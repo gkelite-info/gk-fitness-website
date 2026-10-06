@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
 import { logGymInventoryHistory } from './inventoryHistory';
 
 export interface GymInventoryAttributes {
@@ -39,11 +39,13 @@ export function getEquipmentImageUrl(imageNameOrUrl?: string | null): string | n
   ) {
     return imageNameOrUrl;
   }
+  const supabase = createClient();
   const { data } = supabase.storage.from('equipment').getPublicUrl(imageNameOrUrl);
   return data?.publicUrl || null;
 }
 
 export async function fetchGymInventories(gymId?: string) {
+  const supabase = createClient();
   let query = supabase
     .from('gym_inventories')
     .select('*')
@@ -68,6 +70,7 @@ export async function fetchGymInventories(gymId?: string) {
 }
 
 export async function fetchGymInventoryById(gymInventoryId: string) {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('gym_inventories')
     .select('*')
@@ -91,6 +94,7 @@ export async function fetchGymInventoryById(gymInventoryId: string) {
 }
 
 export async function saveGymInventory(inventoryData: SaveGymInventoryParams) {
+  const supabase = createClient();
   const now = new Date().toISOString();
 
   let imageFileName = inventoryData.image || null;
@@ -193,11 +197,13 @@ export async function saveGymInventory(inventoryData: SaveGymInventoryParams) {
 }
 
 export async function deleteGymInventory(gymInventoryId: string) {
+  const supabase = createClient();
   const now = new Date().toISOString();
 
   const { data, error } = await supabase
     .from('gym_inventories')
     .update({
+      is_Active: false,
       is_deleted: true,
       deletedAt: now,
       updatedAt: now,
@@ -213,6 +219,7 @@ export async function deleteGymInventory(gymInventoryId: string) {
 }
 
 export async function toggleGymInventoryActiveStatus(gymInventoryId: string, currentStatus: boolean) {
+  const supabase = createClient();
   const now = new Date().toISOString();
 
   const { data, error } = await supabase
@@ -233,6 +240,7 @@ export async function toggleGymInventoryActiveStatus(gymInventoryId: string, cur
 
 export async function uploadEquipmentImage(fileData: ArrayBuffer | Blob, fileName: string) {
   try {
+    const supabase = createClient();
     const { data, error } = await supabase.storage
       .from('equipment')
       .upload(fileName, fileData, {
@@ -250,6 +258,7 @@ export async function uploadEquipmentImage(fileData: ArrayBuffer | Blob, fileNam
 }
 
 export async function deleteEquipmentImage(imagePath: string) {
+  const supabase = createClient();
   const fileName = imagePath.includes('/') ? imagePath.split('/').pop()! : imagePath;
   const { data, error } = await supabase.storage
     .from('equipment')
@@ -264,6 +273,7 @@ export async function deleteEquipmentImage(imagePath: string) {
 }
 
 export async function removeEquipmentImageFromDb(gymInventoryId: string) {
+  const supabase = createClient();
   const now = new Date().toISOString();
   
   const { data, error } = await supabase
@@ -282,4 +292,3 @@ export async function removeEquipmentImageFromDb(gymInventoryId: string) {
 
   return data ? data[0] : null;
 }
-

@@ -1,7 +1,16 @@
 "use client";
 import { Cube, Gear, WarningCircle } from "@phosphor-icons/react";
 
-export default function InventoryStats() {
+interface InventoryStatsProps {
+  inventoryData: any[];
+}
+
+export default function InventoryStats({ inventoryData = [] }: InventoryStatsProps) {
+  const totalEquipmentTypes = inventoryData.length;
+  const totalUnits = inventoryData.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+  const underMaintenance = inventoryData.reduce((sum, item) => sum + (Number(item.underMaint) || 0), 0);
+  const outOfService = inventoryData.reduce((sum, item) => sum + (Number(item.outOfService) || 0), 0);
+
   return (
     <div className="w-full mt-6 mb-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
@@ -14,7 +23,7 @@ export default function InventoryStats() {
               Total Equipment
             </span>
             <span className="font-sans font-bold text-[22px] leading-[28px] tracking-[-0.5px] text-white">
-              128
+              {totalEquipmentTypes}
             </span>
           </div>
         </div>
@@ -27,7 +36,7 @@ export default function InventoryStats() {
               Total Units
             </span>
             <span className="font-sans font-bold text-[22px] leading-[28px] tracking-[-0.5px] text-white">
-              324
+              {totalUnits}
             </span>
           </div>
         </div>
@@ -40,7 +49,7 @@ export default function InventoryStats() {
               Under Maintenance
             </span>
             <span className="font-sans font-bold text-[22px] leading-[28px] tracking-[-0.5px] text-white">
-              18
+              {underMaintenance}
             </span>
           </div>
         </div>
@@ -53,7 +62,7 @@ export default function InventoryStats() {
               Out of Service
             </span>
             <span className="font-sans font-bold text-[22px] leading-[28px] tracking-[-0.5px] text-white">
-              6
+              {outOfService}
             </span>
           </div>
         </div>

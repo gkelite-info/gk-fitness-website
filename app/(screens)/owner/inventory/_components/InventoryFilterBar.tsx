@@ -1,10 +1,22 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { MagnifyingGlass, PlusCircle } from "@phosphor-icons/react";
 
-export default function InventoryFilterBar() {
-  const [search, setSearch] = useState("");
+interface InventoryFilterBarProps {
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+}
+
+export default function InventoryFilterBar({ searchTerm, onSearchChange }: InventoryFilterBarProps) {
+  const [localSearch, setLocalSearch] = useState(searchTerm);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      onSearchChange(localSearch);
+    }, 600);
+    return () => clearTimeout(handler);
+  }, [localSearch, onSearchChange]);
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-3 w-full mb-6">
@@ -13,8 +25,8 @@ export default function InventoryFilterBar() {
         <input
           type="text"
           placeholder="Search equipment..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
           className="flex-1 bg-transparent border-none outline-none font-sans text-[13.5px] leading-4 text-white placeholder-[#64748B] min-w-0"
         />
       </div>

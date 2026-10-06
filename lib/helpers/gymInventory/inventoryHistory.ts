@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
 
 export interface GymInventoryHistoryAttributes {
   historyId?: string;
@@ -18,6 +18,7 @@ export interface LogGymInventoryHistoryParams {
 }
 
 export async function logGymInventoryHistory(params: LogGymInventoryHistoryParams) {
+  const supabase = createClient();
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from('gym_inventory_histories')
@@ -43,6 +44,7 @@ export async function logGymInventoryHistory(params: LogGymInventoryHistoryParam
 }
 
 export async function fetchGymInventoryHistory(gymInventoryId: string) {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('gym_inventory_histories')
     .select('*')
@@ -65,6 +67,7 @@ export interface UpdateGymInventoryStockParams {
 }
 
 export async function updateGymInventoryStock(params: UpdateGymInventoryStockParams) {
+  const supabase = createClient();
   const { gymInventoryId, action, quantity, createdBy } = params;
   const now = new Date().toISOString();
 
@@ -100,6 +103,7 @@ export async function updateGymInventoryStock(params: UpdateGymInventoryStockPar
   }
 
   if (action === 'add' || action === 'reduce') {
+    const supabase = createClient();
     const { data: updatedData, error: updateError } = await supabase
       .from('gym_inventories')
       .update({
