@@ -4,16 +4,23 @@ import Link from "next/link";
 import { CaretLeft } from "@phosphor-icons/react";
 import AddEquipmentForm from "../../add/_components/AddEquipmentForm";
 import AddEquipmentPreview from "../../add/_components/AddEquipmentPreview";
+import { useGymInventoryDetail } from "@/lib/hooks/inventory/useGymInventory";
 
 export default function EditEquipmentPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const [equipmentName, setEquipmentName] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  
+  const { data: detailData, isLoading } = useGymInventoryDetail(resolvedParams.id);
 
   useEffect(() => {
-    setEquipmentName("Treadmill");
-    setImagePreview("https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=2070&auto=format&fit=crop");
-  }, [resolvedParams.id]);
+    if (detailData?.data) {
+      setEquipmentName(detailData.data.equipmentName || "");
+      if (detailData.data.image) {
+        setImagePreview(detailData.data.image);
+      }
+    }
+  }, [detailData]);
 
   return (
     <div className="flex flex-col items-start px-4 sm:px-6 lg:px-8 py-6 lg:py-8 w-full max-w-[1200px] mx-auto min-h-screen pb-20 gap-6">
@@ -39,7 +46,8 @@ export default function EditEquipmentPage({ params }: { params: Promise<{ id: st
             equipmentName={equipmentName}
             setEquipmentName={setEquipmentName} 
             imagePreview={imagePreview}
-            setImagePreview={setImagePreview} 
+            setImagePreview={setImagePreview}
+            initialData={detailData?.data}
           />
         </div>
         <div className="w-full lg:w-[40%] flex flex-col shrink-0">

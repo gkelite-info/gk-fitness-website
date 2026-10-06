@@ -1,73 +1,61 @@
 "use client";
 import { useState } from "react";
-import { Eye, PencilSimple, Trash } from "@phosphor-icons/react";
-import Pagination from "../../../components/reusable/Pagination";
 import Link from "next/link";
+import { Eye, PencilSimple, Trash, CircleNotch } from "@phosphor-icons/react";
+import Pagination from "@/app/(screens)/components/reusable/Pagination";
+import ConfirmationModal from "@/app/(screens)/components/reusable/ConfirmationModal";
 import toast from "react-hot-toast";
-import ConfirmationModal from "../../../components/reusable/ConfirmationModal";
+import { getEquipmentImageUrl } from "@/lib/helpers/gymInventory/gymInventory";
+import { useUser } from "@/app/context/UserContext";
+import { useDeleteGymInventory } from "@/lib/hooks/inventory/useGymInventory";
 
-const equipmentData = [
-  {
-    id: "EQ-001",
-    name: "Treadmill",
-    updatedAt: "Today, 09:20 AM",
-    totalUnits: 5,
-    available: 4,
-    underMaint: 1,
-    outOfService: 0,
-    image: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=2070&auto=format&fit=crop"
-  },
-  {
-    id: "EQ-002",
-    name: "Adjustable Bench",
-    updatedAt: "Today, 08:46 AM",
-    totalUnits: 10,
-    available: 8,
-    underMaint: 1,
-    outOfService: 1,
-    image: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=2070&auto=format&fit=crop"
-  },
-  {
-    id: "EQ-003",
-    name: "Cable Crossover",
-    updatedAt: "Yesterday, 06:30 PM",
-    totalUnits: 2,
-    available: 2,
-    underMaint: 0,
-    outOfService: 0,
-    image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop"
-  },
-  {
-    id: "EQ-004",
-    name: "Spin Bike",
-    updatedAt: "Today, 10:15 AM",
-    totalUnits: 6,
-    available: 5,
-    underMaint: 1,
-    outOfService: 0,
-    image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop"
-  }
-];
+interface InventoryListProps {
+  inventoryData?: any[];
+  isLoading?: boolean;
+}
 
-export default function InventoryList() {
+
+export default function InventoryList({ inventoryData = [], isLoading = false }: InventoryListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
-  const totalItems = 128;
+  const totalItems = inventoryData.length;
   const itemsPerPage = 10;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const { roleData } = useUser();
+  const gymId = roleData?.[0]?.gymId || "";
+  const deleteMutation = useDeleteGymInventory(gymId);
 
   const handleDeleteClick = (id: string) => {
     setItemToDelete(id);
     setDeleteModalOpen(true);
   };
 
-  const confirmDelete = () => {
-    toast.success("Equipment deleted successfully!");
-    setDeleteModalOpen(false);
-    setItemToDelete(null);
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      await deleteMutation.mutateAsync(itemToDelete);
+      toast.success("Equipment deleted successfully!");
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete equipment.");
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 w-full mt-4 bg-[#121720] border border-[#1C2430] rounded-2xl">
+        <CircleNotch size={32} className="text-[#D2FF00] animate-spin mb-4" />
+        <span className="font-sans text-[#8590A2]">Loading inventory...</span>
+      </div>
+    );
+  }
+
+  const paginatedData = inventoryData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="flex flex-col items-start w-full gap-4">
@@ -75,26 +63,30 @@ export default function InventoryList() {
         All Equipment
       </h3>
       <div className="flex flex-col items-start w-full gap-4">
-        {equipmentData.map((item) => (
+        {paginatedData.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-8 w-full bg-[#121720] border border-[#1C2430] rounded-2xl">
+            <span className="font-sans text-[#8590A2]">No equipment found.</span>
+          </div>
+        ) : paginatedData.map((item) => (
           <div 
-            key={item.id} 
+            key={item.gymInventoryId} 
             className="flex flex-col xl:flex-row xl:items-center justify-between p-4 gap-6 w-full bg-[#121720] border border-[#1C2430] rounded-2xl"
           >
             <div className="flex flex-row items-center gap-4 w-full xl:w-auto xl:min-w-[270px]">
               <div 
                 className="w-[116px] h-[83px] bg-[#1F2937] rounded-xl shrink-0 bg-cover bg-center ring-1 ring-[#1F2937]"
-                style={{ backgroundImage: `url(${item.image})` }}
+                style={{ backgroundImage: `url(${getEquipmentImageUrl(item.image) || '/placeholder-equipment.png'})` }}
               />
               <div className="flex flex-col items-start gap-0.5">
                 <h4 className="font-sans font-semibold text-[16.6px] leading-[25px] text-white">
-                  {item.name}
+                  {item.equipmentName}
                 </h4>
                 <span className="font-mono font-normal text-[12.4px] leading-[17px] text-[#64748B]">
-                  ID: {item.id}
+                  ID: {item.gymInventoryId?.slice(0, 8)}...
                 </span>
                 <div className="flex flex-row items-center gap-1.5 mt-1">
                   <span className="font-sans font-normal text-[12.4px] leading-[17px] text-[#94A3B8]">
-                    Last updated: {item.updatedAt}
+                    Last updated: {new Date(item.updatedAt || item.createdAt).toLocaleDateString()}
                   </span>
                 </div>
               </div>
@@ -109,7 +101,7 @@ export default function InventoryList() {
                     Total Units
                   </span>
                   <span className="font-sans font-semibold text-[15px] leading-5 text-white">
-                    {item.totalUnits}
+                    {item.quantity}
                   </span>
                 </div>
 
@@ -144,19 +136,19 @@ export default function InventoryList() {
               {/* Actions */}
               <div className="flex flex-row items-center justify-end gap-2 shrink-0 w-full xl:w-auto pt-4 xl:pt-0 mt-2 xl:mt-0 border-t border-[#1E2632] xl:border-none">
                 <Link 
-                  href={`/owner/inventory/${item.id}`}
+                  href={`/owner/inventory/${item.gymInventoryId}`}
                   className="flex justify-center items-center w-8 h-8 rounded-lg border border-transparent hover:border-[#2B3648] hover:bg-[#1A222D] transition-colors cursor-pointer group"
                 >
                   <Eye size={16} className="text-[#64748B] group-hover:text-white transition-colors" />
                 </Link>
                 <Link 
-                  href={`/owner/inventory/edit/${item.id}`}
+                  href={`/owner/inventory/edit/${item.gymInventoryId}`}
                   className="flex justify-center items-center w-8 h-8 rounded-lg border border-transparent hover:border-[#2B3648] hover:bg-[#1A222D] transition-colors cursor-pointer group"
                 >
                   <PencilSimple size={16} className="text-[#64748B] group-hover:text-white transition-colors" />
                 </Link>
                 <button 
-                  onClick={() => handleDeleteClick(item.id)}
+                  onClick={() => handleDeleteClick(item.gymInventoryId)}
                   className="flex justify-center items-center w-8 h-8 rounded-lg border border-transparent hover:border-[#EF4444]/30 hover:bg-[#EF4444]/10 transition-colors cursor-pointer group"
                 >
                   <Trash size={16} className="text-[#EF4444] group-hover:text-red-400 transition-colors" />
@@ -183,6 +175,8 @@ export default function InventoryList() {
         message={`Are you sure you want to delete this equipment? This action cannot be undone.`}
         confirmText="Delete"
         isDestructive={true}
+        isConfirming={deleteMutation.isPending}
+        confirmingText="Deleting..."
       />
     </div>
   );

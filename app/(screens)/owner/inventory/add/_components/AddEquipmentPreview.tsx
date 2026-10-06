@@ -33,8 +33,11 @@ export default function AddEquipmentPreview({ equipmentName, imagePreview }: Add
               <ImageIcon size={48} className="text-[#334155]" />
             </div>
           )}
+          <h3 className="font-sans font-semibold text-lg text-white mb-1 mt-2">
+            {displayName}
+          </h3>
           <span className="font-sans font-normal text-xs leading-4 text-[#8E929B] text-center px-2">
-            Upload an image and add details to see a preview here.
+            {imagePreview ? "This is how your equipment will appear." : "Upload an image and add details to see a preview here."}
           </span>
         </div>
       </div>

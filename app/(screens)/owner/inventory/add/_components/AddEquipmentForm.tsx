@@ -1,21 +1,44 @@
 "use client";
-import { useState, useRef } from "react";
-import { CloudArrowUp, CalendarBlank, CaretDown, Minus, Plus } from "@phosphor-icons/react";
+import { useState, useRef, useEffect } from "react";
+import { CloudArrowUp, CalendarBlank, CaretDown, Minus, Plus, CircleNotch } from "@phosphor-icons/react";
 import toast from "react-hot-toast";
+import { compressImage } from "@/app/(screens)/components/imageCompressor";
+import { useSaveGymInventory } from "@/lib/hooks/inventory/useGymInventory";
+import { useUser } from "@/app/context/UserContext";
+import { createClient } from "@/app/api/supabase/client";
+import { useRouter } from "next/navigation";
 
 interface AddEquipmentFormProps {
   equipmentName: string;
   setEquipmentName: (name: string) => void;
   imagePreview?: string | null;
   setImagePreview: (url: string | null) => void;
+  initialData?: any;
 }
 
-export default function AddEquipmentForm({ equipmentName, setEquipmentName, imagePreview, setImagePreview }: AddEquipmentFormProps) {
-  const [quantity, setQuantity] = useState(1);
-  const [purchaseDate, setPurchaseDate] = useState("");
-  const [notes, setNotes] = useState("");
+export default function AddEquipmentForm({ equipmentName, setEquipmentName, imagePreview, setImagePreview, initialData }: AddEquipmentFormProps) {
+  const [quantity, setQuantity] = useState(initialData?.quantity || 1);
+  const [purchaseDate, setPurchaseDate] = useState(initialData?.purchaseDate ? new Date(initialData.purchaseDate).toISOString().split('T')[0] : "");
+  const [notes, setNotes] = useState(initialData?.notes || "");
   const [isDragging, setIsDragging] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize data on mount if in edit mode
+  useEffect(() => {
+    if (initialData) {
+      if (initialData.equipmentName) setEquipmentName(initialData.equipmentName);
+      if (initialData.quantity) setQuantity(initialData.quantity);
+      if (initialData.purchaseDate) setPurchaseDate(new Date(initialData.purchaseDate).toISOString().split('T')[0]);
+      if (initialData.notes) setNotes(initialData.notes);
+      if (initialData.image) setImagePreview(initialData.image);
+    }
+  }, [initialData, setEquipmentName, setImagePreview]);
+
+  const { user, roleData } = useUser();
+  const router = useRouter();
+  const gymId = roleData?.[0]?.gymId || null;
+  const saveMutation = useSaveGymInventory();
 
   const handleDecrease = () => {
     if (quantity > 1) setQuantity(quantity - 1);
@@ -25,7 +48,7 @@ export default function AddEquipmentForm({ equipmentName, setEquipmentName, imag
     setQuantity(quantity + 1);
   };
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     const validTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!validTypes.includes(file.type)) {
       toast.error("Please select a JPG, PNG, or WEBP image.");
@@ -37,9 +60,20 @@ export default function AddEquipmentForm({ equipmentName, setEquipmentName, imag
       return;
     }
 
-    const imageUrl = URL.createObjectURL(file);
-    setImagePreview(imageUrl);
-    toast.success("Image uploaded successfully!");
+    try {
+      const compressedFile = await compressImage(file, {
+        maxWidth: 800,
+        maxHeight: 800,
+        quality: 0.8
+      });
+      setImageFile(compressedFile);
+      const imageUrl = URL.createObjectURL(compressedFile);
+      setImagePreview(imageUrl);
+      toast.success("Image compressed and loaded!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to process image.");
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -67,12 +101,49 @@ export default function AddEquipmentForm({ equipmentName, setEquipmentName, imag
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!equipmentName.trim()) {
       toast.error("Equipment Name is required.");
       return;
     }
-    toast.success("Equipment saved successfully!");
+    if (!gymId || !user?.id) {
+      toast.error("User or gym context missing.");
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+      let uploadedImageName = null;
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from('equipment')
+          .upload(fileName, imageFile);
+          
+        if (uploadError) {
+          throw uploadError;
+        }
+        uploadedImageName = uploadData.path;
+      }
+
+      await saveMutation.mutateAsync({
+        gymInventoryId: initialData?.gymInventoryId,
+        gymId,
+        equipmentName,
+        quantity,
+        purchaseDate: purchaseDate || new Date().toISOString(),
+        notes: notes.trim(),
+        image: uploadedImageName || initialData?.image,
+        createdBy: user.id,
+      });
+
+      toast.success("Equipment saved successfully!");
+      router.push("/owner/inventory");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save equipment.");
+    }
   };
 
   return (
@@ -187,6 +258,7 @@ export default function AddEquipmentForm({ equipmentName, setEquipmentName, imag
             <input 
               type="date"
               value={purchaseDate}
+              max={new Date().toISOString().split('T')[0]}
               onChange={(e) => setPurchaseDate(e.target.value)}
               className="flex flex-row items-center px-10 py-3 w-full bg-[#1D2024] border border-[#2B2F38] rounded-xl font-sans font-normal text-xs text-white outline-none focus:border-[#D4F400] transition-colors cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full"
               style={{ colorScheme: 'dark' }}
@@ -211,11 +283,16 @@ export default function AddEquipmentForm({ equipmentName, setEquipmentName, imag
         </div>
         <button 
           onClick={handleSave}
-          className="flex flex-row justify-center items-center px-4 py-3.5 w-full bg-[#D4F400] rounded-xl hover:bg-[#bbf000] transition-colors cursor-pointer shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] mt-auto shrink-0"
+          disabled={saveMutation.isPending}
+          className="flex flex-row justify-center items-center px-4 py-3.5 w-full bg-[#D4F400] rounded-xl hover:bg-[#bbf000] disabled:bg-[#D4F400]/50 transition-colors cursor-pointer shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] mt-auto shrink-0"
         >
-          <span className="font-sans font-bold text-xs leading-4 text-black uppercase tracking-[0.6px]">
-            Save Equipment
-          </span>
+          {saveMutation.isPending ? (
+            <CircleNotch size={16} className="text-black animate-spin" />
+          ) : (
+            <span className="font-sans font-bold text-xs leading-4 text-black uppercase tracking-[0.6px]">
+              Save Equipment
+            </span>
+          )}
         </button>
 
       </div>

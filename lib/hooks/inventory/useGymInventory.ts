@@ -1,19 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
 import { fetchGymInventories, fetchGymInventoryById } from '@/lib/helpers/gymInventory/gymInventory';
 import { fetchGymInventoryHistory } from '@/lib/helpers/gymInventory/inventoryHistory';
+import { updateGymInventoryStock, UpdateGymInventoryStockParams } from '@/lib/helpers/gymInventory/inventoryHistory';
+import { saveGymInventory, SaveGymInventoryParams, deleteGymInventory } from '@/lib/helpers/gymInventory/gymInventory';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useGymInventoryList(gymId: string | null | undefined) {
   return useQuery({
     queryKey: ['gymInventoryList', gymId],
     queryFn: async () => {
       if (!gymId) return [];
-      
+
       const data = await fetchGymInventories(gymId);
-      
+
       if (!data || data.length === 0) return [];
 
       const inventoryIds = data.map((item: any) => item.gymInventoryId);
+      const supabase = createClient();
       const { data: historyData, error: historyError } = await supabase
         .from('gym_inventory_histories')
         .select('*')
@@ -23,7 +27,7 @@ export function useGymInventoryList(gymId: string | null | undefined) {
         return data.map((item: any) => {
           let itemMaint = 0;
           let itemOS = 0;
-          
+
           const itemLogs = historyData.filter(log => log.gymInventoryId === item.gymInventoryId);
           itemLogs.forEach(log => {
             if (log.action === 'maintenance') {
@@ -36,7 +40,7 @@ export function useGymInventoryList(gymId: string | null | undefined) {
               itemOS = Math.max(0, itemOS - log.quantity);
             }
           });
-          
+
           return {
             ...item,
             underMaint: itemMaint,
@@ -57,14 +61,51 @@ export function useGymInventoryDetail(gymInventoryId: string | null | undefined)
     queryKey: ['gymInventoryDetail', gymInventoryId],
     queryFn: async () => {
       if (!gymInventoryId) return null;
-      
+
       const [data, history] = await Promise.all([
         fetchGymInventoryById(gymInventoryId),
         fetchGymInventoryHistory(gymInventoryId),
       ]);
-      
+
       return { data, history };
     },
     enabled: !!gymInventoryId,
+  });
+}
+
+export function useSaveGymInventory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: SaveGymInventoryParams) => saveGymInventory(data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gymInventoryList', variables.gymId] });
+      if (variables.gymInventoryId) {
+        queryClient.invalidateQueries({ queryKey: ['gymInventoryDetail', variables.gymInventoryId] });
+      }
+    },
+  });
+}
+
+export function useUpdateGymInventoryStock(gymId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateGymInventoryStockParams) => updateGymInventoryStock(data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gymInventoryList', gymId] });
+      queryClient.invalidateQueries({ queryKey: ['gymInventoryDetail', variables.gymInventoryId] });
+    },
+  });
+}
+
+export function useDeleteGymInventory(gymId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (gymInventoryId: string) => deleteGymInventory(gymInventoryId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gymInventoryList', gymId] });
+    },
   });
 }

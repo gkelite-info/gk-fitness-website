@@ -3,22 +3,94 @@ import { useState } from "react";
 import { CheckCircle, Gear, Prohibit, ArrowsCounterClockwise, Minus, Plus, Cube } from "@phosphor-icons/react";
 import { toast } from "react-hot-toast";
 
-type ActionType = 'add' | 'maintenance' | 'outofservice' | 'restore';
+import { useParams } from "next/navigation";
+import { useUser } from "@/app/context/UserContext";
+import { useUpdateGymInventoryStock } from "@/lib/hooks/inventory/useGymInventory";
+import { CircleNotch } from "@phosphor-icons/react";
 
-export default function UpdateStockPanel() {
+type ActionType = 'add' | 'reduce' | 'maintenance' | 'out_of_service' | 'restore';
+
+interface UpdateStockPanelProps {
+  equipment?: any;
+  history?: any[];
+}
+
+export default function UpdateStockPanel({ equipment, history }: UpdateStockPanelProps) {
+  const params = useParams();
+  const equipmentId = params.id as string;
+  const { user, roleData } = useUser();
+  const gymId = roleData?.[0]?.gymId || "";
+
   const [selectedAction, setSelectedAction] = useState<ActionType>('add');
+  const [restoreSource, setRestoreSource] = useState<'maintenance' | 'out_of_service'>('maintenance');
   const [quantity, setQuantity] = useState(1);
+
+  const updateMutation = useUpdateGymInventoryStock(gymId);
+
+  let total = equipment?.quantity || 0;
+  let maintenanceCount = 0;
+  let outOfServiceCount = 0;
+
+  history?.forEach((log) => {
+    if (log.action === 'maintenance') maintenanceCount += log.quantity;
+    if (log.action === 'restore_maintenance') maintenanceCount -= log.quantity;
+    if (log.action === 'out_of_service') outOfServiceCount += log.quantity;
+    if (log.action === 'restore_out_of_service') outOfServiceCount -= log.quantity;
+  });
+
+  const available = total - maintenanceCount - outOfServiceCount;
+
+  const getMaxQuantity = () => {
+    if (selectedAction === 'add') return 9999;
+    if (selectedAction === 'maintenance' || selectedAction === 'out_of_service') return available;
+    if (selectedAction === 'restore') {
+      return restoreSource === 'maintenance' ? maintenanceCount : outOfServiceCount;
+    }
+    return 9999;
+  };
 
   const handleDecrease = () => {
     if (quantity > 1) setQuantity(quantity - 1);
   };
 
   const handleIncrease = () => {
-    setQuantity(quantity + 1);
+    const max = getMaxQuantity();
+    if (quantity < max) {
+      setQuantity(quantity + 1);
+    } else {
+      toast.error(`Maximum allowed is ${max}`);
+    }
   };
 
-  const handleUpdate = () => {
-    toast.success("Stock updated successfully!");
+  const handleUpdate = async () => {
+    if (!user?.id || !gymId || !equipmentId) return;
+    
+    const max = getMaxQuantity();
+    if (quantity > max) {
+      toast.error(`Cannot update more than ${max} units`);
+      return;
+    }
+    if (quantity <= 0) {
+      toast.error(`Quantity must be at least 1`);
+      return;
+    }
+
+    const finalAction = selectedAction === 'restore' 
+      ? (restoreSource === 'maintenance' ? 'restore_maintenance' : 'restore_out_of_service') 
+      : selectedAction;
+
+    try {
+      await updateMutation.mutateAsync({
+        gymInventoryId: equipmentId,
+        action: finalAction as any,
+        quantity,
+        createdBy: user.id
+      });
+      toast.success("Stock updated successfully!");
+      setQuantity(1);
+    } catch (err) {
+      toast.error("Failed to update stock");
+    }
   };
 
   const actions = [
@@ -43,7 +115,7 @@ export default function UpdateStockPanel() {
       activeBg: 'bg-[rgba(20,24,31,0.7)]'
     },
     {
-      id: 'outofservice' as ActionType,
+      id: 'out_of_service' as ActionType,
       title: 'Mark Out of Service',
       desc: 'Mark units as out of service',
       icon: <Prohibit size={20} className="text-[#EF4444]" />,
@@ -54,7 +126,7 @@ export default function UpdateStockPanel() {
     },
     {
       id: 'restore' as ActionType,
-      title: 'Restore to Available',
+      title: 'Restore Stock',
       desc: 'Move units back to available',
       icon: <ArrowsCounterClockwise size={20} className="text-[#38BDF8]" />,
       bg: 'bg-[#14232C]',
@@ -83,7 +155,10 @@ export default function UpdateStockPanel() {
           {actions.map((act) => (
             <div 
               key={act.id}
-              onClick={() => setSelectedAction(act.id)}
+              onClick={() => {
+                setSelectedAction(act.id);
+                setQuantity(1);
+              }}
               className={`flex flex-row justify-between items-center p-3.5 gap-4 w-full border rounded-xl cursor-pointer transition-colors ${selectedAction === act.id ? `${act.activeBorder} ${act.activeBg}` : 'border-[#1D2633] bg-[rgba(20,24,31,0.7)] hover:border-[#2b394d]'}`}
             >
               <div className="flex flex-row items-center gap-3.5 flex-1">
@@ -108,9 +183,29 @@ export default function UpdateStockPanel() {
           ))}
         </div>
       </div>
+      
+      {selectedAction === 'restore' && (
+        <div className="flex flex-col items-start gap-2 w-full">
+          <label className="font-sans font-semibold text-xs leading-4 text-white">
+            Restore From
+          </label>
+          <select
+            value={restoreSource}
+            onChange={(e) => {
+              setRestoreSource(e.target.value as 'maintenance' | 'out_of_service');
+              setQuantity(1);
+            }}
+            className="w-full bg-[#151C24] border border-[#222D3B] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#C6FF00]"
+          >
+            <option value="maintenance">Maintenance ({maintenanceCount} available)</option>
+            <option value="out_of_service">Out of Service ({outOfServiceCount} available)</option>
+          </select>
+        </div>
+      )}
+
       <div className="flex flex-col items-start gap-2 w-full">
         <label className="font-sans font-semibold text-xs leading-4 text-white">
-          Quantity
+          Quantity {selectedAction !== 'add' && `(Max: ${getMaxQuantity()})`}
         </label>
         <div className="flex flex-row flex-wrap items-center gap-4 w-full">
           <div className="flex flex-row justify-between items-center px-2 py-1 w-[130px] h-[46px] bg-[#151C24] border border-[#222D3B] rounded-xl shrink-0">
@@ -137,9 +232,14 @@ export default function UpdateStockPanel() {
       </div>
       <button 
         onClick={handleUpdate}
-        className="flex flex-row justify-center items-center px-4 py-3.5 gap-2 w-full bg-[#C6FF00] rounded-xl hover:bg-[#b5e600] transition-colors cursor-pointer shadow-sm mt-auto shrink-0"
+        disabled={updateMutation.isPending}
+        className="flex flex-row justify-center items-center px-4 py-3.5 gap-2 w-full bg-[#C6FF00] rounded-xl hover:bg-[#b5e600] disabled:opacity-50 transition-colors cursor-pointer shadow-sm mt-auto shrink-0"
       >
-        <Cube size={20} weight="bold" className="text-black" />
+        {updateMutation.isPending ? (
+          <CircleNotch size={20} weight="bold" className="text-black animate-spin" />
+        ) : (
+          <Cube size={20} weight="bold" className="text-black" />
+        )}
         <span className="font-sans font-bold text-sm leading-5 text-black">
           Update Stock
         </span>

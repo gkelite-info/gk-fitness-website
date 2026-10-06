@@ -1,7 +1,26 @@
 "use client";
 import { Cube, CheckCircle, Gear, Prohibit } from "@phosphor-icons/react";
 
-export default function StockOverview() {
+interface StockOverviewProps {
+  equipment: any;
+  history: any[];
+}
+
+export default function StockOverview({ equipment, history }: StockOverviewProps) {
+  // Compute available, maintenance, out of service based on history
+  let total = equipment.quantity || 0;
+  let maintenanceCount = 0;
+  let outOfServiceCount = 0;
+
+  history?.forEach((log) => {
+    if (log.action === 'maintenance') maintenanceCount += log.quantity;
+    if (log.action === 'restore_maintenance') maintenanceCount -= log.quantity;
+    if (log.action === 'out_of_service') outOfServiceCount += log.quantity;
+    if (log.action === 'restore_out_of_service') outOfServiceCount -= log.quantity;
+  });
+
+  const available = total - maintenanceCount - outOfServiceCount;
+
   return (
     <div className="flex flex-col items-start p-6 gap-6 w-full bg-[#12171E] border border-[#1D2633] shadow-sm rounded-2xl">
       <h3 className="font-sans font-semibold text-base leading-6 text-white">
@@ -15,7 +34,7 @@ export default function StockOverview() {
             Total Units
           </span>
           <span className="font-sans font-bold text-[26px] leading-[26px] text-white text-center">
-            5
+            {total}
           </span>
         </div>
         <div className="flex flex-col items-center justify-center p-4">
@@ -24,7 +43,7 @@ export default function StockOverview() {
             Available
           </span>
           <span className="font-sans font-bold text-[26px] leading-[26px] text-[#69DB3B] text-center">
-            4
+            {available}
           </span>
         </div>
         <div className="flex flex-col items-center justify-center p-4">
@@ -33,7 +52,7 @@ export default function StockOverview() {
             Under Maint.
           </span>
           <span className="font-sans font-bold text-[26px] leading-[26px] text-[#F97316] text-center">
-            1
+            {maintenanceCount}
           </span>
         </div>
         <div className="flex flex-col items-center justify-center p-4">
@@ -42,7 +61,7 @@ export default function StockOverview() {
             Out of Service
           </span>
           <span className="font-sans font-bold text-[26px] leading-[26px] text-[#EF4444] text-center">
-            0
+            {outOfServiceCount}
           </span>
         </div>
 
