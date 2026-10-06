@@ -1,7 +1,4 @@
-import ExpenditureHeader from "./_components/ExpenditureHeader";
-import ExpenditureCards from "./_components/ExpenditureCards";
-import ExpenditureFilterBar from "./_components/ExpenditureFilterBar";
-import ExpenditureTable from "./_components/ExpenditureTable";
+import ExpenditureClient from "./_components/ExpenditureClient";
 
 export const metadata = {
   title: "Expenditure | GK-Gym Life",
@@ -11,10 +8,7 @@ export const metadata = {
 export default function ExpenditurePage() {
   return (
     <div className="flex flex-col px-4 md:px-6 lg:px-7 py-6 gap-6 w-full h-full min-w-0 overflow-y-auto overflow-x-hidden scrollbar-themed max-w-[1024px] mx-auto">
-      <ExpenditureHeader />
-      <ExpenditureCards />
-      <ExpenditureFilterBar />
-      <ExpenditureTable />
+      <ExpenditureClient />
     </div>
   );
 }

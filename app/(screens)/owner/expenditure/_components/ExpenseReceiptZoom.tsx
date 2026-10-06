@@ -1,12 +1,21 @@
 import { X } from "@phosphor-icons/react";
+import { ExpenseData } from "./AddExpenseModal";
 
 interface ExpenseReceiptZoomProps {
   isOpen: boolean;
   onClose: () => void;
+  expenseData?: ExpenseData | null;
+  gymData?: any;
+  receiptUrl?: string | null;
 }
 
-export default function ExpenseReceiptZoom({ isOpen, onClose }: ExpenseReceiptZoomProps) {
+export default function ExpenseReceiptZoom({ isOpen, onClose, expenseData, gymData, receiptUrl }: ExpenseReceiptZoomProps) {
   if (!isOpen) return null;
+
+  const amountStr = expenseData?.amount || "0";
+  const dateStr = expenseData?.date || new Date().toISOString();
+  const titleStr = expenseData?.name || "Expense";
+  const notesStr = expenseData?.notes || "";
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-8 bg-black/90 backdrop-blur-md" onClick={onClose}>
@@ -25,11 +34,11 @@ export default function ExpenseReceiptZoom({ isOpen, onClose }: ExpenseReceiptZo
         {/* Invoice Header */}
         <div className="flex flex-row justify-between items-start mb-6 sm:mb-12 border-b border-gray-200 pb-4 sm:pb-6">
           <div className="font-bold text-black text-lg sm:text-2xl tracking-tight leading-none">
-            GK <span className="font-light text-gray-500 text-base sm:text-xl">GYM LIFE</span>
+            {gymData?.gymName || "GK Gym Life"}
           </div>
           <div className="text-right">
-            <div className="font-bold text-black text-sm sm:text-lg leading-none">RENT INVOICE</div>
-            <div className="text-gray-400 text-[10px] sm:text-sm mt-1 sm:mt-1.5">#RENT-2024-07-001</div>
+            <div className="font-bold text-black text-sm sm:text-lg leading-none">INVOICE</div>
+            <div className="text-gray-400 text-[10px] sm:text-sm mt-1 sm:mt-1.5">#{expenseData?.id || "N/A"}</div>
           </div>
         </div>
 
@@ -37,13 +46,12 @@ export default function ExpenseReceiptZoom({ isOpen, onClose }: ExpenseReceiptZo
         <div className="flex flex-col sm:flex-row justify-between gap-6 sm:gap-0 mb-8 sm:mb-12">
           <div className="text-xs sm:text-sm text-gray-500 leading-relaxed">
             BILL TO<br/>
-            <span className="font-bold text-black text-sm sm:text-base">GK Gym Life</span><br/>
-            123 Fitness Street<br/>Indore, Madhya Pradesh<br/>India - 452001
+            <span className="font-bold text-black text-sm sm:text-base">{gymData?.gymName || "GK Gym Life"}</span><br/>
+            {gymData?.address || "123 Fitness Street"}<br/>{gymData?.city || "Indore"}, {gymData?.state || "Madhya Pradesh"}<br/>India {gymData?.pincode ? `- ${gymData.pincode}` : ""}
           </div>
           <div className="text-xs sm:text-sm text-gray-500 text-left sm:text-right leading-relaxed">
-            Invoice Date: <span className="text-black font-bold">1 Jul 2024</span><br/>
-            Period: <span className="text-black font-bold">July 2024</span><br/>
-            Due Date: <span className="text-black font-bold">1 Jul 2024</span>
+            Invoice Date: <span className="text-black font-bold">{new Date(dateStr).toLocaleDateString()}</span><br/>
+            Due Date: <span className="text-black font-bold">{new Date(dateStr).toLocaleDateString()}</span>
           </div>
         </div>
 
@@ -53,19 +61,31 @@ export default function ExpenseReceiptZoom({ isOpen, onClose }: ExpenseReceiptZo
           <div className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Amount</div>
         </div>
         <div className="flex justify-between items-start gap-4 mb-8 sm:mb-12">
-          <div className="text-xs sm:text-base font-medium text-black leading-tight">Monthly Rent - Gym Facility (July 2024)</div>
-          <div className="text-xs sm:text-base text-black font-semibold shrink-0">₹25,000</div>
+          <div className="text-xs sm:text-base font-medium text-black leading-tight">{titleStr}</div>
+          <div className="text-xs sm:text-base text-black font-semibold shrink-0">₹{amountStr}</div>
         </div>
 
         {/* Total & Notes */}
         <div className="mt-auto flex flex-col gap-4 sm:gap-6">
           <div className="flex justify-between items-center bg-gray-50 p-4 sm:p-6 rounded-lg border border-gray-100">
             <div className="text-sm sm:text-lg font-bold text-black">TOTAL AMOUNT</div>
-            <div className="text-sm sm:text-lg font-bold text-black">₹25,000</div>
+            <div className="text-sm sm:text-lg font-bold text-black">₹{amountStr}</div>
           </div>
-          <div className="text-center text-[9px] sm:text-[11px] text-gray-400 italic px-2">
-            Notes: Monthly rent payment for gym facility. Payment made via bank transfer as per rental agreement for July 2024.
-          </div>
+          {notesStr && (
+            <div className="text-center text-[9px] sm:text-[11px] text-gray-400 italic px-2">
+              Notes: {notesStr}
+            </div>
+          )}
+          {receiptUrl && (
+            <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center">
+              <div className="text-[10px] sm:text-xs font-bold text-gray-400 mb-4 tracking-wider uppercase">Attached Receipt</div>
+              <img 
+                src={receiptUrl} 
+                alt="Attached Receipt" 
+                className="max-w-full max-h-[50vh] object-contain rounded-lg border border-gray-200 shadow-sm"
+              />
+            </div>
+          )}
         </div>
 
       </div>

@@ -16,11 +16,8 @@ export default function InventoryPage() {
       </div>
 
       <InventoryStats />
-      
       <InventoryFilterBar />
-      
       <InventoryList />
-
     </div>
   );
 }

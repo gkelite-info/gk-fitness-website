@@ -73,7 +73,7 @@ export default function PaymentDetailsView({ userId, paymentId }: PaymentDetails
       paymentDate: payment.createdAt ? formatDate(payment.createdAt as string) : "--",
       paymentTime: payment.createdAt ? formatTime(payment.createdAt as string) : "--",
       paymentStatus: (payment.status?.toUpperCase() === "SUCCESSFUL" || payment.status?.toUpperCase() === "SUCCESS") ? "Recorded & Verified" : (payment.status || "Recorded & Verified"),
-      gymName: gym?.gymName || "GK Fitness",
+      gymName: gym?.gymName || "GK-Gym Life",
     } as PaymentDetailsData & { gymName: string };
   }, [gymCustomer, customerPayments, gymPayments, paymentId, customerMembershipPlans, gym]);
 

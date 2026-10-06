@@ -19,6 +19,8 @@ import {
 import { ExpenseData } from "./AddExpenseModal";
 import ExpenseReceiptZoom from "./ExpenseReceiptZoom";
 import { ExpenseInfoRow } from "./ExpenseInfoRow";
+import { useUser } from "@/app/context/UserContext";
+import { useGym } from "@/lib/hooks/gyms/useGym";
 
 interface ExpenseDetailsModalProps {
   isOpen: boolean;
@@ -30,12 +32,23 @@ interface ExpenseDetailsModalProps {
 
 export default function ExpenseDetailsModal({ isOpen, onClose, expenseData, onEdit, onDelete }: ExpenseDetailsModalProps) {
   const [isZoomed, setIsZoomed] = useState(false);
+  const { roleData } = useUser();
+  const gymId = roleData?.[0]?.gymId;
+  const { data: gymData } = useGym(gymId);
 
-  const categoryLabel = expenseData?.category || "Rent";
-  const amountStr = expenseData?.amount || "25,000";
+  const capitalize = (str: string) => str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+
+  const categoryLabel = capitalize(expenseData?.category || "Rent");
+  const amountStr = expenseData?.amount || "0";
   const dateStr = expenseData?.date || "1 Jul 2024";
-  const paymentMethodStr = expenseData?.paymentMethod || "Bank Transfer";
-  const titleStr = expenseData?.name || "Gym Rent - July 2024";
+  const paymentMethodStr = capitalize(expenseData?.paymentMethod || "Bank Transfer");
+  const titleStr = expenseData?.name || "Expense";
+  
+  const receiptUrl = expenseData?.receiptUrl 
+    ? (expenseData.receiptUrl.startsWith('http') 
+        ? expenseData.receiptUrl 
+        : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/gym-expenses/${expenseData.receiptUrl}`)
+    : null;
 
   return (
     <>
@@ -118,9 +131,9 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expenseData, onEd
                   <ExpenseInfoRow label="Amount" value={`₹${amountStr}`} isBold />
                   <ExpenseInfoRow label="Date" value={dateStr} />
                   <ExpenseInfoRow label="Payment Method" value={paymentMethodStr} isPill />
-                  <ExpenseInfoRow label="Reference ID" value="RENT-2024-07-001" hasCopy />
-                  <ExpenseInfoRow label="Added By" value="Amit Gupta" />
-                  <ExpenseInfoRow label="Recorded On" value={`${dateStr}, 10:30 AM`} />
+                  {/* <ExpenseInfoRow label="Reference ID" value="RENT-2024-07-001" hasCopy /> */}
+                  <ExpenseInfoRow label="Added By" value={expenseData?.addedBy || "Unknown"} />
+                  <ExpenseInfoRow label="Recorded On" value={`${dateStr}`} />
                 </div>
               </div>
             </div>
@@ -142,44 +155,58 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expenseData, onEd
                   </button>
                 </div>
                 <div className="p-4 flex flex-col flex-1 gap-3 items-center">
-                  {/* Receipt Image Placeholder */}
-                  <div className="w-full flex-1 min-h-[160px] bg-white rounded-lg p-3 shadow-sm flex flex-col cursor-zoom-in" onClick={() => setIsZoomed(true)}>
-                    <div className="flex justify-between items-start mb-2 border-b pb-1">
-                      <div className="font-bold text-black text-xs tracking-tight">GK <span className="font-light text-gray-500 text-[9px]">GYM LIFE</span></div>
-                      <div className="text-right">
-                        <div className="font-bold text-black text-[8px]">RENT INVOICE</div>
-                        <div className="text-gray-400 text-[6px]">#RENT-2024-07-001</div>
+                  {/* Receipt Display */}
+                  <div className="w-full flex-1 min-h-[160px] bg-white rounded-lg p-3 shadow-sm flex flex-col cursor-zoom-in overflow-hidden" onClick={() => setIsZoomed(true)}>
+                    <>
+                      <div className="flex justify-between items-start mb-2 border-b pb-1">
+                        <div className="font-bold text-black text-xs tracking-tight">{gymData?.gymName || "GK Gym Life"}</div>
+                        <div className="text-right">
+                          <div className="font-bold text-black text-[8px]">INVOICE</div>
+                          <div className="text-gray-400 text-[6px]">#{expenseData?.id || "N/A"}</div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex justify-between mb-2">
-                      <div className="text-[6px] text-gray-500 leading-tight">
-                        BILL TO<br/>
-                        <span className="font-bold text-black text-[7px]">GK Gym Life</span><br/>
-                        123 Fitness Street<br/>Indore, Madhya Pradesh
+                      <div className="flex justify-between mb-2 gap-2">
+                        <div className="text-[6px] text-gray-500 leading-tight flex-1">
+                          BILL TO<br/>
+                          <span className="font-bold text-black text-[7px]">{gymData?.gymName || "GK Gym Life"}</span><br/>
+                          {gymData?.address || "123 Fitness Street"}<br/>
+                          {gymData?.city || "Indore"}, {gymData?.state || "Madhya Pradesh"}
+                        </div>
+                        <div className="text-[6px] text-gray-500 text-right leading-tight">
+                          Invoice Date: <span className="text-black font-bold">{new Date(dateStr).toLocaleDateString()}</span><br/>
+                          Due Date: <span className="text-black font-bold">{new Date(dateStr).toLocaleDateString()}</span>
+                        </div>
                       </div>
-                      <div className="text-[6px] text-gray-500 text-right leading-tight">
-                        Invoice Date: <span className="text-black font-bold">1 Jul 2024</span><br/>
-                        Period: <span className="text-black font-bold">July 2024</span><br/>
-                        Due Date: <span className="text-black font-bold">1 Jul 2024</span>
+                      <div className="flex justify-between border-b pb-1 mb-1">
+                        <div className="text-[6px] font-bold text-gray-400">DESCRIPTION</div>
+                        <div className="text-[6px] font-bold text-gray-400">AMOUNT</div>
                       </div>
-                    </div>
-                    <div className="flex justify-between border-b pb-1 mb-1">
-                      <div className="text-[6px] font-bold text-gray-400">DESCRIPTION</div>
-                      <div className="text-[6px] font-bold text-gray-400">AMOUNT</div>
-                    </div>
-                    <div className="flex justify-between mb-2">
-                      <div className="text-[7px] font-medium text-black">Monthly Rent - Gym Facility</div>
-                      <div className="text-[7px] text-black">₹25,000</div>
-                    </div>
-                    <div className="mt-auto flex justify-between bg-gray-50 p-1.5 rounded">
-                      <div className="text-[8px] font-bold text-black">TOTAL AMOUNT</div>
-                      <div className="text-[8px] font-bold text-black">₹25,000</div>
-                    </div>
+                      <div className="flex justify-between mb-2 gap-2">
+                        <div className="text-[7px] font-medium text-black truncate">{titleStr}</div>
+                        <div className="text-[7px] text-black">₹{amountStr}</div>
+                      </div>
+                      <div className="mt-auto flex justify-between bg-gray-50 p-1.5 rounded">
+                        <div className="text-[8px] font-bold text-black">TOTAL AMOUNT</div>
+                        <div className="text-[8px] font-bold text-black">₹{amountStr}</div>
+                      </div>
+                      {receiptUrl && (
+                        <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col items-center">
+                          <div className="text-[8px] font-bold text-gray-400 mb-2">ATTACHED RECEIPT</div>
+                          <img 
+                            src={receiptUrl} 
+                            alt="Attached Receipt" 
+                            className="max-w-full max-h-[120px] object-contain rounded border border-gray-100"
+                          />
+                        </div>
+                      )}
+                    </>
                   </div>
-                  <button className="flex justify-center items-center gap-2 w-full h-8 mt-auto shrink-0 rounded-lg border border-[#1E293B] hover:bg-[#1E293B]/50 transition-colors cursor-pointer">
-                    <DownloadSimple size={14} className="text-white" />
-                    <span className="font-sans font-semibold text-[11px] text-white">Download Receipt</span>
-                  </button>
+                  {expenseData?.receiptUrl && (
+                    <a href={`/owner/expenditure/receipt/${expenseData.id}`} target="_blank" rel="noopener noreferrer" className="flex justify-center items-center gap-2 w-full h-8 mt-auto shrink-0 rounded-lg border border-[#1E293B] hover:bg-[#1E293B]/50 transition-colors cursor-pointer text-white no-underline">
+                      <DownloadSimple size={14} />
+                      <span className="font-sans font-semibold text-[11px]">Download Receipt</span>
+                    </a>
+                  )}
                 </div>
               </div>
 
@@ -261,7 +288,13 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expenseData, onEd
       )}
     </AnimatePresence>
     {/* Full Screen Receipt Zoom */}
-    <ExpenseReceiptZoom isOpen={isZoomed} onClose={() => setIsZoomed(false)} />
+    <ExpenseReceiptZoom 
+      isOpen={isZoomed} 
+      onClose={() => setIsZoomed(false)} 
+      expenseData={expenseData}
+      gymData={gymData}
+      receiptUrl={receiptUrl}
+    />
     </>
   );
 }
