@@ -16,13 +16,14 @@ export default function TodayRevenuePage() {
   const userId = user?.id || null;
   const gymId = roleData?.[0]?.gymId || null;
   const selectedYear = new Date().getFullYear();
+  const selectedMonth = selectedDate ? new Date(selectedDate).getMonth() : new Date().getMonth();
 
   const {
     totalRevenue,
     revenueByPlan,
     allTransactions,
     isLoading
-  } = useFinanceDashboard(userId, gymId, selectedYear, selectedDate);
+  } = useFinanceDashboard(userId, gymId, selectedYear, selectedMonth, selectedDate);
 
   if (isLoading) {
     return (

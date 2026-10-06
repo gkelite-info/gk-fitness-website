@@ -9,6 +9,7 @@ interface FinanceKPICardsProps {
   totalCustomers?: number;
   customerGrowth?: number;
   monthlyGrowth?: number;
+  selectedMonth?: number;
 }
 
 const formatCurrency = (val: number) => {
@@ -35,15 +36,16 @@ export default function FinanceKPICards({
   todaysGrowth = 0,
   totalCustomers = 0,
   customerGrowth = 0,
-  monthlyGrowth = 0
+  monthlyGrowth = 0,
+  selectedMonth = new Date().getMonth()
 }: FinanceKPICardsProps) {
 
   const KPI_DATA: FinanceKPICardProps[] = [
     {
       title: "Today's Revenue",
       value: formatCurrency(todaysRevenue),
-      trend: formatPercent(todaysGrowth),
-      trendSuffix: "vs yesterday",
+      trend: selectedMonth === -1 ? "" : formatPercent(todaysGrowth),
+      trendSuffix: selectedMonth === -1 ? "" : "vs yesterday",
       trendColor: getTrendColor(todaysGrowth),
       icon: <Database size={24} weight="regular" />,
       iconBgColor: "#122B1C",
@@ -54,8 +56,8 @@ export default function FinanceKPICards({
     {
       title: "Total Customers",
       value: totalCustomers.toLocaleString('en-IN'),
-      trend: formatPercent(customerGrowth),
-      trendSuffix: "this month",
+      trend: selectedMonth === -1 ? "" : formatPercent(customerGrowth),
+      trendSuffix: selectedMonth === -1 ? "" : "this month",
       trendColor: getTrendColor(customerGrowth),
       icon: <UsersThree size={24} weight="regular" />,
       iconBgColor: "#2E1D15",
@@ -64,11 +66,11 @@ export default function FinanceKPICards({
       href: "/owner/finance/active-customers"
     },
     {
-      title: "Monthly Growth",
-      value: formatPercent(monthlyGrowth),
-      trend: "vs last month",
+      title: selectedMonth === -1 ? "All Time Growth" : "Monthly Growth",
+      value: selectedMonth === -1 ? "N/A" : formatPercent(monthlyGrowth),
+      trend: selectedMonth === -1 ? "" : "vs last month",
       trendSuffix: "",
-      trendColor: getTrendColor(monthlyGrowth),
+      trendColor: selectedMonth === -1 ? "#94A3B8" : getTrendColor(monthlyGrowth),
       icon: <TrendUp size={24} weight="regular" />,
       iconBgColor: "#132238",
       iconBorderColor: "rgba(37, 99, 235, 0.2)",

@@ -5,11 +5,15 @@ import { CalendarBlank, CaretDown, CaretLeft, CaretRight } from "@phosphor-icons
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export default function FinanceHeader() {
+interface FinanceHeaderProps {
+  selectedMonth: number;
+  selectedYear: number;
+  onMonthYearChange: (month: number, year: number) => void;
+}
+
+export default function FinanceHeader({ selectedMonth, selectedYear, onMonthYearChange }: FinanceHeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [viewYear, setViewYear] = useState(new Date().getFullYear());
+  const [viewYear, setViewYear] = useState(selectedYear);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -24,13 +28,12 @@ export default function FinanceHeader() {
   }, []);
 
   const handleSelectMonth = (monthIndex: number) => {
-    setSelectedMonth(monthIndex);
-    setSelectedYear(viewYear);
+    onMonthYearChange(monthIndex, viewYear);
     setIsOpen(false);
   };
 
   const isCurrentMonth = selectedMonth === new Date().getMonth() && selectedYear === new Date().getFullYear();
-  const displayText = isCurrentMonth ? "This Month" : `${MONTHS[selectedMonth]} ${selectedYear}`;
+  const displayText = selectedMonth === -1 ? "All Time" : (isCurrentMonth ? "This Month" : `${MONTHS[selectedMonth]} ${selectedYear}`);
 
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
@@ -61,8 +64,20 @@ export default function FinanceHeader() {
 
         {isOpen && (
           <div className="absolute right-0 top-full mt-2 w-[240px] bg-[#111622] border border-[#232936] rounded-[16px] shadow-[0px_8px_32px_rgba(0,0,0,0.4)] z-50 p-4">
+            {/* All Time Button */}
+            <button
+              onClick={() => handleSelectMonth(-1)}
+              className={`w-full h-9 mb-4 flex items-center justify-center rounded-[10px] font-sans font-medium text-[12px] transition-colors cursor-pointer ${
+                selectedMonth === -1 
+                  ? "bg-[rgba(204,255,0,0.1)] text-[#CCFF00] border border-[rgba(204,255,0,0.25)]" 
+                  : "bg-[#1A1C23] text-[#94A3B8] hover:bg-[#232936] hover:text-[#E2E8F0]"
+              }`}
+            >
+              All Time
+            </button>
+
             {/* Year Navigation */}
-            <div className="flex flex-row items-center justify-between mb-4">
+            <div className="flex flex-row items-center justify-between mb-4 pt-4 border-t border-[#232936]">
               <button 
                 onClick={() => setViewYear(prev => prev - 1)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1A1C23] transition-colors cursor-pointer text-[#9CA3AF] hover:text-white"

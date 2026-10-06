@@ -1,6 +1,11 @@
+"use client";
 import { Info, Lightning, Warning, Star, CurrencyInr } from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
-import { ReactNode } from "react";
+import { ReactNode, useMemo } from "react";
+import { useUser } from "@/app/context/UserContext";
+import { useGymExpenses } from "@/lib/hooks/gymExpenses/useGymExpenses";
+import { useGymPayments } from "@/lib/hooks/useGymPayments";
+import { useCustomerGymPayments } from "@/lib/hooks/customerGymPayments/useCustomerGymPayments";
 
 interface BarData {
   height: string;
@@ -81,16 +86,80 @@ function PrimaryKPICard(props: PrimaryKPICardProps) {
   );
 }
 
-export default function FinancePrimaryCards() {
+export default function FinancePrimaryCards({ selectedMonth, selectedYear }: { selectedMonth: number, selectedYear: number }) {
+  const { user, roleData } = useUser();
+  const userId = user?.id || null;
+  const gymId = roleData?.[0]?.gymId || null;
+
+  const { data: expenses = [] } = useGymExpenses(gymId);
+  const { data: gymPayments = [] } = useGymPayments(userId);
+  const { data: customerPayments = [] } = useCustomerGymPayments(gymId);
+
+  const currentMonthData = useMemo(() => {
+    return (data: any[]) => data.filter((item: any) => {
+      if (selectedMonth === -1) return true;
+      const date = new Date(item.createdAt || item.paymentDate);
+      return date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
+    });
+  }, [selectedMonth, selectedYear]);
+
+  const previousMonthData = useMemo(() => {
+    return (data: any[]) => data.filter((item: any) => {
+      if (selectedMonth === -1) return false;
+      const date = new Date(item.createdAt || item.paymentDate);
+      const prevMonth = selectedMonth === 0 ? 11 : selectedMonth - 1;
+      const prevYear = selectedMonth === 0 ? selectedYear - 1 : selectedYear;
+      return date.getMonth() === prevMonth && date.getFullYear() === prevYear;
+    });
+  }, [selectedMonth, selectedYear]);
+
+  const expensesCurrent = currentMonthData(expenses);
+  const expensesPrev = previousMonthData(expenses);
+
+  const gymPaymentsCurrent = currentMonthData(gymPayments);
+  const gymPaymentsPrev = previousMonthData(gymPayments);
+
+  const customerPaymentsCurrent = currentMonthData(customerPayments);
+  const customerPaymentsPrev = previousMonthData(customerPayments);
+
+  const totalExpenses = expensesCurrent.reduce((sum: number, exp: any) => sum + (Number(exp.amount) || 0), 0);
+  const prevExpenses = expensesPrev.reduce((sum: number, exp: any) => sum + (Number(exp.amount) || 0), 0);
+
+  const totalGymPayments = gymPaymentsCurrent.reduce((sum: number, p: any) => sum + (Number(p.amountPaid) || 0), 0);
+  const prevGymPayments = gymPaymentsPrev.reduce((sum: number, p: any) => sum + (Number(p.amountPaid) || 0), 0);
+
+  const totalCustomerPayments = customerPaymentsCurrent.reduce((sum: number, p: any) => sum + (Number(p.amountPaid) || 0), 0);
+  const prevCustomerPayments = customerPaymentsPrev.reduce((sum: number, p: any) => sum + (Number(p.amountPaid) || 0), 0);
+
+  const grossProfit = totalGymPayments + totalCustomerPayments;
+  const prevGrossProfit = prevGymPayments + prevCustomerPayments;
+
+  const netProfit = grossProfit - totalExpenses;
+  const prevNetProfit = prevGrossProfit - prevExpenses;
+
+  const calculateTrend = (current: number, previous: number) => {
+    if (selectedMonth === -1) return 0;
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Number((((current - previous) / previous) * 100).toFixed(1));
+  };
+
+  const grossProfitTrend = calculateTrend(grossProfit, prevGrossProfit);
+  const expensesTrend = calculateTrend(totalExpenses, prevExpenses);
+  const netProfitTrend = calculateTrend(netProfit, prevNetProfit);
+
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(val);
+  };
+
   const cardsData: PrimaryKPICardProps[] = [
     {
       title: "Gross Profit",
-      value: "1,24,500",
-      trendValue: 15.2,
+      value: formatCurrency(grossProfit),
+      trendValue: grossProfitTrend,
       trendSuffix: "vs last month",
       gradient: "linear-gradient(180deg, #0F1E17 0%, #0D1814 50%, #0A120E 100%)",
       borderColor: "rgba(6, 78, 59, 0.4)",
-      trendColor: "#4ADE80",
+      trendColor: grossProfitTrend >= 0 ? "#4ADE80" : "#F43F5E",
       bars: [
         { height: "19px", bg: "rgba(16,185,129,0.2)" },
         { height: "28.5px", bg: "rgba(16,185,129,0.3)" },
@@ -104,9 +173,13 @@ export default function FinancePrimaryCards() {
       imageHeight: 84,
       footerIcon: <Lightning size={14} color="#68F07C" weight="fill" />,
       footerIconBg: "#1F4932",
-      footerText: (
+      footerText: selectedMonth === -1 ? (
         <>
-          Profit increased by <CurrencyInr size={11} weight="bold" className="inline relative top-[-1px]" /> 16,500 compared to last month.
+          Total gross profit generated across all time.
+        </>
+      ) : (
+        <>
+          Profit {grossProfitTrend >= 0 ? 'increased' : 'decreased'} by <CurrencyInr size={11} weight="bold" className="inline relative top-[-1px]" /> {formatCurrency(Math.abs(grossProfit - prevGrossProfit))} compared to last month.
         </>
       ),
       footerBg: "#12261C",
@@ -114,12 +187,12 @@ export default function FinancePrimaryCards() {
     },
     {
       title: "Expenditure",
-      value: "62,300",
-      trendValue: 8.1,
+      value: formatCurrency(totalExpenses),
+      trendValue: expensesTrend,
       trendSuffix: "vs last month",
       gradient: "linear-gradient(180deg, #211214 0%, #1B0F11 50%, #120A0B 100%)",
       borderColor: "rgba(76, 5, 25, 0.5)",
-      trendColor: "#F43F5E",
+      trendColor: expensesTrend > 0 ? "#F43F5E" : "#4ADE80",
       bars: [
         { height: "14.5px", bg: "rgba(244,63,94,0.2)" },
         { height: "24.3px", bg: "rgba(244,63,94,0.3)" },
@@ -133,9 +206,13 @@ export default function FinancePrimaryCards() {
       imageHeight: 90,
       footerIcon: <Warning size={14} color="#F43F5E" weight="fill" />,
       footerIconBg: "#44171D",
-      footerText: (
+      footerText: selectedMonth === -1 ? (
         <>
-          Expenses increased by <CurrencyInr size={11} weight="bold" className="inline relative top-[-1px]" /> 4,700 compared to last month.
+          Total expenditure generated across all time.
+        </>
+      ) : (
+        <>
+          Expenses {expensesTrend > 0 ? 'increased' : 'decreased'} by <CurrencyInr size={11} weight="bold" className="inline relative top-[-1px]" /> {formatCurrency(Math.abs(totalExpenses - prevExpenses))} compared to last month.
         </>
       ),
       footerBg: "#261316",
@@ -143,12 +220,12 @@ export default function FinancePrimaryCards() {
     },
     {
       title: "Net Profit",
-      value: "62,200",
-      trendValue: 22.6,
+      value: formatCurrency(netProfit),
+      trendValue: netProfitTrend,
       trendSuffix: "vs last month",
       gradient: "linear-gradient(180deg, #0F1E28 0%, #0C1720 50%, #0A1016 100%)",
       borderColor: "rgba(8, 47, 73, 0.5)",
-      trendColor: "#34D399",
+      trendColor: netProfitTrend >= 0 ? "#34D399" : "#F43F5E",
       bars: [
         { height: "14.5px", bg: "#01214A" },
         { height: "24.3px", bg: "#002E69" },
@@ -162,9 +239,13 @@ export default function FinancePrimaryCards() {
       imageHeight: 94,
       footerIcon: <Star size={14} color="#22D3EE" weight="fill" />,
       footerIconBg: "#183B55",
-      footerText: (
+      footerText: selectedMonth === -1 ? (
         <>
-          Great! Net profit grew by <CurrencyInr size={11} weight="bold" className="inline relative top-[-1px]" /> 11,800 compared to last month.
+          Total net profit generated across all time.
+        </>
+      ) : (
+        <>
+          {netProfitTrend >= 0 ? 'Great!' : 'Notice:'} Net profit {netProfitTrend >= 0 ? 'grew' : 'fell'} by <CurrencyInr size={11} weight="bold" className="inline relative top-[-1px]" /> {formatCurrency(Math.abs(netProfit - prevNetProfit))} compared to last month.
         </>
       ),
       footerBg: "#102434",

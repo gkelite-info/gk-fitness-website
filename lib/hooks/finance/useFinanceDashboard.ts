@@ -5,7 +5,7 @@ import { useGymCustomerMembershipPlans } from '@/lib/hooks/gymCustomerMembership
 import { useGymPayments } from '@/lib/hooks/useGymPayments';
 import { useCustomerGymPayments } from '@/lib/hooks/customerGymPayments/useCustomerGymPayments';
 
-export function useFinanceDashboard(userId: string | null, gymId: string | null, selectedYear: number, selectedDate?: string) {
+export function useFinanceDashboard(userId: string | null, gymId: string | null, selectedYear: number, selectedMonth: number, selectedDate?: string) {
   const { data: customersData, isLoading: isLoadingCustomers } = useGymCustomers(gymId ?? undefined);
   const { data: membershipPlans, isLoading: isLoadingPlans } = useMembershipPlans(gymId);
   const { data: customerPlans, isLoading: isLoadingCustomerPlans } = useGymCustomerMembershipPlans(gymId ?? undefined);
@@ -38,23 +38,33 @@ export function useFinanceDashboard(userId: string | null, gymId: string | null,
     }
 
     const now = new Date();
+    const isCurrentMonthView = now.getFullYear() === selectedYear && now.getMonth() === selectedMonth;
+    
     const todayStr = now.toDateString();
-
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toDateString();
 
-    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    const startOfCurrentMonth = selectedMonth === -1 
+      ? new Date(0) 
+      : new Date(selectedYear, selectedMonth, 1);
+      
+    const endOfCurrentMonth = selectedMonth === -1 
+      ? new Date(9999, 11, 31, 23, 59, 59, 999) 
+      : new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59, 999);
+    
+    const startOfLastMonth = selectedMonth === -1 
+      ? new Date(0) 
+      : new Date(selectedYear, selectedMonth - 1, 1);
+      
+    const endOfLastMonth = selectedMonth === -1 
+      ? new Date(0) 
+      : new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999);
 
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-    const currentYear = now.getFullYear();
-    const currentMonthIndex = now.getMonth();
-
-    const monthsToRender = selectedYear === currentYear
-      ? monthNames.slice(0, currentMonthIndex + 1)
+    const monthsToRender = selectedMonth === -1 || selectedYear === now.getFullYear()
+      ? monthNames.slice(0, now.getMonth() + 1)
       : monthNames;
 
     monthsToRender.forEach(m => {
@@ -113,42 +123,49 @@ export function useFinanceDashboard(userId: string | null, gymId: string | null,
           }
         }
 
-        const amount = payment.amountPaid || 0;
-        if (amount > 0) {
-          totalRevenue += amount;
-          const pDate = new Date(payment.paymentDate);
+          const amount = payment.amountPaid || 0;
+          if (amount > 0) {
+            
+            const pDate = new Date(payment.paymentDate);
 
-          if (pDate.toDateString() === todayStr) {
-            todaysRevenue += amount;
-            todaysPayments.push(payment);
-            if (payment.planId) {
-              if (todaysPlanRevenues[payment.planId] === undefined) todaysPlanRevenues[payment.planId] = 0;
-              todaysPlanRevenues[payment.planId] += amount;
+            // Revenue By Plan only considers payments in the selected month
+            if (pDate >= startOfCurrentMonth && pDate <= endOfCurrentMonth) {
+              totalRevenue += amount; // We'll count totalRevenue for the selected month now
+              
+              if (payment.planId) {
+                if (planRevenues[payment.planId] === undefined) planRevenues[payment.planId] = 0;
+                planRevenues[payment.planId] += amount;
+              }
             }
-          } else if (pDate.toDateString() === yesterdayStr) {
-            yesterdayRev += amount;
-          }
 
-          if (pDate >= startOfCurrentMonth) {
-            currentMonthRev += amount;
-          } else if (pDate >= startOfLastMonth && pDate <= endOfLastMonth) {
-            lastMonthRev += amount;
-          }
+            if (isCurrentMonthView || selectedMonth === -1) {
+              if (pDate.toDateString() === todayStr) {
+                todaysRevenue += amount;
+                todaysPayments.push(payment);
+                if (payment.planId) {
+                  if (todaysPlanRevenues[payment.planId] === undefined) todaysPlanRevenues[payment.planId] = 0;
+                  todaysPlanRevenues[payment.planId] += amount;
+                }
+              } else if (pDate.toDateString() === yesterdayStr) {
+                yesterdayRev += amount;
+              }
+            }
 
-          if (pDate.getFullYear() === selectedYear) {
-            const monthKey = monthNames[pDate.getMonth()];
-            if (monthlyRev[monthKey] !== undefined) {
-              monthlyRev[monthKey] += amount;
+            if (pDate >= startOfCurrentMonth && pDate <= endOfCurrentMonth) {
+              currentMonthRev += amount;
+            } else if (pDate >= startOfLastMonth && pDate <= endOfLastMonth) {
+              lastMonthRev += amount;
+            }
+
+            if (pDate.getFullYear() === selectedYear) {
+              const monthKey = monthNames[pDate.getMonth()];
+              if (monthlyRev[monthKey] !== undefined) {
+                monthlyRev[monthKey] += amount;
+              }
             }
           }
-
-          if (payment.planId) {
-            if (planRevenues[payment.planId] === undefined) planRevenues[payment.planId] = 0;
-            planRevenues[payment.planId] += amount;
-          }
-        }
-      });
-    }
+        });
+      }
 
     if (customerPlans) {
       customerPlans.forEach((plan: any) => {
@@ -164,7 +181,7 @@ export function useFinanceDashboard(userId: string | null, gymId: string | null,
       totalCustomers = customersData.length;
       customersData.forEach((c: any) => {
         const createdAt = new Date(c.createdAt || c.joiningDate || new Date());
-        if (createdAt >= startOfCurrentMonth) {
+        if (createdAt >= startOfCurrentMonth && createdAt <= endOfCurrentMonth) {
           thisMonthNewCustomers++;
         } else if (createdAt >= startOfLastMonth && createdAt <= endOfLastMonth) {
           lastMonthNewCustomers++;
@@ -203,10 +220,14 @@ export function useFinanceDashboard(userId: string | null, gymId: string | null,
 
     const maxRevenue = Math.max(...formattedMonthlyChart.map(m => m.value), 0);
 
-    const recentTransactions = allPayments ? [...allPayments].sort((a: any, b: any) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()).slice(0, 5) : [];
-    
-    // All payments sorted by time
-    const allTransactions = allPayments ? [...allPayments].sort((a: any, b: any) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()) : [];
+    // Filter all payments for the selected month to show in Recent Transactions
+    const selectedMonthPayments = allPayments ? [...allPayments].filter((p: any) => {
+      const d = new Date(p.paymentDate);
+      return d >= startOfCurrentMonth && d <= endOfCurrentMonth;
+    }).sort((a: any, b: any) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()) : [];
+
+    const recentTransactions = selectedMonthPayments.slice(0, 5);
+    const allTransactions = selectedMonthPayments;
 
     // Sort today's payments directly by time
     const formattedTodaysPayments = todaysPayments.sort((a: any, b: any) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime());
@@ -228,7 +249,7 @@ export function useFinanceDashboard(userId: string | null, gymId: string | null,
       customersData,
       customerPlans
     };
-  }, [gymPaymentsData, customerGymPaymentsData, customersData, membershipPlans, customerPlans, selectedYear, selectedDate]);
+  }, [gymPaymentsData, customerGymPaymentsData, customersData, membershipPlans, customerPlans, selectedYear, selectedMonth, selectedDate]);
 
   return { ...financeData, isLoading };
 }

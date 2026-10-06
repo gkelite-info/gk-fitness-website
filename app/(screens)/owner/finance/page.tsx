@@ -16,7 +16,9 @@ export default function FinanceDashboardPage() {
   const gymId = roleData?.[0]?.gymId || null;
 
   const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
 
   const {
     todaysRevenue,
@@ -29,7 +31,7 @@ export default function FinanceDashboardPage() {
     customerGrowth,
     recentTransactions,
     isLoading
-  } = useFinanceDashboard(userId, gymId, selectedYear);
+  } = useFinanceDashboard(userId, gymId, selectedYear, selectedMonth);
 
   if (isLoading) {
     return (
@@ -53,7 +55,14 @@ export default function FinanceDashboardPage() {
 
   return (
     <div className="flex flex-col items-start p-4 md:p-6 lg:p-8 w-full min-h-screen bg-[#0C0E11] gap-6 overflow-y-auto">
-      <FinanceHeader />
+      <FinanceHeader 
+        selectedMonth={selectedMonth} 
+        selectedYear={selectedYear} 
+        onMonthYearChange={(month, year) => {
+          setSelectedMonth(month);
+          setSelectedYear(year);
+        }}
+      />
 
       <FinanceKPICards
         todaysRevenue={todaysRevenue}
@@ -61,9 +70,10 @@ export default function FinanceDashboardPage() {
         totalCustomers={totalCustomers}
         customerGrowth={customerGrowth}
         monthlyGrowth={monthlyGrowth}
+        selectedMonth={selectedMonth}
       />
 
-      <FinancePrimaryCards />
+      <FinancePrimaryCards selectedMonth={selectedMonth} selectedYear={selectedYear} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 w-full">
         <RevenueByPlan revenueByPlan={revenueByPlan} />
