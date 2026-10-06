@@ -17,7 +17,7 @@ export default function InvoiceTemplate({ data }: InvoiceTemplateProps) {
         <div className="flex flex-col sm:flex-row justify-between items-start gap-6">
           <div className="flex flex-col gap-2">
             <h1 className="text-2xl sm:text-3xl font-bold text-white m-0 uppercase tracking-tight">
-              {data.gymName || "GK Fitness"}
+              {data.gymName || "GK-Gym Life"}
             </h1>
             <span className="text-sm text-[#94A3B8] font-medium uppercase tracking-[1px]">Payment Invoice</span>
           </div>
@@ -104,7 +104,7 @@ export default function InvoiceTemplate({ data }: InvoiceTemplateProps) {
           <div className="w-full sm:w-1/2 flex flex-col gap-2">
             <span className="text-xs text-[#94A3B8] uppercase tracking-widest font-semibold">Notes</span>
             <p className="text-sm text-[#C4CAAC] leading-relaxed">
-              This is a computer generated invoice and does not require a physical signature. Thank you for choosing {data.gymName || "GK Fitness"}!
+              This is a computer generated invoice and does not require a physical signature. Thank you for choosing {data.gymName || "GK-Gym Life"}!
             </p>
           </div>
 

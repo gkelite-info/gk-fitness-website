@@ -8,8 +8,8 @@ export default function OwnerLayout({
 }) {
   return (
     <PortalLayout>
-      <div className="w-full h-full flex justify-center">
-        <div className="w-full max-w-[1600px]">
+      <div className="w-full h-full flex justify-center print:h-auto print:block">
+        <div className="w-full max-w-[1600px] print:max-w-none print:w-auto">
           {children}
         </div>
       </div>

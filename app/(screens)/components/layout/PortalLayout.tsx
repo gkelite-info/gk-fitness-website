@@ -30,6 +30,12 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
     }
   }, [pathname]);
 
+  const isReceiptPage = pathname?.includes('/receipt/');
+
+  if (isReceiptPage) {
+    return <div className="w-full min-h-screen bg-white">{children}</div>;
+  }
+
   const renderSidebar = () => {
     if (loading || !profile) {
       return <SidebarShimmer />;
@@ -52,8 +58,8 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#0C0D10] overflow-hidden">
-      <div className="hidden lg:block h-full flex-shrink-0 z-10">
+    <div className="flex h-screen w-full bg-[#0C0D10] overflow-hidden print:h-auto print:overflow-visible print:bg-white print:block">
+      <div className="hidden lg:block h-full flex-shrink-0 z-10 print:hidden">
         {renderSidebar()}
       </div>
 
@@ -87,10 +93,12 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
         )}
       </AnimatePresence>
 
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        <TopHeader onOpenSidebar={() => setIsSidebarOpen(true)} />
-        <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-themed">
-          <div className="min-h-full">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden print:h-auto print:overflow-visible print:block">
+        <div className="print:hidden">
+          <TopHeader onOpenSidebar={() => setIsSidebarOpen(true)} />
+        </div>
+        <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-themed print:overflow-visible print:h-auto print:block">
+          <div className="min-h-full print:min-h-0">
             {children}
           </div>
         </main>
