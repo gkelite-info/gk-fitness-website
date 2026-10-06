@@ -20,13 +20,14 @@ interface PageProps {
 export default function MembershipPlanDetailsPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const searchParams = useSearchParams();
-  
+
   const { user, roleData } = useUser();
   const userId = user?.id || null;
   const gymId = roleData?.[0]?.gymId || null;
   const selectedYear = new Date().getFullYear();
+  const selectedMonth = new Date().getMonth();
 
-  const { revenueByPlan, allTransactions, customersData, customerPlans, isLoading } = useFinanceDashboard(userId, gymId, selectedYear);
+  const { revenueByPlan, allTransactions, customersData, customerPlans, isLoading } = useFinanceDashboard(userId, gymId, selectedYear, selectedMonth);
 
   // Use the name from query params, fallback to generic "Membership Plan" if not provided
   const queryName = searchParams.get('name');
@@ -39,7 +40,7 @@ export default function MembershipPlanDetailsPage({ params }: PageProps) {
   const renewals = activeMembers > 0 ? Math.floor(activeMembers * 0.15) : 0; // Mock renewals based on members
 
   const planTransactions = allTransactions?.filter((tx: any) => tx.planId === planId) || [];
-  
+
   const planMembers = customerPlans?.filter((cp: any) => cp.planId === planId).map((cp: any) => {
     const customer = customersData?.find((c: any) => c.customerId === cp.customerId);
     const user = customer?.users;
@@ -63,13 +64,13 @@ export default function MembershipPlanDetailsPage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col items-start p-4 md:p-6 lg:p-8 w-full min-h-screen bg-[#0C0E11] gap-6 overflow-y-auto">
-      
+
       {/* Header Area */}
       <PlanDetailsHeader planName={planName} />
 
       {/* Hero Section */}
-      <PlanDetailsHero 
-        planName={planName} 
+      <PlanDetailsHero
+        planName={planName}
         activeMembers={activeMembers}
         revenue={revenue}
         renewals={renewals}

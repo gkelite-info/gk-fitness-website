@@ -29,8 +29,9 @@ export default function PaymentDetailsPage({ params }: { params: Promise<{ id: s
   const userId = user?.id || null;
   const gymId = roleData?.[0]?.gymId || null;
   const selectedYear = new Date().getFullYear();
+  const selectedMonth = new Date().getMonth();
 
-  const { allTransactions, isLoading } = useFinanceDashboard(userId, gymId, selectedYear);
+  const { allTransactions, isLoading } = useFinanceDashboard(userId, gymId, selectedYear, selectedMonth);
 
   if (isLoading) {
     return (

@@ -12,13 +12,14 @@ export default function PaymentDetailsPage() {
   const params = useParams();
   const paymentId = params.paymentId as string;
   const router = useRouter();
-  
+
   const { user, roleData } = useUser();
   const userId = user?.id || null;
   const gymId = roleData?.[0]?.gymId || null;
   const selectedYear = new Date().getFullYear();
+  const selectedMonth = new Date().getMonth();
 
-  const { allTransactions, isLoading } = useFinanceDashboard(userId, gymId, selectedYear);
+  const { allTransactions, isLoading } = useFinanceDashboard(userId, gymId, selectedYear, selectedMonth);
 
   if (isLoading) {
     return (
@@ -42,7 +43,7 @@ export default function PaymentDetailsPage() {
 
   const name = payment.gym_customers?.users?.name || payment.gym_customers?.fullName || 'Unknown User';
   const plan = payment.gym_membership_plans?.name || payment.gym_membership_plans?.planName || payment.plan?.planName || 'Unknown Plan';
-  
+
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-IN', {
       maximumFractionDigits: 0
@@ -61,10 +62,10 @@ export default function PaymentDetailsPage() {
 
   // Use createdAt for exact timestamp if available, fallback to paymentDate
   const exactTimestamp = payment.createdAt || payment.paymentDate;
-  
+
   const paymentDateObj = new Date(exactTimestamp);
-  const formattedDateOnly = paymentDateObj.toLocaleDateString('en-GB', { 
-    day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' 
+  const formattedDateOnly = paymentDateObj.toLocaleDateString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata'
   });
 
   const summaryData = [
@@ -76,7 +77,7 @@ export default function PaymentDetailsPage() {
 
   return (
     <div className="flex flex-col items-start p-4 md:p-6 lg:p-8 w-full min-h-screen bg-[#0C0E11] overflow-y-auto">
-      <TransactionDetailsView 
+      <TransactionDetailsView
         onBack={() => router.back()}
         title="Transaction Detail"
         subtitle="Payment Details"
