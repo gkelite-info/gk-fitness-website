@@ -9,6 +9,7 @@ import PostCard from "./PostCard";
 import CreatePostModal from "./CreatePostModal";
 import AddStoryModal from "./AddStoryModal";
 import ViewStoryModal from "./ViewStoryModal";
+import PostCommentsModal from "./PostCommentsModal";
 import { MOCK_STORIES, MOCK_POSTS } from "./mockData";
 import toast from "react-hot-toast";
 
@@ -17,6 +18,7 @@ export default function CommunityClient() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAddStoryModalOpen, setIsAddStoryModalOpen] = useState(false);
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
+  const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null);
   const [posts, setPosts] = useState(MOCK_POSTS);
   const [stories, setStories] = useState(MOCK_STORIES);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -217,6 +219,9 @@ export default function CommunityClient() {
                 setPosts(prev => prev.filter(p => p.id !== postId));
                 toast.success("Post deleted successfully!");
               }}
+              onCommentClick={(postId) => {
+                setActiveCommentPostId(postId);
+              }}
             />
           ))}
         </div>
@@ -345,6 +350,13 @@ export default function CommunityClient() {
             toast.success("Story deleted successfully!");
             setActiveStoryIndex(null);
           }}
+        />
+      )}
+
+      {activeCommentPostId && (
+        <PostCommentsModal 
+          post={posts.find(p => p.id === activeCommentPostId)!} 
+          onClose={() => setActiveCommentPostId(null)} 
         />
       )}
     </div>

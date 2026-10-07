@@ -1,7 +1,5 @@
+import ProfileClient from "./_components/ProfileClient";
+
 export default function ProfilePage() {
-  return (
-    <div className="w-full h-full min-h-[500px] flex items-center justify-center">
-      <h1 className="text-white text-3xl font-bold font-sans">Profile</h1>
-    </div>
-  );
+  return <ProfileClient />;
 }

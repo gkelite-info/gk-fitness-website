@@ -12,9 +12,11 @@ type Props = {
   post: Post;
   onEdit?: (postId: string) => void;
   onDelete?: (postId: string) => void;
+  onCommentClick?: (postId: string) => void;
+  hideCommentsClick?: boolean;
 };
 
-export default function PostCard({ post, onEdit, onDelete }: Props) {
+export default function PostCard({ post, onEdit, onDelete, onCommentClick, hideCommentsClick }: Props) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
@@ -219,7 +221,12 @@ export default function PostCard({ post, onEdit, onDelete }: Props) {
             </span>
           </button>
           
-          <button className="flex flex-row items-center gap-2 group cursor-pointer">
+          <button 
+            onClick={() => {
+              if (!hideCommentsClick) onCommentClick?.(post.id);
+            }} 
+            className={`flex flex-row items-center gap-2 group ${hideCommentsClick ? 'cursor-default' : 'cursor-pointer'}`}
+          >
             <ChatCircle size={16} weight="regular" className="text-[#94A3B8] group-hover:text-white transition-colors" />
             <span className="font-['Nimbus_Sans'] font-medium text-xs leading-4 text-center text-[#CBD5E1] group-hover:text-white transition-colors">
               {post.comments}
