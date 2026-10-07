@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { House, Users, CurrencyInr, Compass, User, Barbell, Crown, Wallet, CalendarCheck, Headset, Receipt, Package, Clock, ListChecks, Bell, Fingerprint } from "@phosphor-icons/react/dist/ssr";
-import LogoutButton from "../../reusable/LogoutButton";
+
 import { useEffect, useRef } from "react";
 
 const navLinks = [
@@ -91,10 +91,8 @@ export default function OwnerSidebar() {
           );
         })}
       </div>
-
-      <div className="w-full mt-6 shrink-0">
-        <LogoutButton />
-      </div>
+      
+      {/* Logout button removed as per request, moved to Profile screen */}
     </div>
   );
 }
