@@ -8,6 +8,7 @@ export function useGymCustomers(gymId?: string) {
       const data = await fetchGymCustomers(gymId);
       return data;
     },
+    enabled: !!gymId,
   });
 }
 
