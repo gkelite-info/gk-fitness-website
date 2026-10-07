@@ -1,5 +1,3 @@
-import { supabase } from '@/lib/supabase';
-
 export type DeviceType = "fingerprint" | "facerecognition" | "multi";
 
 export interface BiometricDevicePayload {
@@ -41,14 +39,22 @@ export interface BiometricDeviceRow {
   createdAt: string;
 }
 
-export const getBiometricDevices = async (gymId: string, page?: number, limit?: number) => {
+export const getBiometricDevices = async (gymId: string, page?: number, limit?: number, status: 'active' | 'inactive' = 'active') => {
   try {
-    let query = supabase
+    const { createClient } = await import('@/app/api/supabase/client');
+    const supabaseAuth = createClient();
+
+    let query = supabaseAuth
       .from("gym_biometric_devices")
       .select("*", { count: 'exact' })
       .eq("gymId", gymId)
-      .eq("is_deleted", false)
       .order("createdAt", { ascending: false });
+
+    if (status === 'active') {
+      query = query.eq("is_deleted", false).is("deletedAt", null);
+    } else if (status === 'inactive') {
+      query = query.eq("is_deleted", true).eq("isActive", false).not("deletedAt", "is", null);
+    }
 
     if (page !== undefined && limit !== undefined) {
       const from = (page - 1) * limit;
@@ -67,6 +73,9 @@ export const getBiometricDevices = async (gymId: string, page?: number, limit?: 
 
 export const upsertBiometricDevice = async (payload: BiometricDevicePayload) => {
   try {
+    const { createClient } = await import('@/app/api/supabase/client');
+    const supabaseAuth = createClient();
+
     const now = new Date().toISOString();
 
     const deviceData = {
@@ -88,8 +97,7 @@ export const upsertBiometricDevice = async (payload: BiometricDevicePayload) => 
     };
 
     if (payload.deviceId) {
-      // Update
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAuth
         .from("gym_biometric_devices")
         .update(deviceData)
         .eq("deviceId", payload.deviceId)
@@ -98,9 +106,8 @@ export const upsertBiometricDevice = async (payload: BiometricDevicePayload) => 
       if (error) throw error;
       return { success: true, data: data[0] };
     } else {
-      // Insert
       const newDeviceId = crypto.randomUUID();
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAuth
         .from("gym_biometric_devices")
         .insert([{ ...deviceData, deviceId: newDeviceId, createdAt: now }])
         .select();
@@ -116,16 +123,37 @@ export const upsertBiometricDevice = async (payload: BiometricDevicePayload) => 
 
 export const deleteBiometricDevice = async (deviceId: string) => {
   try {
+    const { createClient } = await import('@/app/api/supabase/client');
+    const supabaseAuth = createClient();
+
     const now = new Date().toISOString();
-    const { error } = await supabase
+    const { error } = await supabaseAuth
       .from("gym_biometric_devices")
-      .update({ is_deleted: true, deletedAt: now })
+      .update({ isActive: false, is_deleted: true, deletedAt: now })
       .eq("deviceId", deviceId);
 
     if (error) throw error;
     return { success: true };
   } catch (error: any) {
     console.error('[Biometric API] deleteBiometricDevice error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const restoreBiometricDevice = async (deviceId: string) => {
+  try {
+    const { createClient } = await import('@/app/api/supabase/client');
+    const supabaseAuth = createClient();
+
+    const { error } = await supabaseAuth
+      .from("gym_biometric_devices")
+      .update({ isActive: true, is_deleted: false, deletedAt: null })
+      .eq("deviceId", deviceId);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error('[Biometric API] restoreBiometricDevice error:', error);
     return { success: false, error: error.message };
   }
 };

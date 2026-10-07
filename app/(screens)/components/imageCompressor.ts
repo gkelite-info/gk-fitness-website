@@ -51,7 +51,6 @@ export async function compressImage(file: File, options: CompressOptions = {}): 
             }
 
             if (blob.size >= file.size) {
-              console.log(`[imageCompressor] Compressed size (${(blob.size / 1024).toFixed(2)} KB) is larger than original (${(file.size / 1024).toFixed(2)} KB). Returning original.`);
               return resolve(file);
             }
 

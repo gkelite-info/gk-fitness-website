@@ -15,7 +15,7 @@ type Props = {
 
 export default function EnrolledUserDetailModal({ user, onClose, onUnenroll, onRegister }: Props) {
   const [mounted, setMounted] = useState(false);
-  
+
   useEffect(() => {
     setMounted(true);
     document.body.style.overflow = "hidden";
@@ -63,17 +63,23 @@ export default function EnrolledUserDetailModal({ user, onClose, onUnenroll, onR
             </div>
           </div>
           <div className="flex flex-row items-center gap-2">
-            <div 
+            <div
               onClick={() => onRegister("face")}
-              className="flex justify-center items-center w-10 h-10 bg-[#3C4613] rounded-full border border-[rgba(203,248,62,0.2)] cursor-pointer hover:bg-[#4D5A18] transition-colors shadow-sm"
+              className={`flex justify-center items-center w-10 h-10 rounded-full border cursor-pointer transition-colors shadow-sm ${user.hasFace
+                  ? "bg-[#3C4613] border-[rgba(203,248,62,0.2)] hover:bg-[#4D5A18]"
+                  : "bg-[#28292C] border-[#323438] hover:bg-[#323438]"
+                }`}
             >
-              <UserFocus size={20} className="text-[#CBF83E]" />
+              <UserFocus size={20} className={user.hasFace ? "text-[#CBF83E]" : "text-[#A3A3A3]"} weight={user.hasFace ? "fill" : "regular"} />
             </div>
-            <div 
+            <div
               onClick={() => onRegister("fingerprint")}
-              className="flex justify-center items-center w-10 h-10 bg-[#3C4613] rounded-full border border-[rgba(203,248,62,0.2)] cursor-pointer hover:bg-[#4D5A18] transition-colors shadow-sm"
+              className={`flex justify-center items-center w-10 h-10 rounded-full border cursor-pointer transition-colors shadow-sm ${user.hasFingerprint
+                  ? "bg-[#3C4613] border-[rgba(203,248,62,0.2)] hover:bg-[#4D5A18]"
+                  : "bg-[#28292C] border-[#323438] hover:bg-[#323438]"
+                }`}
             >
-              <Fingerprint size={20} className="text-[#D2FF00]" weight="bold" />
+              <Fingerprint size={20} className={user.hasFingerprint ? "text-[#D2FF00]" : "text-[#A3A3A3]"} weight={user.hasFingerprint ? "fill" : "regular"} />
             </div>
           </div>
         </div>

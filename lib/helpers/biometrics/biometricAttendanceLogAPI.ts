@@ -55,7 +55,11 @@ export const getBiometricAttendanceLogs = async (
       query = query.gte("scanTimestamp", filters.fromDate);
     }
     if (filters?.toDate) {
-      query = query.lte("scanTimestamp", filters.toDate);
+      let toDateVal = filters.toDate;
+      if (toDateVal.length === 10) { // YYYY-MM-DD
+        toDateVal += "T23:59:59.999Z";
+      }
+      query = query.lte("scanTimestamp", toDateVal);
     }
     if (filters?.customerId) {
       query = query.eq("customerId", filters.customerId);

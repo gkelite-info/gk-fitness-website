@@ -9,9 +9,10 @@ import { CredentialUser } from "../types";
 type Props = {
   user: CredentialUser;
   onClose: () => void;
+  onCapture: () => void;
 };
 
-export default function RegisterFingerprintModal({ user, onClose }: Props) {
+export default function RegisterFingerprintModal({ user, onClose, onCapture }: Props) {
   const [mounted, setMounted] = useState(false);
   
   useEffect(() => { 
@@ -62,12 +63,20 @@ export default function RegisterFingerprintModal({ user, onClose }: Props) {
           </div>
         </div>
 
-        <button 
-          onClick={onClose} 
-          className="w-full h-[44px] bg-[#232631] rounded-xl font-sans font-semibold text-[14px] text-white hover:bg-[#2A2E3B] transition-colors cursor-pointer mt-1 shadow-sm"
-        >
-          Cancel
-        </button>
+        <div className="flex flex-col gap-2 w-full mt-1">
+          <button 
+            onClick={onCapture} 
+            className="w-full h-[44px] bg-[#D2F800] rounded-xl font-sans font-bold text-[14px] text-black hover:bg-[#d4ff32] transition-colors cursor-pointer shadow-sm"
+          >
+            Start Scan
+          </button>
+          <button 
+            onClick={onClose} 
+            className="w-full h-[44px] bg-[#232631] rounded-xl font-sans font-semibold text-[14px] text-white hover:bg-[#2A2E3B] transition-colors cursor-pointer shadow-sm"
+          >
+            Cancel
+          </button>
+        </div>
       </motion.div>
     </div>
   );

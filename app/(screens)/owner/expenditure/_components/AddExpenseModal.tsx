@@ -362,12 +362,9 @@ export default function AddExpenseModal({ isOpen, onClose, initialData, onSucces
                       let receiptUrl = existingReceiptUrl;
 
                       if (files.length > 0) {
-                        console.log('[AddExpenseModal] Original receipt file size:', files[0].size);
                         const compressedFile = await compressImage(files[0]);
-                        console.log('[AddExpenseModal] Compressed receipt file size:', compressedFile.size);
 
                         const uploadedUrl = await uploadGymExpenseReceipt(compressedFile);
-                        console.log('[AddExpenseModal] Uploaded URL:', uploadedUrl);
                         if (uploadedUrl) receiptUrl = uploadedUrl;
                       }
 
@@ -384,11 +381,9 @@ export default function AddExpenseModal({ isOpen, onClose, initialData, onSucces
                         createdBy: userId!
                       };
 
-                      console.log('[AddExpenseModal] Submitting expensePayload:', expensePayload);
 
                       saveExpenseMutation.mutate(expensePayload, {
                         onSuccess: (data) => {
-                          console.log('[AddExpenseModal] saveExpenseMutation Success Response:', data);
                           toast.success(`Expense ${initialData ? 'updated' : 'saved'} successfully!`);
                           if (onSuccess && data) {
                             onSuccess({
