@@ -10,6 +10,9 @@ export interface CustomerData {
   planBg: string;
   attendance: string;
   isPresent: boolean;
+  phone?: string;
+  attendanceId?: string;
+  hasNoPlan: boolean;
 }
 
 interface Props {
@@ -23,7 +26,6 @@ interface Props {
 export default function ManualAttendanceTable({ customers, isBulkMode, selectedIds, onToggleSelect, onToggleIndividual }: Props) {
   return (
     <div className="flex flex-col w-full gap-3">
-      {/* Header (Desktop Only) */}
       <div className="hidden lg:grid grid-cols-[4fr_2.5fr_3.5fr_2fr] w-full px-5 py-2">
         <div className="flex items-center">
           <span className="font-sans font-semibold text-[11px] leading-[16px] tracking-[0.55px] uppercase text-[#8B949E]">
@@ -47,29 +49,28 @@ export default function ManualAttendanceTable({ customers, isBulkMode, selectedI
         </div>
       </div>
 
-      {/* Rows */}
       {customers.map((cust) => (
-        <div 
-          key={cust.id} 
-          onClick={() => isBulkMode && onToggleSelect(cust.id)}
-          className={`w-full flex flex-col lg:grid lg:grid-cols-[4fr_2.5fr_3.5fr_2fr] lg:items-center p-4 gap-3 lg:gap-0 bg-[#171B24] border border-[#232936] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] rounded-[16px] transition-colors ${isBulkMode ? "cursor-pointer hover:bg-[#1A1F2B]" : ""}`}
+        <div
+          key={cust.id}
+          onClick={() => isBulkMode && !cust.hasNoPlan && onToggleSelect(cust.id)}
+          className={`w-full flex flex-col lg:grid lg:grid-cols-[4fr_2.5fr_3.5fr_2fr] lg:items-center p-4 gap-3 lg:gap-0 bg-[#171B24] border border-[#232936] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] rounded-[16px] transition-colors ${isBulkMode && !cust.hasNoPlan ? "cursor-pointer hover:bg-[#1A1F2B]" : ""} ${cust.hasNoPlan && isBulkMode ? "opacity-75" : ""}`}
         >
-          {/* Member Name, ID, and Mobile Content */}
           <div className="flex flex-row items-start lg:items-center gap-3.5 w-full">
             {isBulkMode && (
               <div className="flex items-center justify-center shrink-0">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={selectedIds.has(cust.id)}
-                  onChange={() => onToggleSelect(cust.id)}
+                  onChange={() => !cust.hasNoPlan && onToggleSelect(cust.id)}
                   onClick={(e) => e.stopPropagation()} // Prevent double trigger with row
-                  className="w-[18px] h-[18px] rounded-[4px] border-[#2C3344] bg-[#0D1017] accent-[#C8FF00] cursor-pointer" 
+                  disabled={cust.hasNoPlan}
+                  className={`w-[18px] h-[18px] rounded-[4px] border-[#2C3344] bg-[#0D1017] accent-[#C8FF00] ${cust.hasNoPlan ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                 />
               </div>
             )}
-            <Avatar 
-              gender={cust.name.includes("Neha") || cust.name.includes("Priya") || cust.name.includes("Sneha") || cust.name.includes("Ananya") ? "female" : "male"} 
-              className="w-11 h-11" 
+            <Avatar
+              gender={cust.name.includes("Neha") || cust.name.includes("Priya") || cust.name.includes("Sneha") || cust.name.includes("Ananya") ? "female" : "male"}
+              className="w-11 h-11"
             />
             <div className="flex flex-col gap-0.5">
               <span className="font-sans font-semibold text-[14px] leading-[20px] tracking-[-0.35px] text-white">
@@ -78,11 +79,10 @@ export default function ManualAttendanceTable({ customers, isBulkMode, selectedI
               <span className="font-sans font-medium text-[12px] leading-[16px] tracking-[0.3px] text-[#8B949E]">
                 ID: {cust.custId}
               </span>
-              
-              {/* Mobile Only: Plan & Attendance */}
+
               <div className="flex flex-col gap-2 mt-2 lg:hidden">
                 <div className="flex items-center">
-                  <div 
+                  <div
                     className="flex flex-row items-center px-3 py-1 gap-1.5 rounded-[6px] border w-fit"
                     style={{ backgroundColor: cust.planBg, borderColor: cust.planBg.replace("0.1)", "0.2)") }}
                   >
@@ -101,9 +101,8 @@ export default function ManualAttendanceTable({ customers, isBulkMode, selectedI
             </div>
           </div>
 
-          {/* Membership Plan (Desktop) */}
           <div className="hidden lg:flex items-center">
-            <div 
+            <div
               className="flex flex-row items-center px-3 py-1 gap-1.5 rounded-[6px] border w-fit"
               style={{ backgroundColor: cust.planBg, borderColor: cust.planBg.replace("0.1)", "0.2)") }}
             >
@@ -114,17 +113,25 @@ export default function ManualAttendanceTable({ customers, isBulkMode, selectedI
             </div>
           </div>
 
-          {/* Last Attendance (Desktop) */}
           <div className="hidden lg:flex items-center">
             <span className="font-sans font-medium text-[12px] leading-[16px] text-[#E2E8F0]">
               {cust.attendance}
             </span>
           </div>
 
-          {/* Actions */}
           <div className="flex flex-row items-center justify-end gap-3 w-full lg:w-auto mt-1 lg:mt-0">
-            {cust.isPresent ? (
-              <button 
+            {cust.hasNoPlan ? (
+              <button
+                disabled
+                className="flex flex-row justify-center items-center px-3 py-2 gap-1.5 min-w-[98px] bg-[#0E1117] border border-[#232936] rounded-lg opacity-50 cursor-not-allowed"
+              >
+                <Check size={14} color="#8B949E" weight="bold" />
+                <span className="font-sans font-medium text-[12px] leading-[16px] text-[#8B949E]">
+                  No Plan
+                </span>
+              </button>
+            ) : cust.isPresent ? (
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleIndividual(cust.id);
@@ -140,7 +147,7 @@ export default function ManualAttendanceTable({ customers, isBulkMode, selectedI
                 </span>
               </button>
             ) : (
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleIndividual(cust.id);
