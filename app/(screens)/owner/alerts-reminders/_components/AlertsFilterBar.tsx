@@ -4,21 +4,34 @@ import { MagnifyingGlass, CalendarBlank } from "@phosphor-icons/react/dist/ssr";
 import Dropdown from "@/app/(screens)/components/reusable/Dropdown";
 import { useState } from "react";
 
-export default function AlertsFilterBar() {
-  const [selectedType, setSelectedType] = useState("");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+export default function AlertsFilterBar({
+  selectedType,
+  setSelectedType,
+  searchQuery,
+  setSearchQuery,
+  fromDate,
+  setFromDate,
+  toDate,
+  setToDate
+}: {
+  selectedType: string;
+  setSelectedType: (v: string) => void;
+  searchQuery: string;
+  setSearchQuery: (v: string) => void;
+  fromDate: string;
+  setFromDate: (v: string) => void;
+  toDate: string;
+  setToDate: (v: string) => void;
+}) {
 
   const typeOptions = [
     { label: "All Types", value: "" },
     { label: "Membership", value: "Membership" },
     { label: "Payment", value: "Payment" },
     { label: "Member", value: "Member" },
-    { label: "Trainer", value: "Trainer" },
-    { label: "Support", value: "Support" },
     { label: "PT Sessions", value: "PT Sessions" },
-    { label: "Attendance", value: "Attendance" },
     { label: "Inventory", value: "Inventory" },
+    { label: "Attendance", value: "Attendance" },
   ];
 
   return (
@@ -30,6 +43,8 @@ export default function AlertsFilterBar() {
         </div>
         <input 
           type="text" 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search alerts..." 
           className="w-full h-full bg-[#131922] border border-[#222B37] rounded-lg pl-10 pr-4 font-sans font-normal text-[12px] leading-[14px] text-white placeholder:text-[#64748B] focus:outline-none focus:border-[#323842]"
         />
@@ -55,6 +70,7 @@ export default function AlertsFilterBar() {
               type="date" 
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
               className="flex-1 bg-transparent border-none outline-none text-[#CBD5E1] text-[12px] font-sans min-w-0 w-full cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
               style={{ colorScheme: "dark" }}
             />
@@ -65,6 +81,8 @@ export default function AlertsFilterBar() {
               type="date" 
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
+              min={fromDate || undefined}
+              max={new Date().toISOString().slice(0, 10)}
               className="flex-1 bg-transparent border-none outline-none text-[#CBD5E1] text-[12px] font-sans min-w-0 w-full cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
               style={{ colorScheme: "dark" }}
             />
