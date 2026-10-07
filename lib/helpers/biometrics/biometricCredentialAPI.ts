@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+
 
 export interface BiometricCredentialPayload {
   credentialId?: string;
@@ -14,7 +14,10 @@ export interface BiometricCredentialPayload {
 
 export const getBiometricCredentials = async (gymId: string) => {
   try {
-    const { data, error } = await supabase
+    const { createClient } = await import('@/app/api/supabase/client');
+    const supabaseAuth = createClient();
+
+    const { data, error } = await supabaseAuth
       .from("gym_biometric_credentials")
       .select(`
         *,
@@ -22,6 +25,7 @@ export const getBiometricCredentials = async (gymId: string) => {
       `)
       .eq("gymId", gymId)
       .eq("is_deleted", false)
+      .is("deletedAt", null)
       .order("createdAt", { ascending: false });
 
     if (error) throw error;
@@ -34,6 +38,9 @@ export const getBiometricCredentials = async (gymId: string) => {
 
 export const upsertBiometricCredential = async (payload: BiometricCredentialPayload) => {
   try {
+    const { createClient } = await import('@/app/api/supabase/client');
+    const supabaseAuth = createClient();
+
     const now = new Date().toISOString();
 
     const credData = {
@@ -49,7 +56,7 @@ export const upsertBiometricCredential = async (payload: BiometricCredentialPayl
     };
 
     if (payload.credentialId) {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAuth
         .from("gym_biometric_credentials")
         .update(credData)
         .eq("credentialId", payload.credentialId)
@@ -58,7 +65,7 @@ export const upsertBiometricCredential = async (payload: BiometricCredentialPayl
       if (error) throw error;
       return { success: true, data: data[0] };
     } else {
-      const { data: existing } = await supabase
+      const { data: existing } = await supabaseAuth
         .from("gym_biometric_credentials")
         .select("credentialId")
         .eq("gymId", payload.gymId)
@@ -72,7 +79,7 @@ export const upsertBiometricCredential = async (payload: BiometricCredentialPayl
       }
 
       const newId = crypto.randomUUID();
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAuth
         .from("gym_biometric_credentials")
         .insert([{ ...credData, credentialId: newId, createdAt: now }])
         .select();
@@ -88,8 +95,11 @@ export const upsertBiometricCredential = async (payload: BiometricCredentialPayl
 
 export const deleteBiometricCredential = async (credentialId: string) => {
   try {
+    const { createClient } = await import('@/app/api/supabase/client');
+    const supabaseAuth = createClient();
+
     const now = new Date().toISOString();
-    const { error } = await supabase
+    const { error } = await supabaseAuth
       .from("gym_biometric_credentials")
       .update({ is_deleted: true, deletedAt: now })
       .eq("credentialId", credentialId);

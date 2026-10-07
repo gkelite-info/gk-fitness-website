@@ -9,7 +9,7 @@ export function useRealtimeAnnouncements(gymId: string | null | undefined) {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     if (!gymId) {
       setAnnouncements([]);
       setLoading(false);
@@ -43,7 +43,7 @@ export function useRealtimeAnnouncements(gymId: string | null | undefined) {
         { event: 'new_announcement' },
         (payload) => {
           if (!isMounted) return;
-          
+
           const newRecord = payload.payload as GymAnnouncementAttributes;
           if (!newRecord.is_deleted) {
             setAnnouncements((prev) => {
@@ -51,7 +51,7 @@ export function useRealtimeAnnouncements(gymId: string | null | undefined) {
               if (prev.some(a => a.gymAnnouncementId === newRecord.gymAnnouncementId)) {
                 return prev;
               }
-              return [newRecord, ...prev].sort((a, b) => 
+              return [newRecord, ...prev].sort((a, b) =>
                 new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime()
               );
             });
@@ -61,7 +61,6 @@ export function useRealtimeAnnouncements(gymId: string | null | undefined) {
       )
       .subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
-          console.log('[Realtime] Successfully connected to Supabase Broadcast!');
         }
       });
 

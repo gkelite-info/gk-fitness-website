@@ -3,6 +3,7 @@ import {
   getBiometricDevices,
   upsertBiometricDevice,
   deleteBiometricDevice,
+  restoreBiometricDevice,
   BiometricDevicePayload
 } from '@/lib/helpers/biometrics/biometricDeviceAPI';
 
@@ -19,12 +20,12 @@ export function useBiometricDevices(gymId?: string) {
   });
 }
 
-export function useBiometricDevicesPaginated(gymId?: string, page = 1, limit = 10) {
+export function useBiometricDevicesPaginated(gymId?: string, page = 1, limit = 10, status: 'active' | 'inactive' = 'active') {
   return useQuery({
-    queryKey: ['biometricDevicesPaginated', gymId, page, limit],
+    queryKey: ['biometricDevicesPaginated', gymId, page, limit, status],
     queryFn: async () => {
       if (!gymId) return { data: [], total: 0 };
-      const res = await getBiometricDevices(gymId, page, limit);
+      const res = await getBiometricDevices(gymId, page, limit, status);
       if (!res.success) throw new Error(res.error || 'Failed to fetch devices');
       return { data: res.data || [], total: res.total || 0 };
     },
@@ -39,6 +40,7 @@ export function useSaveBiometricDevice() {
     mutationFn: (payload: BiometricDevicePayload) => upsertBiometricDevice(payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['biometricDevices', variables.gymId] });
+      queryClient.invalidateQueries({ queryKey: ['biometricDevicesPaginated', variables.gymId] });
     },
   });
 }
@@ -51,6 +53,20 @@ export function useDeleteBiometricDevice() {
       deleteBiometricDevice(deviceId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['biometricDevices', variables.gymId] });
+      queryClient.invalidateQueries({ queryKey: ['biometricDevicesPaginated', variables.gymId] });
+    },
+  });
+}
+
+export function useRestoreBiometricDevice() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ deviceId, gymId }: { deviceId: string; gymId: string }) => 
+      restoreBiometricDevice(deviceId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['biometricDevices', variables.gymId] });
+      queryClient.invalidateQueries({ queryKey: ['biometricDevicesPaginated', variables.gymId] });
     },
   });
 }

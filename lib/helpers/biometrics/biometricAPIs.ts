@@ -1,8 +1,10 @@
 // @ts-nocheck
 // import * as FileSystem from 'expo-file-system/legacy';
 
+import md5Lib from 'md5';
+
 const md5 = async (str: string) => {
-  return await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.MD5, str);
+  return md5Lib(str);
 };
 
 export interface RegisterUserParams {
@@ -807,31 +809,38 @@ export const uploadFaceToDevice = async (params: UploadFaceParams) => {
 
 
   try {
-    const uploadResult = await FileSystem.uploadAsync(url, imageUri, {
-      httpMethod: 'POST',
-      uploadType: 1 as any,
-      fieldName: 'FaceDataRecord',
-      parameters: {
-        data: JSON.stringify({
-          faceLibType: "blackFD",
-          FDID: "1",
-          FPID: String(employeeNo),
-          FaceInfo: {
-            employeeNo: String(employeeNo)
-          }
-        })
-      },
+    const formData = new FormData();
+    formData.append('data', JSON.stringify({
+      faceLibType: "blackFD",
+      FDID: "1",
+      FPID: String(employeeNo),
+      FaceInfo: {
+        employeeNo: String(employeeNo)
+      }
+    }));
+
+    const base64Data = imageUri.split(',')[1] || imageUri;
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+    const imageBlob = new Blob([imageBuffer], { type: 'image/jpeg' });
+    
+    formData.append('FaceDataRecord', imageBlob, 'face.jpg');
+
+    const uploadResult = await fetch(url, {
+      method: 'POST',
       headers: {
         'Authorization': authStr
-      }
+      },
+      body: formData
     });
 
-    let data;
-    try { data = JSON.parse(uploadResult.body); } catch { data = { rawXml: uploadResult.body }; }
+    const responseText = await uploadResult.text();
 
-    if (uploadResult.status !== 200 || (data?.statusCode && data.statusCode !== 1)) {
+    let data;
+    try { data = JSON.parse(responseText); } catch { data = { rawXml: responseText }; }
+
+    if (!uploadResult.ok || (data?.statusCode && data.statusCode !== 1)) {
       console.error("Device rejected the request with status", uploadResult.status, data);
-      const err = new Error(`Device rejected request with status ${uploadResult.status}. Details: ${uploadResult.body}`) as any;
+      const err = new Error(`Device rejected request with status ${uploadResult.status}. Details: ${responseText}`) as any;
       err.subStatusCode = data?.subStatusCode || data?.subCode;
       throw err;
     }

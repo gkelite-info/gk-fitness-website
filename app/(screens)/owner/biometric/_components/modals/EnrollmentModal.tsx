@@ -8,20 +8,65 @@ import { CredentialUser } from "../types";
 
 type Props = {
   user: CredentialUser;
+  devices: any[];
   onClose: () => void;
-  onEnroll: (e: React.FormEvent) => void;
+  onEnroll: (enrollments: { deviceId: string; deviceUserId: string }[]) => Promise<void> | void;
 };
 
-export default function EnrollmentModal({ user, onClose, onEnroll }: Props) {
+export default function EnrollmentModal({ user, devices, onClose, onEnroll }: Props) {
   const [mounted, setMounted] = useState(false);
-  
+  const [selectedDevices, setSelectedDevices] = useState<{ [key: string]: boolean }>({});
+  const [deviceUserIds, setDeviceUserIds] = useState<{ [key: string]: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     setMounted(true);
     document.body.style.overflow = "hidden";
+    if (devices.length === 1) {
+      setSelectedDevices({ [devices[0].deviceId]: true });
+    }
     return () => { document.body.style.overflow = "unset"; };
-  }, []);
+  }, [devices]);
 
   if (!mounted) return null;
+
+  const handleCheckboxChange = (deviceId: string) => {
+    setSelectedDevices(prev => ({ ...prev, [deviceId]: !prev[deviceId] }));
+  };
+
+  const handleIdChange = (deviceId: string, value: string) => {
+    setDeviceUserIds(prev => ({ ...prev, [deviceId]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    const enrollments: { deviceId: string; deviceUserId: string }[] = [];
+
+    for (const device of devices) {
+      if (selectedDevices[device.deviceId]) {
+        const id = deviceUserIds[device.deviceId];
+        if (!id || id.trim() === "") {
+          alert(`Please enter a Device User ID for ${device.deviceName || 'selected device'}`);
+          return;
+        }
+        enrollments.push({ deviceId: device.deviceId, deviceUserId: id.trim() });
+      }
+    }
+
+    if (enrollments.length === 0) {
+      alert("Please select at least one device to enroll.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onEnroll(enrollments);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const modalContent = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
@@ -47,28 +92,51 @@ export default function EnrollmentModal({ user, onClose, onEnroll }: Props) {
         <h2 className="font-sans font-bold text-2xl leading-8 tracking-[-0.6px] text-white mb-1 pr-8">
           {user.name}
         </h2>
-        <span className="font-sans font-normal text-[15px] leading-5 text-[#94A3B8] mb-1">
+        <span className="font-sans font-normal text-[15px] leading-5 text-[#94A3B8] mb-6">
           {user.phone}
         </span>
-        <span className="font-sans font-medium text-[13px] leading-5 text-[#64748B] mb-6">
-          Device User ID
-        </span>
 
-        <form onSubmit={onEnroll} className="flex flex-col w-full gap-8">
-          <div className="flex flex-col gap-3 w-full">
-            <p className="font-sans font-normal text-[13px] sm:text-sm leading-5 text-[#94A3B8]">
-              Enter the ID number assigned to this customer on the physical ZKTeco device.
+        <form onSubmit={handleSubmit} className="flex flex-col w-full gap-6">
+
+          <div className="flex flex-col gap-4 w-full">
+            <p className="font-sans font-medium text-[14px] leading-5 text-[#64748B]">
+              Select devices to enroll in:
             </p>
-            <input
-              type="text"
-              required
-              autoComplete="off"
-              placeholder="e.g. 105"
-              className="w-full h-12 sm:h-[54px] bg-[#0E0F13] border border-[#232631] rounded-2xl px-5 font-sans font-normal text-[15px] sm:text-base text-white placeholder:text-[#475569] outline-none focus:border-[#D2F800] transition-colors shadow-inner"
-            />
+            {devices.map(device => (
+              <div key={device.deviceId} className="flex flex-col gap-3 p-4 bg-[#0E0F13] border border-[#232631] rounded-2xl">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!selectedDevices[device.deviceId]}
+                    onChange={() => handleCheckboxChange(device.deviceId)}
+                    className="w-5 h-5 accent-[#D2F800] bg-[#14161A] border-[#232631] rounded"
+                  />
+                  <span className="font-sans font-semibold text-white text-base">
+                    {device.deviceName || device.deviceIp}
+                  </span>
+                </label>
+
+                {selectedDevices[device.deviceId] && (
+                  <div className="flex flex-col gap-2 mt-1">
+                    <span className="font-sans font-medium text-[13px] text-[#94A3B8]">
+                      Device User ID
+                    </span>
+                    <input
+                      type="text"
+                      required
+                      autoComplete="off"
+                      placeholder="e.g. 105"
+                      value={deviceUserIds[device.deviceId] || ""}
+                      onChange={(e) => handleIdChange(device.deviceId, e.target.value)}
+                      className="w-full h-11 bg-[#14161A] border border-[#232631] rounded-xl px-4 font-sans font-normal text-[14px] text-white placeholder:text-[#475569] outline-none focus:border-[#D2F800] transition-colors shadow-inner"
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
 
-          <div className="flex flex-row justify-between items-center gap-3 sm:gap-4 w-full">
+          <div className="flex flex-row justify-between items-center gap-3 sm:gap-4 w-full mt-4">
             <button
               type="button"
               onClick={onClose}
@@ -78,9 +146,13 @@ export default function EnrollmentModal({ user, onClose, onEnroll }: Props) {
             </button>
             <button
               type="submit"
-              className="flex-1 flex justify-center items-center h-12 sm:h-[54px] bg-[#D2F800] rounded-2xl shadow-[0px_4px_6px_-1px_rgba(210,248,0,0.1),0px_2px_4px_-2px_rgba(210,248,0,0.1)] font-sans font-bold text-sm sm:text-[15px] text-black hover:bg-[#d4ff32] transition-colors cursor-pointer"
+              disabled={isSubmitting}
+              className={`flex-1 flex justify-center items-center h-12 sm:h-[54px] rounded-2xl shadow-[0px_4px_6px_-1px_rgba(210,248,0,0.1),0px_2px_4px_-2px_rgba(210,248,0,0.1)] font-sans font-bold text-sm sm:text-[15px] transition-colors ${isSubmitting
+                  ? "bg-[#D2F800]/50 text-black/50 cursor-not-allowed"
+                  : "bg-[#D2F800] text-black hover:bg-[#d4ff32] cursor-pointer"
+                }`}
             >
-              Enroll
+              {isSubmitting ? "Enrolling..." : "Enroll"}
             </button>
           </div>
         </form>

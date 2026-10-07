@@ -34,8 +34,10 @@ export interface ScanPayload {
   };
 }
 
+import crypto from 'crypto';
+
 const md5 = async (str: string) => {
-  return await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.MD5, str);
+  return crypto.createHash('md5').update(str).digest('hex');
 };
 
 export const deviceDigestFetch = async (
@@ -148,10 +150,7 @@ const parseTimeToMinutes = (timeStr: string): number => {
   }
 };
 
-export const processBiometricScan = async (body: ScanPayload) => {
-  const { createClient } = await import('@/app/api/supabase/client');
-  const supabase = createClient();
-  
+export const processBiometricScan = async (supabase: any, body: ScanPayload) => {
   try {
     let deviceSerialNumber = body.deviceSerialNumber || body.deviceID || body.serialNo;
     let deviceUserId = body.employeeNo || body.EmployeeNoString || body.deviceUserId;
@@ -512,10 +511,7 @@ export const processBiometricScan = async (body: ScanPayload) => {
   }
 };
 
-export const syncDeviceLogs = async (deviceId: string) => {
-  const { createClient } = await import('@/app/api/supabase/client');
-  const supabase = createClient();
-  
+export const syncDeviceLogs = async (supabase: any, deviceId: string) => {
   try {
     const { data: device, error: devErr } = await supabase
       .from("gym_biometric_devices")
@@ -588,7 +584,7 @@ export const syncDeviceLogs = async (deviceId: string) => {
           authMethod: resolvedAuth,
         };
 
-        const result = await processBiometricScan(scanPayload);
+        const result = await processBiometricScan(supabase, scanPayload);
         if (result.success) {
           successCount++;
         }

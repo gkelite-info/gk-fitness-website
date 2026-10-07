@@ -4,6 +4,9 @@ export type CredentialUser = {
   phone: string;
   deviceUserId: string | null;
   enrolledType: "fingerprint" | "face" | null;
+  hasFingerprint?: boolean;
+  hasFace?: boolean;
+  credentials?: any[];
 };
 
 export type LogEntry = {
@@ -15,7 +18,7 @@ export type LogEntry = {
   authMethod: "Fingerprint" | "Face";
   scanTimeStr: string;
   scanDateStr: string;
-  status: "Success" | "Rejected";
+  status: string;
   rejectReason?: string;
   timestamp: number;
 };

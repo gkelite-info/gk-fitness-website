@@ -9,13 +9,13 @@ import { CredentialUser } from "../types";
 type Props = {
   user: CredentialUser;
   onClose: () => void;
+  onCapture: (imageUrl: string) => void;
+  onDelete: () => void;
 };
 
-export default function RegisterFaceModal({ user, onClose }: Props) {
+export default function RegisterFaceModal({ user, onClose, onCapture, onDelete }: Props) {
   const [mounted, setMounted] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(
-    user.enrolledType === "face" ? `https://i.pravatar.cc/150?u=${user.id}` : null
-  );
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   
@@ -199,7 +199,9 @@ export default function RegisterFaceModal({ user, onClose }: Props) {
           ) : selectedImage ? (
             <>
               <button 
-                onClick={handleClose} 
+                onClick={() => {
+                  if (selectedImage) onCapture(selectedImage);
+                }} 
                 className="w-full h-[44px] bg-[#D2F800] rounded-xl shadow-[0px_4px_6px_-1px_rgba(210,248,0,0.1)] font-sans font-bold text-[14px] text-black hover:bg-[#d4ff32] transition-colors cursor-pointer"
               >
                 Confirm Registration
@@ -218,12 +220,20 @@ export default function RegisterFaceModal({ user, onClose }: Props) {
                   onClick={() => setSelectedImage(null)}
                   className="flex-1 h-[44px] bg-[#321719] border border-[#4C0519] rounded-xl font-sans font-semibold text-[13px] text-[#F43F5E] hover:bg-[#401D20] transition-colors cursor-pointer shadow-sm"
                 >
-                  Remove Photo
+                  Discard Photo
                 </button>
               </div>
             </>
           ) : (
             <>
+              {user.hasFace && (
+                <button 
+                  onClick={onDelete}
+                  className="w-full h-[44px] bg-[#321719] border border-[#4C0519] rounded-xl font-sans font-semibold text-[14px] text-[#F43F5E] hover:bg-[#401D20] transition-colors cursor-pointer shadow-sm mb-2"
+                >
+                  Remove Existing Face
+                </button>
+              )}
               <button 
                 onClick={handleCameraClick}
                 className="w-full h-[44px] bg-[#2A3011] border border-[#3E4817] rounded-xl font-sans font-semibold text-[14px] text-[#CBF83E] hover:bg-[#323814] transition-colors cursor-pointer shadow-sm"

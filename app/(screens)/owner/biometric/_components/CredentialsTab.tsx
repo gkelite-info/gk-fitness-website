@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { MagnifyingGlass, Fingerprint, UserFocus } from "@phosphor-icons/react/dist/ssr";
 import ConfirmationModal from "../../../components/reusable/ConfirmationModal";
@@ -14,16 +14,13 @@ import EnrolledUserDetailModal from "./modals/EnrolledUserDetailModal";
 import RegisterFingerprintModal from "./modals/RegisterFingerprintModal";
 import RegisterFaceModal from "./modals/RegisterFaceModal";
 
-const mockCredentials: CredentialUser[] = [
-  { id: "1", name: "Ramu", phone: "+91 6300263791", deviceUserId: "4", enrolledType: "fingerprint" },
-  { id: "2", name: "Suresh Kumar", phone: "+91 9876543210", deviceUserId: "5", enrolledType: "face" },
-  { id: "3", name: "Priya Sharma", phone: "+91 9823456781", deviceUserId: "6", enrolledType: "fingerprint" },
-  { id: "4", name: "Rahul Verma", phone: "+91 9765432109", deviceUserId: "7", enrolledType: "face" },
-  { id: "5", name: "Ananya Patel", phone: "+91 9812345670", deviceUserId: "8", enrolledType: "fingerprint" },
-  { id: "6", name: "Website test", phone: "9000273128", deviceUserId: null, enrolledType: null },
-  { id: "7", name: "Vikram Singh", phone: "+91 9876543210", deviceUserId: null, enrolledType: null },
-  { id: "8", name: "Arjun Reddy", phone: "+91 7654321098", deviceUserId: null, enrolledType: null },
-];
+import { useUser } from "@/app/context/UserContext";
+import { useBiometricCredentials, useSaveBiometricCredential, useDeleteBiometricCredential } from "@/lib/hooks/biometrics/useBiometricCredentials";
+import { useBiometricDevices } from "@/lib/hooks/biometrics/useBiometricDevices";
+import { useGymCustomers } from "@/lib/hooks/customers/useGymCustomers";
+import { useGymCustomerMembershipPlans } from "@/lib/hooks/gymCustomerMembershipPlans/useGymCustomerMembershipPlans";
+import { serverRegisterUserOnDevice, serverDeleteUserOnDevice, serverCaptureFingerprintOnDevice, serverUploadFaceToDevice, serverDeleteFaceFromDevice } from "@/app/actions/biometricDeviceActions";
+
 
 export default function CredentialsTab() {
   const router = useRouter();
@@ -33,30 +30,130 @@ export default function CredentialsTab() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  const { roleData } = useUser();
+  const gymId = roleData?.[0]?.gymId;
+
+  const { data: customersRaw, isLoading: custLoading } = useGymCustomers(gymId);
+  const { data: credsRaw, isLoading: credsLoading } = useBiometricCredentials(gymId);
+  const { data: devicesRaw } = useBiometricDevices(gymId);
+  const { data: plansData } = useGymCustomerMembershipPlans(gymId);
+  const saveMutation = useSaveBiometricCredential();
+  const deleteMutation = useDeleteBiometricCredential();
+
+  const parseBool = (val: any): boolean => {
+    if (val === true || val === 1 || val === "true" || val === "1") return true;
+    return false;
+  };
+
+  const users: (CredentialUser & { credentialId: string | null })[] = useMemo(() => {
+    if (!customersRaw) return [];
+    return customersRaw.map((cust: any) => {
+      const creds = credsRaw?.filter((c: any) => c.customerId === cust.customerId && !c.is_deleted) || [];
+      const cred = creds[0];
+      const hasFace = creds.some((c: any) => parseBool(c.hasFace) || parseBool(c.has_face));
+      const hasFingerprint = creds.some((c: any) => parseBool(c.hasFingerprint) || parseBool(c.has_fingerprint));
+
+      let enrolledType: "fingerprint" | "face" | null = null;
+      if (creds.length > 0) {
+        if (hasFace) enrolledType = "face";
+        else enrolledType = "fingerprint";
+      }
+      return {
+        id: cust.customerId,
+        name: cust.fullName,
+        phone: cust.phone,
+        deviceUserId: cred ? cred.deviceUserId : null,
+        credentialId: cred ? cred.credentialId : null,
+        enrolledType,
+        hasFingerprint,
+        hasFace,
+        credentials: creds,
+      };
+    });
+  }, [customersRaw, credsRaw]);
+
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setSearch(searchInput);
+      setCurrentPage(1);
+    }, 600);
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
+
   const [enrollUser, setEnrollUser] = useState<CredentialUser | null>(null);
-  const [users, setUsers] = useState(mockCredentials);
 
   const detailId = searchParams.get("detail");
   const registerType = searchParams.get("register");
-  
+
   const detailUser = users.find(u => u.id === detailId) || null;
   const [unenrollUser, setUnenrollUser] = useState<CredentialUser | null>(null);
 
-  const filteredData = users.filter(u => u.name.toLowerCase().includes(search.toLowerCase()) || u.phone.includes(search));
+  const filteredData = users.filter(u => u.name.toLowerCase().includes(search.toLowerCase()) || (u.phone && u.phone.includes(search)));
   const currentData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
 
-  const handleEnroll = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!enrollUser) return;
-    
-    setUsers(prev => prev.map(u => u.id === enrollUser.id ? { ...u, enrolledType: "fingerprint", deviceUserId: "105" } : u));
-    
-    toast.success(`${enrollUser.name} successfully enrolled!`, {
-      style: { background: "#141720", color: "#fff", border: "1px solid #232834" }
+  const handleEnroll = async (enrollments: { deviceId: string; deviceUserId: string }[]) => {
+    if (!enrollUser || !gymId) return;
+
+    const customerPlans = plansData?.filter((p: any) => p.customerId === enrollUser.id);
+    const hasActivePlan = customerPlans?.some((p: any) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endDate = new Date(p.endDate);
+      endDate.setHours(0, 0, 0, 0);
+      return endDate >= today;
     });
-    setEnrollUser(null);
+
+    if (!hasActivePlan) {
+      setEnrollUser(null);
+      setTimeout(() => {
+        toast.error("No active plan", {
+          style: { background: "#141720", color: "#fff", border: "1px solid #232834" }
+        });
+      }, 600);
+      return;
+    }
+
+    let successCount = 0;
+
+    for (const enrollment of enrollments) {
+      const device = devicesRaw?.find(d => d.deviceId === enrollment.deviceId);
+      if (!device) continue;
+
+      try {
+        await serverRegisterUserOnDevice({
+          ip: device.deviceIp,
+          port: device.devicePort,
+          devIndex: device.deviceId,
+          username: device.deviceUsername || undefined,
+          password: device.devicePassword || undefined,
+          employeeNo: enrollment.deviceUserId,
+          name: enrollUser.name
+        });
+
+        await saveMutation.mutateAsync({
+          gymId,
+          customerId: enrollUser.id,
+          deviceId: device.deviceId,
+          deviceUserId: enrollment.deviceUserId,
+          hasFingerprint: false,
+        });
+
+        successCount++;
+      } catch (err: any) {
+        toast.error(`Device ${device.deviceName || device.deviceIp} error: ${err.message}`);
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success(`${enrollUser.name} successfully enrolled in ${successCount} device(s)!`, {
+        style: { background: "#141720", color: "#fff", border: "1px solid #232834" }
+      });
+      setEnrollUser(null);
+    }
   };
 
   const handleUnenrollClick = () => {
@@ -65,14 +162,48 @@ export default function CredentialsTab() {
     }
   };
 
-  const confirmUnenroll = () => {
-    if (!unenrollUser) return;
-    setUsers(prev => prev.map(u => u.id === unenrollUser.id ? { ...u, enrolledType: null, deviceUserId: null } : u));
-    toast.success(`${unenrollUser.name} unenrolled successfully!`, {
-      style: { background: "#141720", color: "#fff", border: "1px solid #232834" }
+  const confirmUnenroll = async () => {
+    if (!unenrollUser || !gymId) return;
+    const userToUnenroll = users.find(u => u.id === unenrollUser.id);
+    if (!userToUnenroll?.credentialId) return;
+
+    try {
+      const response = await fetch('/api/biometric/device/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          credentialId: userToUnenroll.credentialId,
+          gymId: gymId,
+          deviceUserId: userToUnenroll.deviceUserId
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to unenroll user from device");
+      }
+
+      toast.success("User removed from biometric device", {
+        style: { background: "#141720", color: "#fff", border: "1px solid #232834" }
+      });
+    } catch (err: any) {
+      toast.error("Device error: " + err.message);
+      console.error("Failed to delete on device", err);
+      return;
+    }
+
+    deleteMutation.mutate({ credentialId: userToUnenroll.credentialId, gymId }, {
+      onSuccess: () => {
+        toast.success(`${unenrollUser.name} unenrolled successfully!`, {
+          style: { background: "#141720", color: "#fff", border: "1px solid #232834" }
+        });
+        setUnenrollUser(null);
+        closeDetail();
+      },
+      onError: (err) => {
+        toast.error(err.message || "Failed to unenroll user");
+      }
     });
-    setUnenrollUser(null);
-    closeDetail();
   };
 
   const openDetail = (id: string) => {
@@ -100,24 +231,160 @@ export default function CredentialsTab() {
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
+  const handleUploadFingerprint = async () => {
+    if (!detailUser || !detailUser.credentials || detailUser.credentials.length === 0) return;
+
+    let successCount = 0;
+    for (const cred of detailUser.credentials) {
+      const device = devicesRaw?.find(d => d.deviceId === cred.deviceId);
+      if (!device) continue;
+
+      try {
+        await serverRegisterUserOnDevice({
+          ip: device.deviceIp,
+          port: device.devicePort,
+          devIndex: device.deviceId,
+          username: device.deviceUsername || undefined,
+          password: device.devicePassword || undefined,
+          employeeNo: cred.deviceUserId,
+          name: detailUser.name
+        });
+
+        await serverCaptureFingerprintOnDevice({
+          ip: device.deviceIp,
+          port: device.devicePort,
+          devIndex: device.deviceId,
+          username: device.deviceUsername || undefined,
+          password: device.devicePassword || undefined,
+          employeeNo: cred.deviceUserId,
+          fingerPrintID: cred.fingerPrintID || 1
+        });
+
+        await saveMutation.mutateAsync({
+          gymId: cred.gymId,
+          customerId: cred.customerId,
+          deviceId: cred.deviceId,
+          deviceUserId: cred.deviceUserId,
+          credentialId: cred.credentialId,
+          hasFingerprint: true,
+          hasFace: cred.hasFace,
+          hasCard: cred.hasCard,
+          rfidCardNo: cred.rfidCardNo,
+        });
+
+        successCount++;
+      } catch (err: any) {
+        toast.error(`Device ${device.deviceName || device.deviceIp} error: ${err.message}`);
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success(`Fingerprint registered successfully on ${successCount} device(s)!`, {
+        style: { background: "#141720", color: "#fff", border: "1px solid #232834" }
+      });
+      closeRegister();
+    }
+  };
+
+  const handleUploadFace = async (imageUrl: string) => {
+    if (!detailUser || !detailUser.credentials || detailUser.credentials.length === 0) return;
+
+    let successCount = 0;
+    for (const cred of detailUser.credentials) {
+      const device = devicesRaw?.find(d => d.deviceId === cred.deviceId);
+      if (!device) continue;
+
+      try {
+        await serverRegisterUserOnDevice({
+          ip: device.deviceIp,
+          port: device.devicePort,
+          devIndex: device.deviceId,
+          username: device.deviceUsername || undefined,
+          password: device.devicePassword || undefined,
+          employeeNo: cred.deviceUserId,
+          name: detailUser.name
+        });
+
+        await serverUploadFaceToDevice({
+          ip: device.deviceIp,
+          port: device.devicePort,
+          devIndex: device.deviceId,
+          username: device.deviceUsername || undefined,
+          password: device.devicePassword || undefined,
+          employeeNo: cred.deviceUserId,
+          imageUri: imageUrl,
+        });
+
+        await saveMutation.mutateAsync({
+          ...cred,
+          hasFace: true,
+        });
+
+        successCount++;
+      } catch (err: any) {
+        let msg = err.message || "Failed to register face.";
+        toast.error(`Device ${device.deviceName || device.deviceIp} error: ${msg}`);
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success(`Face registered successfully on ${successCount} device(s)!`, {
+        style: { background: "#141720", color: "#fff", border: "1px solid #232834" }
+      });
+      closeRegister();
+    }
+  };
+
+  const handleDeleteFace = async () => {
+    if (!detailUser || !detailUser.credentials || detailUser.credentials.length === 0) return;
+
+    let successCount = 0;
+    for (const cred of detailUser.credentials) {
+      const device = devicesRaw?.find(d => d.deviceId === cred.deviceId);
+      if (!device) continue;
+
+      try {
+        await serverDeleteFaceFromDevice({
+          ip: device.deviceIp,
+          port: device.devicePort,
+          devIndex: device.deviceId,
+          username: device.deviceUsername || undefined,
+          password: device.devicePassword || undefined,
+          employeeNo: cred.deviceUserId
+        });
+
+        await saveMutation.mutateAsync({
+          ...cred,
+          hasFace: false,
+        });
+
+        successCount++;
+      } catch (err: any) {
+        toast.error(`Device ${device.deviceName || device.deviceIp} error: ${err.message}`);
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success(`Face removed successfully from ${successCount} device(s)!`, {
+        style: { background: "#141720", color: "#fff", border: "1px solid #232834" }
+      });
+      closeRegister();
+    }
+  };
+
   return (
     <div className="flex flex-col w-full gap-6 mt-4">
-      {/* Search Bar */}
       <div className="flex flex-row items-center w-full bg-[#141720] border border-[#202532] rounded-2xl px-4 sm:px-5 h-11 sm:h-[46px] gap-3 focus-within:border-[#38BDF8] transition-colors shadow-sm">
         <MagnifyingGlass size={18} color="#A1A1AA" />
-        <input 
+        <input
           type="text"
           placeholder="Search customers..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setCurrentPage(1);
-          }}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           className="flex-1 bg-transparent border-none outline-none font-sans font-normal text-[13px] text-white placeholder:text-[#475569] h-full"
         />
       </div>
 
-      {/* List */}
       <div className="flex flex-col w-full gap-3 sm:gap-4">
         {currentData.length > 0 ? (
           currentData.map(user => {
@@ -139,7 +406,7 @@ export default function CredentialsTab() {
                 </div>
 
                 {isEnrolled ? (
-                  <div 
+                  <div
                     onClick={() => openDetail(user.id)}
                     className="flex flex-row justify-center items-center px-3 py-1.5 sm:py-2 gap-1.5 sm:gap-2 bg-[rgba(210,248,0,0.05)] border border-[rgba(210,248,0,0.15)] rounded-xl shrink-0 cursor-pointer hover:bg-[rgba(210,248,0,0.1)] transition-colors"
                   >
@@ -182,16 +449,16 @@ export default function CredentialsTab() {
 
       <AnimatePresence>
         {enrollUser && (
-          <EnrollmentModal user={enrollUser} onClose={() => setEnrollUser(null)} onEnroll={handleEnroll} />
+          <EnrollmentModal user={enrollUser} devices={devicesRaw?.filter(d => d.isActive) || []} onClose={() => setEnrollUser(null)} onEnroll={handleEnroll} />
         )}
         {detailUser && !registerType && (
           <EnrolledUserDetailModal user={detailUser} onClose={closeDetail} onUnenroll={handleUnenrollClick} onRegister={openRegister} />
         )}
         {detailUser && registerType === "fingerprint" && (
-          <RegisterFingerprintModal user={detailUser} onClose={closeRegister} />
+          <RegisterFingerprintModal user={detailUser} onClose={closeRegister} onCapture={handleUploadFingerprint} />
         )}
         {detailUser && registerType === "face" && (
-          <RegisterFaceModal user={detailUser} onClose={closeRegister} />
+          <RegisterFaceModal user={detailUser} onClose={closeRegister} onCapture={handleUploadFace} onDelete={handleDeleteFace} />
         )}
       </AnimatePresence>
 

@@ -33,10 +33,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Log the received scan for debugging
-    console.log(`[Biometric Scan API] Scan received from deviceId: ${deviceId}`);
-    console.log("[Biometric Scan API] Payload:", payload);
-
     // TODO: In a production environment, this is where you would process the 
     // scan payload (e.g. matching fingerprint/face ID) and insert a log entry 
     // into the Supabase database.

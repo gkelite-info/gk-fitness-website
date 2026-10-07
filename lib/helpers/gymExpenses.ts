@@ -163,7 +163,6 @@ export async function uploadGymExpenseReceipt(file: File): Promise<string | null
       throw new Error(result.error || 'Upload failed');
     }
 
-    console.log('[gymExpensesHelper] uploadGymExpenseReceipt Success:', result.url);
     return result.url;
   } catch (error: any) {
     console.error('[gymExpensesHelper] uploadGymExpenseReceipt Catch Error:', error);

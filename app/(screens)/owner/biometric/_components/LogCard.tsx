@@ -7,7 +7,8 @@ type LogCardProps = {
 
 export default function LogCard({ log }: LogCardProps) {
   const isCheckIn = log.type === "Check In";
-  const isRejected = log.status === "Rejected";
+  const isRejected = log.status.toLowerCase() === "rejected";
+  const isAccepted = log.status.toLowerCase() === "accepted" || log.status.toLowerCase() === "success" || log.status.toLowerCase() === "approved";
 
   return (
     <div className="flex flex-col bg-[#14161A] border border-[#232631] rounded-2xl p-5 sm:p-6 gap-6 hover:bg-[#1A1D24] transition-colors w-full">
@@ -69,22 +70,33 @@ export default function LogCard({ log }: LogCardProps) {
           </span>
           {isRejected ? (
             <>
-              <div className="flex flex-row items-center gap-1.5">
+              <div className="flex flex-row items-center gap-1.5 mt-[2px]">
                 <WarningCircle size={16} className="text-[#F43F5E]" weight="fill" />
                 <span className="font-sans font-bold text-[14px] leading-5 text-[#F43F5E]">
-                  Rejected
+                  {log.status}
                 </span>
               </div>
-              <span className="font-sans font-medium text-[13px] leading-5 text-[#F43F5E]">
-                {log.rejectReason}
-              </span>
+              {log.rejectReason && (
+                <span className="font-sans font-medium text-[13px] leading-5 text-[#F43F5E]">
+                  {log.rejectReason}
+                </span>
+              )}
             </>
-          ) : (
+          ) : isAccepted ? (
             <>
               <div className="flex flex-row items-center gap-1.5 mt-[2px]">
                 <CheckCircle size={16} className="text-[#0F946E]" weight="fill" />
                 <span className="font-sans font-bold text-[14px] leading-5 text-[#0F946E]">
-                  Success
+                  {log.status}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-row items-center gap-1.5 mt-[2px]">
+                <CheckCircle size={16} className="text-[#F59E0B]" weight="fill" />
+                <span className="font-sans font-bold text-[14px] leading-5 text-[#F59E0B]">
+                  {log.status}
                 </span>
               </div>
             </>
