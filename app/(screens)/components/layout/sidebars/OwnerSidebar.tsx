@@ -19,7 +19,7 @@ const navLinks = [
   { name: "Enquiries", href: "/owner/enquiries", icon: Headset },
   { name: "Membership Expiry", href: "/owner/membership-expiry", icon: Clock },
   { name: "Manual Attendance", href: "/owner/manual-attendance", icon: ListChecks },
-  { name: "Reminders", href: "/owner/reminders", icon: Bell },
+  // { name: "Reminders", href: "/owner/alerts-reminders", icon: Bell },
   { name: "Biometric", href: "/owner/biometric", icon: Fingerprint },
   { name: "Profile", href: "/owner/profile", icon: User },
 ];
@@ -50,10 +50,23 @@ export default function OwnerSidebar() {
           </span>
         </div>
       </div>
-      
+
       <div className="flex flex-col items-start gap-2 w-full flex-1 overflow-y-auto scrollbar-themed pr-2">
         {navLinks.map((link) => {
-          const isActive = pathname === link.href || (link.href !== "/owner" && pathname.startsWith(`${link.href}/`));
+          let isActive = pathname === link.href || (link.href !== "/owner" && pathname.startsWith(`${link.href}/`));
+
+          // Make Home active if we are on a dashboard inner screen
+          if (link.name === "Home" && pathname.startsWith("/owner/alerts-reminders")) {
+            isActive = true;
+          }
+          // If Home is active due to being on alerts-reminders, we don't want Reminders to ALSO be active
+          // Wait, if they click Reminders from sidebar, they probably want Reminders to be active. 
+          // But the user explicitly requested Home to be active when navigating from Home.
+          // To satisfy the user exactly, let's keep Home active for this route, and prevent Reminders from being active to avoid double-active tabs.
+          // if (link.name === "Reminders" && pathname.startsWith("/owner/alerts-reminders")) {
+          //   isActive = false;
+          // }
+
           const Icon = link.icon;
           return (
             <Link
@@ -61,11 +74,10 @@ export default function OwnerSidebar() {
               href={link.href}
               prefetch={true}
               ref={isActive ? activeItemRef : null}
-              className={`flex flex-row items-center px-4 py-3 gap-3.5 w-full h-[46px] rounded-2xl transition-all shrink-0 ${
-                isActive
-                  ? "bg-gradient-to-r from-[rgba(212,255,50,0.18)] to-[rgba(212,255,50,0.05)] border border-[#D4FF32] sidebar-glow text-[#D4FF32]"
-                  : "text-[#94A3B8] hover:text-white"
-              }`}
+              className={`flex flex-row items-center px-4 py-3 gap-3.5 w-full h-[46px] rounded-2xl transition-all shrink-0 ${isActive
+                ? "bg-gradient-to-r from-[rgba(212,255,50,0.18)] to-[rgba(212,255,50,0.05)] border border-[#D4FF32] sidebar-glow text-[#D4FF32]"
+                : "text-[#94A3B8] hover:text-white"
+                }`}
             >
               <Icon
                 size={20}
@@ -79,7 +91,7 @@ export default function OwnerSidebar() {
           );
         })}
       </div>
-      
+
       <div className="w-full mt-6 shrink-0">
         <LogoutButton />
       </div>

@@ -8,98 +8,17 @@ import { TableBody } from "@/app/(screens)/components/reusable/table/TableBody";
 import { TableRow, TableHeadCell, TableCell } from "@/app/(screens)/components/reusable/table/TableCells";
 import Pagination from "@/app/(screens)/components/reusable/Pagination";
 
-const ALERTS_DATA = [
-  {
-    id: 1,
-    title: "8 memberships expire tomorrow",
-    subtitle: "Review members and renewals",
-    type: "Membership",
-    details: "8 members have memberships expiring on 30 Jul 2026.",
-    date: "29 Jul 2026",
-    time: "9:30 AM",
-    color: "red",
-  },
-  {
-    id: 2,
-    title: "Rahul Sharma renewed Gold Membership",
-    subtitle: "Valid till 31 Aug 2026",
-    type: "Payment",
-    details: "Rahul Sharma renewed Gold Membership.",
-    date: "29 Jul 2026",
-    time: "9:12 AM",
-    color: "green",
-  },
-  {
-    id: 3,
-    title: "New member registration received",
-    subtitle: "Priya Nair joined the gym",
-    type: "Member",
-    details: "New member Priya Nair has completed registration.",
-    date: "29 Jul 2026",
-    time: "8:55 AM",
-    color: "yellow",
-  },
-  {
-    id: 4,
-    title: "Trainer leave request submitted",
-    subtitle: "Amit Kumar • 2 Aug – 4 Aug",
-    type: "Trainer",
-    details: "Amit Kumar has requested leave from 2 Aug to 4 Aug.",
-    date: "29 Jul 2026",
-    time: "8:20 AM",
-    color: "orange",
-  },
-  {
-    id: 5,
-    title: "Support ticket received",
-    subtitle: '"Unable to book trainer"',
-    type: "Support",
-    details: "New support ticket received regarding trainer booking issue.",
-    date: "29 Jul 2026",
-    time: "7:48 AM",
-    color: "blue",
-  },
-  {
-    id: 6,
-    title: "Payment failed",
-    subtitle: "Membership payment failed for Arjun Singh",
-    type: "Payment",
-    details: "Payment failed for Arjun Singh. Please check.",
-    date: "28 Jul 2026",
-    time: "6:40 PM",
-    color: "purple",
-  },
-  {
-    id: 7,
-    title: "Personal training package purchased",
-    subtitle: "Sneha Patel purchased 12 PT Sessions",
-    type: "PT Sessions",
-    details: "Sneha Patel purchased a package of 12 PT Sessions.",
-    date: "28 Jul 2026",
-    time: "5:10 PM",
-    color: "teal",
-  },
-  {
-    id: 8,
-    title: "Attendance milestone",
-    subtitle: "50 members checked in today",
-    type: "Attendance",
-    details: "Reached 50 member check-ins today.",
-    date: "28 Jul 2026",
-    time: "4:00 PM",
-    color: "orange",
-  },
-  {
-    id: 9,
-    title: "Low inventory alert",
-    subtitle: "Protein Powder (Chocolate) only 3 units left",
-    type: "Inventory",
-    details: "Protein Powder (Chocolate) stock is low. Only 3 units left.",
-    date: "28 Jul 2026",
-    time: "3:45 PM",
-    color: "pink",
-  },
-];
+export interface AlertItem {
+  id: string | number;
+  title: string;
+  subtitle: string;
+  type: string;
+  details: string;
+  date: string;
+  time?: string;
+  color: string;
+  rawDate?: string;
+}
 
 const getColorConfig = (color: string) => {
   switch (color) {
@@ -115,10 +34,15 @@ const getColorConfig = (color: string) => {
   }
 };
 
-export default function AlertsTable() {
+export default function AlertsTable({ alerts }: { alerts: AlertItem[] }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 11;
-  const totalPages = Math.ceil(ALERTS_DATA.length / itemsPerPage);
+  const totalPages = Math.ceil(alerts.length / itemsPerPage);
+
+  const paginatedAlerts = alerts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="w-full bg-[rgba(18,23,30,0.7)] border border-[#1F2732] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] rounded-xl overflow-hidden mt-1">
@@ -129,12 +53,18 @@ export default function AlertsTable() {
             <TableHeadCell className="w-[120px] text-[12px]">Type</TableHeadCell>
             <TableHeadCell className="w-[300px] text-[12px]">Details</TableHeadCell>
             <TableHeadCell className="w-[100px] text-[12px]">Date</TableHeadCell>
-            <TableHeadCell className="w-[100px] text-[12px]">Time</TableHeadCell>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {ALERTS_DATA.map((alert) => {
-            const theme = getColorConfig(alert.color);
+          {alerts.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="text-center py-8 text-[#94A3B8]">
+                No alerts found.
+              </TableCell>
+            </TableRow>
+          ) : (
+            paginatedAlerts.map((alert) => {
+              const theme = getColorConfig(alert.color);
             return (
               <TableRow key={alert.id} className="border-b border-[#1B222C] last:border-b-0 hover:bg-[rgba(255,255,255,0.02)] cursor-pointer">
                 <TableCell className="pl-6 py-4">
@@ -169,14 +99,10 @@ export default function AlertsTable() {
                     {alert.date}
                   </span>
                 </TableCell>
-                <TableCell className="py-4">
-                  <span className="font-sans font-normal text-[11px] leading-4 text-[#94A3B8]">
-                    {alert.time}
-                  </span>
-                </TableCell>
               </TableRow>
             );
-          })}
+          })
+        )}
         </TableBody>
       </Table>
       
@@ -184,7 +110,7 @@ export default function AlertsTable() {
         <Pagination 
           currentPage={currentPage}
           totalPages={totalPages > 0 ? totalPages : 1}
-          totalItems={ALERTS_DATA.length}
+          totalItems={alerts.length}
           itemsPerPage={itemsPerPage}
           onPageChange={setCurrentPage}
         />
