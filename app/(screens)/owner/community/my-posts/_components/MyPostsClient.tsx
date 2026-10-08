@@ -9,91 +9,103 @@ import ConfirmationModal from "@/app/(screens)/components/reusable/ConfirmationM
 import Dropdown from "@/app/(screens)/components/reusable/Dropdown";
 import PostCommentsModal from "../../_components/PostCommentsModal";
 import CreatePostModal from "../../_components/CreatePostModal";
+import { useUser } from "@/app/context/UserContext";
+import { useOwnerGymId } from "@/lib/hooks/auth/useOwnerGymId";
+import { useCommunityFeed, useCreatePost, useDeletePost, useEditPost } from "@/lib/hooks/community/useCommunityFeed";
+import { useToggleLike, useToggleSave } from "@/lib/hooks/community/usePostInteractions";
+import toast from "react-hot-toast";
 
-const MOCK_POSTS: Post[] = [
-  {
-    id: "1",
-    title: "Back & Biceps session complete! 💪",
-    description: "Progress is built one rep at a time.",
-    timeAgo: "2h ago",
-    image: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1000&auto=format&fit=crop",
-    likes: 128,
-    comments: 24,
-    isLiked: true,
-  },
-  {
-    id: "2",
-    title: "Day 30 update! Down 3.5 kg and feeling stronger every day. 🔥",
-    description: "Consistency is key. Here's a quick comparison.",
-    timeAgo: "1d ago",
-    image: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=1000&auto=format&fit=crop",
-    likes: 156,
-    comments: 38
-  },
-  {
-    id: "3",
-    title: "Post workout meal ✅",
-    description: "Fuel your body, fuel your goals.",
-    timeAgo: "3d ago",
-    image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=1000&auto=format&fit=crop",
-    likes: 97,
-    comments: 15
-  },
-  {
-    id: "4",
-    title: "Morning run to clear the mind. 🏃‍♂️",
-    description: "5K done! Great start to the weekend.",
-    timeAgo: "5d ago",
-    image: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=1469&auto=format&fit=crop",
-    likes: 82,
-    comments: 12,
-    isSaved: true
-  }
-];
+const getTimeAgo = (dateString: string) => {
+  const diff = Math.max(0, Date.now() - new Date(dateString).getTime());
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+};
 
 export default function MyPostsClient() {
   const router = useRouter();
+  const { user } = useUser();
+  const { data: gymId } = useOwnerGymId(user?.id);
+
+  const { data: feedData, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading: isFeedLoading } = useCommunityFeed(gymId ?? null, user?.id ?? null);
+  const { mutateAsync: createPostMutate } = useCreatePost();
+  const { mutateAsync: deletePostMutate } = useDeletePost();
+  const { mutateAsync: toggleLikeMutate } = useToggleLike();
+  const { mutateAsync: toggleSaveMutate } = useToggleSave();
+  const { mutateAsync: editPostMutate } = useEditPost();
+
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [currentPage, setCurrentPage] = useState(1);
-  const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
   const [sortBy, setSortBy] = useState("recent");
   
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [postToDelete, setPostToDelete] = useState<Post | null>(null);
+  const [postToDelete, setPostToDelete] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [postToEdit, setPostToEdit] = useState<Post | null>(null);
+  const [postToEdit, setPostToEdit] = useState<any | null>(null);
   
-  const [commentPost, setCommentPost] = useState<Post | null>(null);
+  const [commentPost, setCommentPost] = useState<any | null>(null);
 
-  const handleDeleteClick = (post: Post) => {
+  const mappedPosts = feedData?.pages.flat().map((p: any) => ({
+    id: p.gymCommunityPostId,
+    author: {
+      name: p.users?.name || "Unknown",
+      avatar: p.users?.profilePhoto || null,
+      gender: p.users?.gender || null,
+      role: (p.users?.role === 'superadmin' ? 'Owner' : (p.users?.role || "Member")) as any,
+    },
+    title: p.caption?.substring(0, 50) + (p.caption?.length > 50 ? "..." : ""),
+    description: p.caption,
+    timeAgo: getTimeAgo(p.createdAt),
+    image: p.imagePath || undefined,
+    media: p.imagePath ? [{ url: p.imagePath }] : [],
+    likes: p.likesCount || 0,
+    comments: p.commentsCount || 0,
+    isLiked: p.isLikedByMe,
+    isSaved: p.isSavedByMe,
+    isUser: p.createdBy === user?.id,
+  })) || [];
+
+  // For "My Posts", we only want posts created by the current user
+  const userPosts = mappedPosts.filter((p: any) => p.isUser);
+
+  const handleDeleteClick = (post: any) => {
     setPostToDelete(post);
     setDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (!postToDelete) return;
+    if (!postToDelete || !user) return;
     setIsDeleting(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setPosts(prev => prev.filter(p => p.id !== postToDelete.id));
-    setIsDeleting(false);
-    setDeleteModalOpen(false);
-    setPostToDelete(null);
+    try {
+      await deletePostMutate({ postId: postToDelete.id, userId: user.id, gymId: gymId ?? null, role: "owner" });
+      toast.success("Post deleted successfully!");
+    } catch (e) {
+      toast.error("Failed to delete post");
+    } finally {
+      setIsDeleting(false);
+      setDeleteModalOpen(false);
+      setPostToDelete(null);
+    }
   };
 
-  const handleEditClick = (post: Post) => {
+  const handleEditClick = (post: any) => {
     setPostToEdit(post);
     setCreateModalOpen(true);
   };
   
-  const handleCommentClick = (post: Post) => {
+  const handleCommentClick = (post: any) => {
     setCommentPost(post);
   };
 
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
 
-  const displayedPosts = activeTab === 'posts' ? posts : posts.filter(p => p.isSaved);
+  const displayedPosts = activeTab === 'posts' ? userPosts : mappedPosts.filter((p: any) => p.isSaved);
 
   return (
     <div className="w-full max-w-5xl mx-auto flex flex-col h-full p-4 sm:p-6 lg:p-8 pt-6 gap-6 relative">
@@ -111,7 +123,7 @@ export default function MyPostsClient() {
                 My Posts
               </h1>
               <span className="bg-[#2B3512] text-[#C8FF00] font-['Nimbus_Sans'] font-bold text-[10px] px-2 py-0.5 rounded-[4px] uppercase tracking-wide">
-                {posts.length} Published
+                {userPosts.length} Published
               </span>
             </div>
             <p className="font-['Nimbus_Sans'] font-normal text-sm text-[#94A3B8]">
@@ -138,14 +150,14 @@ export default function MyPostsClient() {
             className={`flex items-center gap-2 cursor-pointer pb-1 border-b-2 transition-colors ${activeTab === 'posts' ? 'border-[#C8FF00]' : 'border-transparent hover:border-[#323842]'}`}
           >
             <span className={`font-['Nimbus_Sans'] font-medium text-[15px] ${activeTab === 'posts' ? 'text-[#C8FF00] font-bold' : 'text-[#94A3B8]'}`}>Posts</span>
-            <span className={`${activeTab === 'posts' ? 'bg-[#2B3512] text-[#C8FF00]' : 'bg-[#1A1C22] text-[#94A3B8]'} font-['Nimbus_Sans'] font-bold text-[11px] px-1.5 rounded-[4px]`}>{posts.length}</span>
+            <span className={`${activeTab === 'posts' ? 'bg-[#2B3512] text-[#C8FF00]' : 'bg-[#1A1C22] text-[#94A3B8]'} font-['Nimbus_Sans'] font-bold text-[11px] px-1.5 rounded-[4px]`}>{userPosts.length}</span>
           </div>
           <div 
             onClick={() => setActiveTab('saved')}
             className={`flex items-center gap-2 cursor-pointer pb-1 border-b-2 transition-colors ${activeTab === 'saved' ? 'border-[#C8FF00]' : 'border-transparent hover:border-[#323842]'}`}
           >
             <span className={`font-['Nimbus_Sans'] font-medium text-[15px] ${activeTab === 'saved' ? 'text-[#C8FF00] font-bold' : 'text-[#94A3B8]'}`}>Saved</span>
-            <span className={`${activeTab === 'saved' ? 'bg-[#2B3512] text-[#C8FF00]' : 'bg-[#1A1C22] text-[#94A3B8]'} font-['Nimbus_Sans'] font-bold text-[11px] px-1.5 rounded-[4px]`}>{posts.filter(p => p.isSaved).length}</span>
+            <span className={`${activeTab === 'saved' ? 'bg-[#2B3512] text-[#C8FF00]' : 'bg-[#1A1C22] text-[#94A3B8]'} font-['Nimbus_Sans'] font-bold text-[11px] px-1.5 rounded-[4px]`}>{mappedPosts.filter((p: any) => p.isSaved).length}</span>
           </div>
         </div>
 
@@ -180,17 +192,34 @@ export default function MyPostsClient() {
       </div>
 
       <div className={`w-full z-0 ${viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5' : 'flex flex-col gap-4 sm:gap-5'}`}>
-        {displayedPosts.map(post => (
-          <MyPostCard 
-            key={post.id} 
-            post={post} 
-            viewMode={viewMode}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
-            onComment={handleCommentClick}
-          />
-        ))}
-        {displayedPosts.length === 0 && (
+        {isFeedLoading && displayedPosts.length === 0 ? (
+          <div className="flex flex-col gap-6 w-full col-span-full">
+            <div className="w-full h-64 bg-[#161920] rounded-2xl border border-[#232730] animate-pulse"></div>
+            <div className="w-full h-64 bg-[#161920] rounded-2xl border border-[#232730] animate-pulse"></div>
+          </div>
+        ) : (
+          displayedPosts.map(post => (
+            <MyPostCard 
+              key={post.id} 
+              post={post} 
+              viewMode={viewMode}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+              onComment={handleCommentClick}
+              onLike={async (p) => {
+                if (user && gymId) {
+                  await toggleLikeMutate({ postId: p.id, userId: user.id, gymId: gymId ?? null });
+                }
+              }}
+              onBookmark={async (p) => {
+                if (user && gymId) {
+                  await toggleSaveMutate({ postId: p.id, userId: user.id, gymId: gymId ?? null });
+                }
+              }}
+            />
+          ))
+        )}
+        {!isFeedLoading && displayedPosts.length === 0 && (
           <div className="w-full flex flex-col items-center justify-center py-20 col-span-full">
             <p className="font-['Nimbus_Sans'] font-medium text-[#94A3B8]">No posts found.</p>
           </div>
@@ -224,19 +253,26 @@ export default function MyPostsClient() {
           initialContent={postToEdit ? postToEdit.description : ""}
           initialImages={postToEdit ? [postToEdit.image] : []}
           onClose={() => { setCreateModalOpen(false); setPostToEdit(null); }}
-          onPost={(content, images) => {
-            if (postToEdit) {
-              setPosts(prev => prev.map(p => p.id === postToEdit.id ? { ...p, description: content, image: images[0] || p.image } : p));
-            } else {
-              setPosts([{
-                id: Date.now().toString(),
-                title: "New Post",
-                description: content,
-                timeAgo: "Just now",
-                image: images[0] || "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=1000&auto=format&fit=crop",
-                likes: 0,
-                comments: 0
-              }, ...posts]);
+          onPost={async (content, images) => {
+            if (!user || !gymId) return;
+            try {
+              if (postToEdit) {
+                await editPostMutate({ 
+                  postId: postToEdit.id, 
+                  gymId: gymId ?? null, 
+                  userId: user.id, 
+                  caption: content, 
+                  imageUri: images[0] 
+                });
+                toast.success("Post updated successfully!");
+                setCreateModalOpen(false);
+                setPostToEdit(null);
+              } else {
+                await createPostMutate({ gymId: gymId ?? null, userId: user.id, caption: content, imageUri: images[0] });
+                toast.success("Post created successfully!");
+              }
+            } catch (e) {
+              toast.error("Failed to post");
             }
           }}
         />
@@ -246,7 +282,7 @@ export default function MyPostsClient() {
         <PostCommentsModal 
           post={{
             id: commentPost.id,
-            author: commentPost.author || { name: 'Gym Owner', avatar: 'https://i.pravatar.cc/150?u=owner', role: 'Owner' as const },
+            author: commentPost.author || { name: 'Gym Owner', avatar: null, role: 'Owner' as const },
             timeAgo: commentPost.timeAgo,
             content: commentPost.description,
             media: [{ url: commentPost.image }],

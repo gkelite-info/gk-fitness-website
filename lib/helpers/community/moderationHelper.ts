@@ -1,6 +1,7 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
 
 export async function blockUser(blockerId: string, blockedId: string) {
+  const supabase = createClient();
   try {
     // Check if already blocked
     const { data: existingBlock } = await supabase
@@ -39,6 +40,7 @@ export async function blockUser(blockerId: string, blockedId: string) {
 }
 
 export async function unblockUser(blockerId: string, blockedId: string) {
+  const supabase = createClient();
   try {
     const { error } = await supabase
       .from('gym_community_blocks')
@@ -61,6 +63,7 @@ export async function reportContent(
   postId?: string,
   commentId?: string
 ) {
+  const supabase = createClient();
   try {
     const { error } = await supabase
       .from('gym_community_reports')
@@ -84,6 +87,7 @@ export async function reportContent(
 }
 
 export async function fetchBlocklist(blockerId: string) {
+  const supabase = createClient();
   try {
     const { data, error } = await supabase
       .from('gym_community_blocks')

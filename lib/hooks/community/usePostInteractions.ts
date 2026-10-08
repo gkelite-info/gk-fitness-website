@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toggleLike, toggleSave, fetchComments, addComment, deleteComment } from '@/lib/helpers/community/interactionsHelper';
+import { toggleLike, toggleSave, fetchComments, addComment, deleteComment, editComment, toggleCommentLike } from '@/lib/helpers/community/interactionsHelper';
 
 export function useToggleLike() {
   const queryClient = useQueryClient();
@@ -125,3 +125,7 @@ export function useDeleteComment() {
     }
   });
 }
+
+export function useEditComment() { const queryClient = useQueryClient(); return useMutation({ mutationFn: async ({ commentId, content, userId }: { commentId: string, content: string, userId: string }) => { return await editComment(commentId, content, userId); }, onSuccess: (_, variables) => { queryClient.invalidateQueries({ queryKey: ['comments'] }); } }); }
+
+export function useToggleCommentLike() { const queryClient = useQueryClient(); return useMutation({ mutationFn: async ({ commentId, userId }: { commentId: string, userId: string }) => { return await toggleCommentLike(commentId, userId); }, onSuccess: (_, variables) => { queryClient.invalidateQueries({ queryKey: ['comments'] }); } }); }

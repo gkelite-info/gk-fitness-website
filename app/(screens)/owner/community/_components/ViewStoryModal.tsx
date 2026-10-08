@@ -13,17 +13,18 @@ type Props = {
   onClose: () => void;
   onEdit?: (storyId: string, segmentIndex: number) => void;
   onDelete?: (storyId: string, segmentIndex: number) => void;
+  onLike?: (userId: string, segmentIndex: number, isCurrentlyLiked: boolean) => Promise<void>;
 };
 
 import ConfirmationModal from "@/app/(screens)/components/reusable/ConfirmationModal";
 
-export default function ViewStoryModal({ stories, initialIndex, onClose, onEdit, onDelete }: Props) {
+export default function ViewStoryModal({ stories, initialIndex, onClose, onEdit, onDelete, onLike }: Props) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0);
   const [progress, setProgress] = useState(0);
 
   const currentStory = stories[currentIndex];
-  const segments = currentStory?.segments || (currentStory ? [{ url: currentStory.avatar, type: "image" as const }] : []);
+  const segments = currentStory?.segments || (currentStory ? [{ url: currentStory.avatar || undefined, type: "image" as const }] : []);
 
   const [showDropdown, setShowDropdown] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -33,12 +34,21 @@ export default function ViewStoryModal({ stories, initialIndex, onClose, onEdit,
   const currentSegmentKey = `${currentStory?.id}-${currentSegmentIndex}`;
   const isLiked = likesMap[currentSegmentKey] || false;
 
-  const handleLike = (e: React.MouseEvent) => {
+  const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
+    const currentlyLiked = likesMap[currentSegmentKey] || false;
+    
+    if (onLike) {
+      try {
+        await onLike(currentStory.id, currentSegmentIndex, currentlyLiked);
+      } catch (err) {
+        console.error(err);
+        return;
+      }
+    }
+    
     setLikesMap(prev => {
-      const currentlyLiked = prev[currentSegmentKey];
-      
       if (!currentlyLiked) {
         // Spawn hearts only when liking
         const generated = Array.from({ length: 8 }).map((_, i) => {

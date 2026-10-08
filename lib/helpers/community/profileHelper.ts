@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
 
 export interface CommunityProfile {
   gymCommunityProfileId: string;
@@ -19,6 +19,7 @@ export interface CommunityProfile {
 }
 
 export async function fetchCommunityProfile(userId: string): Promise<CommunityProfile | null> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('gym_community_profiles')
     .select(`
@@ -67,6 +68,7 @@ export async function fetchCommunityProfile(userId: string): Promise<CommunityPr
 }
 
 export async function checkUsernameAvailability(username: string, excludeUserId?: string): Promise<boolean> {
+  const supabase = createClient();
   let query = supabase
     .from('gym_community_profiles')
     .select('gymCommunityProfileId')
@@ -87,11 +89,13 @@ export async function checkUsernameAvailability(username: string, excludeUserId?
 }
 
 export async function upsertCommunityProfile(params: {
+
   userId: string;
   username: string;
   bio?: string;
   website?: string;
 }) {
+  const supabase = createClient();
   const { userId, username, bio = '', website = '' } = params;
   
   const updatedAt = new Date().toISOString();
@@ -145,6 +149,7 @@ export async function upsertCommunityProfile(params: {
 }
 
 export async function checkIsFollowing(followerId: string, followingId: string): Promise<boolean> {
+  const supabase = createClient();
   if (!followerId || !followingId) return false;
   
   const { data, error } = await supabase
@@ -163,6 +168,7 @@ export async function checkIsFollowing(followerId: string, followingId: string):
 }
 
 export async function followUser(followerId: string, followingId: string) {
+  const supabase = createClient();
   if (followerId === followingId) throw new Error('Cannot follow yourself');
 
   const { error } = await supabase
@@ -183,6 +189,7 @@ export async function followUser(followerId: string, followingId: string) {
 }
 
 export async function unfollowUser(followerId: string, followingId: string) {
+  const supabase = createClient();
   const { error } = await supabase
     .from('gym_community_follows')
     .delete()
@@ -196,6 +203,7 @@ export async function unfollowUser(followerId: string, followingId: string) {
 }
 
 export async function fetchFollowers(userId: string, currentUserId: string, page = 0, limit = 20) {
+  const supabase = createClient();
   const from = page * limit;
   const to = from + limit - 1;
 
@@ -217,6 +225,7 @@ export async function fetchFollowers(userId: string, currentUserId: string, page
 }
 
 export async function fetchFollowing(userId: string, currentUserId: string, page = 0, limit = 20) {
+  const supabase = createClient();
   const from = page * limit;
   const to = from + limit - 1;
 

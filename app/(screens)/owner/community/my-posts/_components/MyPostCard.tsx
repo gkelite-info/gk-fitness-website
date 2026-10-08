@@ -21,22 +21,26 @@ interface MyPostCardProps {
   onEdit: (post: Post) => void;
   onDelete: (post: Post) => void;
   onComment?: (post: Post) => void;
+  onLike?: (post: Post) => Promise<void>;
+  onBookmark?: (post: Post) => Promise<void>;
 }
 
-export default function MyPostCard({ post, viewMode, onEdit, onDelete, onComment }: MyPostCardProps) {
+export default function MyPostCard({ post, viewMode, onEdit, onDelete, onComment, onLike, onBookmark }: MyPostCardProps) {
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
   const [likes, setLikes] = useState(post.likes);
   const [isSaved, setIsSaved] = useState(post.isSaved || false);
 
-  const handleLike = (e: React.MouseEvent) => {
+  const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsLiked(!isLiked);
     setLikes(prev => isLiked ? prev - 1 : prev + 1);
+    if (onLike) await onLike(post);
   };
 
-  const handleSave = (e: React.MouseEvent) => {
+  const handleSave = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsSaved(!isSaved);
+    if (onBookmark) await onBookmark(post);
   };
 
   if (viewMode === 'grid') {

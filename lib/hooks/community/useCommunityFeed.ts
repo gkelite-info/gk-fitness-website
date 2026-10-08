@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchCommunityPosts, createCommunityPost, deleteCommunityPost } from '@/lib/helpers/community/communityHelper';
+import { fetchCommunityPosts, createCommunityPost, deleteCommunityPost, editCommunityPost } from '@/lib/helpers/community/communityHelper';
 
 export function useCommunityFeed(gymId: string | null, userId: string | null) {
   return useInfiniteQuery({
@@ -42,3 +42,5 @@ export function useDeletePost() {
     }
   });
 }
+
+export function useEditPost() { const queryClient = useQueryClient(); return useMutation({ mutationFn: async ({ postId, gymId, userId, caption, imageUri }: { postId: string, gymId: string | null, userId: string, caption: string, imageUri?: string | null }) => { return await editCommunityPost(postId, gymId, userId, caption, imageUri); }, onSuccess: (_, variables) => { queryClient.invalidateQueries({ queryKey: ['community-feed', variables.gymId, variables.userId] }); } }); }

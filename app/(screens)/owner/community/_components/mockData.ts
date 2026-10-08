@@ -1,7 +1,8 @@
 export type Story = {
   id: string;
   name: string;
-  avatar: string;
+  avatar: string | null;
+  gender?: "male" | "female" | "other" | null;
   segments?: { url: string; type: "image" | "video"; trimStart?: number; trimEnd?: number }[];
   isUser?: boolean;
   hasUnseen?: boolean;
@@ -16,7 +17,8 @@ export type Post = {
   id: string;
   author: {
     name: string;
-    avatar: string;
+    avatar: string | null;
+    gender?: "male" | "female" | "other" | null;
     role: "Trainer" | "Member" | "Owner";
   };
   timeAgo: string;

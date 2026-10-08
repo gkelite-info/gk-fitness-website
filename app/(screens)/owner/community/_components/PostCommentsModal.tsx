@@ -10,71 +10,112 @@ import PostCard from "./PostCard";
 import Avatar from "@/app/(screens)/components/reusable/Avatar";
 import ConfirmationModal from "@/app/(screens)/components/reusable/ConfirmationModal";
 
+import { usePostComments, useAddComment, useDeleteComment, useEditComment, useToggleCommentLike, useToggleLike } from "@/lib/hooks/community/usePostInteractions";
+import { useUser } from "@/app/context/UserContext";
+import { useOwnerGymId } from "@/lib/hooks/auth/useOwnerGymId";
+
 type Props = {
-  post: Post;
+  post: any;
   onClose: () => void;
 };
 
-const MOCK_COMMENTS = [
-  { id: 1, user: { name: "Sarah Lee", avatar: "https://i.pravatar.cc/150?u=sarah" }, timeAgo: "1h ago", text: "Amazing pump! Keep pushing 🔥", likes: 12, isLiked: false, isEdited: false },
-  { id: 5, user: { name: "Gym Owner", avatar: "https://i.pravatar.cc/150?u=owner" }, timeAgo: "20m ago", text: "@Sarah Lee Sure, will share it in my next post! 💪", likes: 2, isLiked: false, parentId: 1, isEdited: false },
-  { id: 2, user: { name: "Mike Turner", avatar: "https://i.pravatar.cc/150?u=mike" }, timeAgo: "56m ago", text: "That back is looking insane! 👏", likes: 8, isLiked: false, isEdited: false },
-  { id: 3, user: { name: "Jessica Wilson", avatar: "https://i.pravatar.cc/150?u=jessica" }, timeAgo: "35m ago", text: "Beast mode! 🔥💪", likes: 5, isLiked: false, isEdited: false },
-  { id: 4, user: { name: "David Miller", avatar: "https://i.pravatar.cc/150?u=david" }, timeAgo: "28m ago", text: "What a workout! Mind sharing the routine?", likes: 3, isLiked: false, isEdited: false },
-  { id: 6, user: { name: "Emma Davis", avatar: "https://i.pravatar.cc/150?u=emma1" }, timeAgo: "15m ago", text: "You're an inspiration! Keep it up 🙌", likes: 1, isLiked: false, isEdited: false },
-];
+const getTimeAgo = (dateString: string) => {
+  const diff = Math.max(0, Date.now() - new Date(dateString).getTime());
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+};
+
+// Mock comments removed
 
 const BASIC_EMOJIS = ['🔥', '💪', '👏', '🙌', '💯', '😂', '😍', '❤️', '👍', '🙏', '😎', '🏆'];
 
 export default function PostCommentsModal({ post, onClose }: Props) {
+  const { user, profile } = useUser();
+  const { data: gymId } = useOwnerGymId(user?.id);
+  
+  const { data: commentsData = [], isLoading } = usePostComments(post.id, user?.id || null, 'oldest');
+  const { mutateAsync: addCommentMutate } = useAddComment();
+  const { mutateAsync: deleteCommentMutate } = useDeleteComment();
+  const { mutateAsync: editCommentMutate } = useEditComment();
+  const { mutateAsync: toggleCommentLikeMutate } = useToggleCommentLike();
+
+  const { mutateAsync: toggleLikeMutate } = useToggleLike();
+
   const [commentText, setCommentText] = useState("");
-  const [comments, setComments] = useState(MOCK_COMMENTS);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [replyingTo, setReplyingTo] = useState<{ parentId: number, username: string } | null>(null);
-  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [replyingTo, setReplyingTo] = useState<{ parentId: string, username: string } | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
-  const [dropdownConfig, setDropdownConfig] = useState<{ id: number, x: number, y: number } | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
+  const [dropdownConfig, setDropdownConfig] = useState<{ id: string, x: number, y: number } | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleLikeComment = (id: number) => {
-    setComments(prev => prev.map(c => c.id === id ? { ...c, isLiked: !c.isLiked, likes: c.isLiked ? c.likes - 1 : c.likes + 1 } : c));
-  };
+  const mappedComments = commentsData.map((c: any) => ({
+    id: c.gymCommunityCommentId,
+    user: {
+      name: c.users?.name || "Unknown",
+      avatar: c.users?.profilePhoto || null,
+      gender: c.users?.gender || null,
+    },
+    timeAgo: getTimeAgo(c.createdAt),
+    text: c.content,
+    likes: c.likesCount || 0,
+    isLiked: c.isLikedByMe,
+    isEdited: false,
+    parentId: c.parentId || null,
+    isUser: c.authorId === user?.id,
+  }));
 
-  const handlePostComment = () => {
-    if (!commentText.trim()) return;
-    const newComment = {
-      id: Date.now(),
-      user: { name: "Gym Owner", avatar: "https://i.pravatar.cc/150?u=owner" },
-      timeAgo: "Just now",
-      text: commentText.trim(),
-      likes: 0,
-      isLiked: false,
-      parentId: replyingTo?.parentId,
-      isEdited: false
-    };
-    setComments(prev => [...prev, newComment]);
-    setCommentText("");
-    setReplyingTo(null);
-  };
-
-  const handleSaveEdit = (id: number) => {
-    if (!editingText.trim()) return;
-    setComments(prev => prev.map(c => c.id === id ? { ...c, text: editingText.trim(), isEdited: true } : c));
-    setEditingCommentId(null);
-  };
-
-  const handleDeleteComment = () => {
-    if (showDeleteConfirm) {
-      setComments(prev => prev.filter(c => c.id !== showDeleteConfirm && c.parentId !== showDeleteConfirm));
-      setShowDeleteConfirm(null);
-      toast.success("Comment deleted");
+  const handleLikeComment = async (id: string) => {
+    if (!user) return;
+    try {
+      await toggleCommentLikeMutate({ commentId: id, userId: user.id });
+    } catch (e) {
+      toast.error("Failed to like comment");
     }
   };
 
-  const handleDotsClick = (e: React.MouseEvent, id: number) => {
+  const handlePostComment = async () => {
+    if (!commentText.trim() || !user) return;
+    try {
+      await addCommentMutate({ postId: post.id, userId: user.id, content: commentText.trim(), parentId: replyingTo?.parentId });
+      setCommentText("");
+      setReplyingTo(null);
+      toast.success("Comment added");
+    } catch (e) {
+      toast.error("Failed to add comment");
+    }
+  };
+
+  const handleSaveEdit = async (id: string) => {
+    if (!user || !editingText.trim()) return;
+    try {
+      await editCommentMutate({ commentId: id, content: editingText.trim(), userId: user.id });
+      setEditingCommentId(null);
+      toast.success("Comment updated");
+    } catch (e) {
+      toast.error("Failed to update comment");
+    }
+  };
+
+  const handleDeleteComment = async () => {
+    if (showDeleteConfirm && user) {
+      try {
+        await deleteCommentMutate({ commentId: showDeleteConfirm, userId: user.id, role: "owner" });
+        setShowDeleteConfirm(null);
+        toast.success("Comment deleted");
+      } catch (e) {
+        toast.error("Failed to delete comment");
+      }
+    }
+  };
+
+  const handleDotsClick = (e: React.MouseEvent, id: string) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const showAbove = spaceBelow < 100;
@@ -86,7 +127,7 @@ export default function PostCommentsModal({ post, onClose }: Props) {
     });
   };
 
-  const handleReply = (parentId: number, username: string) => {
+  const handleReply = (parentId: string, username: string) => {
     setReplyingTo({ parentId, username });
     setCommentText(prev => prev ? `${prev} @${username} ` : `@${username} `);
     inputRef.current?.focus();
@@ -99,22 +140,11 @@ export default function PostCommentsModal({ post, onClose }: Props) {
   };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight + 50 && !isLoadingMore && hasMore) {
-      setIsLoadingMore(true);
-      setTimeout(() => {
-        setComments(prev => [...prev, 
-          { id: Date.now(), user: { name: "Sarah Lee", avatar: "https://i.pravatar.cc/150?u=sarah" }, timeAgo: "1m ago", text: "Such a great workout! 🔥", likes: 0, isLiked: false, isEdited: false },
-          { id: Date.now()+1, user: { name: "Mike Turner", avatar: "https://i.pravatar.cc/150?u=mike" }, timeAgo: "Just now", text: "Need to try this!", likes: 0, isLiked: false, isEdited: false }
-        ]);
-        setIsLoadingMore(false);
-        setHasMore(false);
-      }, 1500);
-    }
+    // Pagination for comments is currently handled by fetching all or sorting by oldest
   };
 
-  const CommentItem = ({ comment, onReply }: { comment: typeof comments[0], onReply: () => void }) => {
-    const isUser = comment.user.name === "Gym Owner";
+  const CommentItem = ({ comment, onReply }: { comment: any, onReply: () => void }) => {
+    const isUser = comment.isUser;
     const isEditing = editingCommentId === comment.id;
 
     return (
@@ -151,12 +181,12 @@ export default function PostCommentsModal({ post, onClose }: Props) {
               </button>
             </div>
           )}
-          <div className="flex flex-col items-center gap-1 min-w-[24px]">
+          {/* <div className="flex flex-col items-center gap-1 min-w-[24px]">
             <button onClick={() => handleLikeComment(comment.id)} className="cursor-pointer group p-1">
               <Heart size={14} weight={comment.isLiked ? "fill" : "regular"} className={`${comment.isLiked ? "text-[#F43F5E]" : "text-[#475569] group-hover:text-white"} transition-colors`} />
             </button>
             {comment.likes > 0 && <span className="font-['Nimbus_Sans'] font-medium text-[10px] text-[#475569] leading-none">{comment.likes}</span>}
-          </div>
+          </div> */}
         </div>
       </div>
     );
@@ -169,11 +199,21 @@ export default function PostCommentsModal({ post, onClose }: Props) {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="fixed inset-0 bg-[#0C0D10]/90 backdrop-blur-sm cursor-pointer" onClick={onClose} />
           <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="relative w-full h-full md:h-[90vh] md:max-w-6xl flex flex-col md:flex-row gap-0 md:gap-6 z-10 pointer-events-none rounded-none md:rounded-2xl overflow-hidden">
             <div className="hidden md:flex flex-1 md:flex-[1.2] lg:flex-[1.5] w-full h-full overflow-y-auto overflow-x-hidden scrollbar-themed pointer-events-auto rounded-2xl bg-[#0E0F13] p-1 border border-[#232730]">
-              <div className="w-full h-fit"><PostCard post={post} hideCommentsClick /></div>
+              <div className="w-full h-fit">
+                <PostCard 
+                  post={post} 
+                  hideCommentsClick 
+                  onLike={async () => {
+                    if (user && gymId) {
+                      await toggleLikeMutate({ postId: post.id, userId: user.id, gymId: gymId ?? null });
+                    }
+                  }}
+                />
+              </div>
             </div>
             <div className="flex-1 md:flex-[1] lg:flex-[1] w-full h-full bg-[#161920] border-l md:border border-[#232730] md:rounded-2xl flex flex-col pointer-events-auto shadow-2xl relative">
               <div className="flex flex-row items-center justify-between p-5 sm:p-6 border-b border-[#232730] shrink-0 bg-[#161920]">
-                <h2 className="font-['Nimbus_Sans'] font-bold text-[18px] sm:text-xl text-white">Comments <span className="text-[#94A3B8] font-medium text-[14px] ml-1">({comments.length})</span></h2>
+                <h2 className="font-['Nimbus_Sans'] font-bold text-[18px] sm:text-xl text-white">Comments <span className="text-[#94A3B8] font-medium text-[14px] ml-1">({mappedComments.length})</span></h2>
                 <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-[#94A3B8] hover:text-white transition-colors cursor-pointer bg-[#1A1D24] border border-[#334155] hover:border-[#475569]">
                   <X size={16} weight="bold" />
                 </button>
@@ -187,20 +227,23 @@ export default function PostCommentsModal({ post, onClose }: Props) {
                   </div>
                   <p className="font-['Nimbus_Sans'] font-normal text-[13px] text-[#E2E8F0]">{post.content}</p>
                 </div>
-                {comments.filter(c => !c.parentId).map((comment) => (
-                  <div key={comment.id} className="flex flex-col gap-4 w-full">
-                    <CommentItem comment={comment} onReply={() => handleReply(comment.id, comment.user.name)} />
-                    {comments.filter(c => c.parentId === comment.id).map(reply => (
-                      <div key={reply.id} className="ml-10">
-                        <CommentItem comment={reply} onReply={() => handleReply(comment.id, reply.user.name)} />
-                      </div>
-                    ))}
-                  </div>
-                ))}
-                {isLoadingMore && <div className="flex justify-center items-center py-2 w-full"><CircleNotch size={24} className="text-[#C8FF00] animate-spin" weight="bold" /></div>}
+                {isLoading ? (
+                  <div className="flex justify-center items-center py-8 w-full"><CircleNotch size={24} className="text-[#C8FF00] animate-spin" weight="bold" /></div>
+                ) : (
+                  mappedComments.filter((c: any) => !c.parentId).map((comment: any) => (
+                    <div key={comment.id} className="flex flex-col gap-4 w-full">
+                      <CommentItem comment={comment} onReply={() => handleReply(comment.id, comment.user.name)} />
+                      {mappedComments.filter((c: any) => c.parentId === comment.id).map((reply: any) => (
+                        <div key={reply.id} className="ml-10">
+                          <CommentItem comment={reply} onReply={() => handleReply(comment.id, reply.user.name)} />
+                        </div>
+                      ))}
+                    </div>
+                  ))
+                )}
               </div>
               <div className="flex flex-row items-center p-4 sm:p-5 border-t border-[#232730] shrink-0 bg-[#161920]">
-                <Avatar src="https://i.pravatar.cc/150?u=owner" alt="Your avatar" className="w-8 h-8 border border-[#334155] mr-3 hidden sm:block" />
+                <Avatar src={profile?.profilePhoto || null} gender={profile?.gender as any} alt="Your avatar" className="w-8 h-8 border border-[#334155] mr-3 hidden sm:block" />
                 <div className="flex flex-row items-center flex-1 bg-[#1A1D24] border border-[#334155] rounded-full px-4 py-2 gap-3 focus-within:border-[#C8FF00] transition-colors relative">
                   <input ref={inputRef} type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handlePostComment()} placeholder="Write a comment..." className="flex-1 bg-transparent border-none outline-none font-['Nimbus_Sans'] text-[13px] sm:text-[14px] text-white placeholder:text-[#475569]" />
                   <div className="relative flex items-center">
@@ -233,7 +276,7 @@ export default function PostCommentsModal({ post, onClose }: Props) {
             style={{ left: dropdownConfig.x, top: dropdownConfig.y }}
             onClick={e => e.stopPropagation()}
           >
-            <button onClick={() => { setEditingText(comments.find(c => c.id === dropdownConfig.id)?.text || ""); setEditingCommentId(dropdownConfig.id); setDropdownConfig(null); }} className="flex items-center gap-2 px-3 py-2 text-xs text-white hover:bg-white/5 cursor-pointer"><PencilSimple size={14} /> Edit</button>
+            <button onClick={() => { setEditingText(mappedComments.find((c: any) => c.id === dropdownConfig.id)?.text || ""); setEditingCommentId(dropdownConfig.id); setDropdownConfig(null); }} className="flex items-center gap-2 px-3 py-2 text-xs text-white hover:bg-white/5 cursor-pointer"><PencilSimple size={14} /> Edit</button>
             <button onClick={() => { setShowDeleteConfirm(dropdownConfig.id); setDropdownConfig(null); }} className="flex items-center gap-2 px-3 py-2 text-xs text-[#F43F5E] hover:bg-white/5 cursor-pointer"><Trash size={14} /> Delete</button>
           </div>
         </div>
