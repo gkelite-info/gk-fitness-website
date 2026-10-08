@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   MapPin, Phone, Envelope, Globe,
   Users, Barbell, CreditCard,
-  Crown, ArrowsLeftRight, Bell, User, ShieldCheck, Question, SignOut,
+  Crown, ArrowsLeftRight, Bell, User, ShieldCheck, Question, SignOut, LockKey,
   CaretRight, CheckCircle, PencilSimple
 } from "@phosphor-icons/react";
 import ConfirmationModal from "@/app/(screens)/components/reusable/ConfirmationModal";
@@ -58,12 +58,13 @@ export default function ProfileClient() {
   };
 
   const menuItems = [
-    { icon: Crown, title: "Membership Plans", desc: "Create, edit and manage membership plans", color: "text-[#C8FF00]" },
-    { icon: Barbell, title: "Gym Access", desc: "Manage gym timings and customer check-in rules.", color: "text-[#C8FF00]" },
+    { icon: Crown, title: "Membership Plans", desc: "Create, edit and manage membership plans", color: "text-[#C8FF00]", onClick: () => router.push('/owner/membership-plans') },
+    { icon: Barbell, title: "Gym Access", desc: "Manage gym timings and customer check-in rules.", color: "text-[#C8FF00]", onClick: () => router.push('/owner/profile/gym-access') },
     { icon: Bell, title: "Notifications", desc: "Manage notification preferences", color: "text-[#C8FF00]", isToggle: true },
-    { icon: User, title: "Member App Access", desc: "Choose how long members can continue", color: "text-[#C8FF00]" },
-    { icon: ShieldCheck, title: "Privacy & Security", desc: "Change password and security settings", color: "text-[#C8FF00]" },
-    { icon: Question, title: "Help & Support", desc: "Get help and contact support", color: "text-[#C8FF00]" },
+    { icon: User, title: "Member App Access", desc: "Choose how long members can continue", color: "text-[#C8FF00]", onClick: () => router.push('/owner/profile/member-app-access') },
+    { icon: LockKey, title: "Change Password", desc: "Update your account password securely", color: "text-[#C8FF00]", onClick: () => router.push('/owner/profile/change-password') },
+    { icon: ShieldCheck, title: "Privacy Policy", desc: "View our privacy policy", color: "text-[#C8FF00]", onClick: () => router.push('/owner/profile/privacy-policy') },
+    // { icon: Question, title: "Help & Support", desc: "Get help and contact support", color: "text-[#C8FF00]" },
     { icon: SignOut, title: "Logout", desc: "Sign out from your account", color: "text-[#F43F5E]", isDestructive: true, onClick: () => setIsLogoutModalOpen(true) },
   ];
 
