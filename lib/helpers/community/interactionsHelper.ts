@@ -193,8 +193,22 @@ export async function deleteComment(commentId: string, userId: string, role?: st
   }
 }
 
-export async function editComment(commentId: string, content: string, userId: string) { try { const { error } = await supabase.from('gym_community_comments').update({ content, updatedAt: new Date().toISOString() }).eq('gymCommunityCommentId', commentId).eq('authorId', userId); if (error) throw error; return true; } catch (error) { console.error('editComment Error:', error); throw error; } }
+export async function editComment(commentId: string, content: string, userId: string) {
   const supabase = createClient();
+  try {
+    const { error } = await supabase
+      .from('gym_community_comments')
+      .update({ content, updatedAt: new Date().toISOString() })
+      .eq('gymCommunityCommentId', commentId)
+      .eq('authorId', userId);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('editComment Error:', error);
+    throw error;
+  }
+}
+
 
 export async function toggleCommentLike(commentId: string, userId: string) {
   const supabase = createClient();
