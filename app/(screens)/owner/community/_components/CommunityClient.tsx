@@ -69,14 +69,13 @@ export default function CommunityClient() {
   const handleScroll = useCallback(() => {
     let scrollTop = 0;
     const scrollParent = scrollContainerRef.current?.closest('.overflow-y-auto');
-    
+
     if (scrollParent) {
       scrollTop = scrollParent.scrollTop;
     } else if (typeof window !== 'undefined') {
       scrollTop = window.scrollY;
     }
 
-    // Use hysteresis (dead-band) to prevent flickering when the layout shrinks and pulls the scroll position up
     if (scrollTop > 150) {
       setIsScrolled(true);
     } else if (scrollTop < 30) {
@@ -100,7 +99,7 @@ export default function CommunityClient() {
   useEffect(() => {
     const scrollParent = scrollContainerRef.current?.closest('.overflow-y-auto');
     const target = scrollParent || window;
-    
+
     target.addEventListener('scroll', handleScroll);
     return () => target.removeEventListener('scroll', handleScroll as any);
   }, [handleScroll]);
@@ -123,12 +122,12 @@ export default function CommunityClient() {
   const handleEditPost = async (content: string, images: string[]) => {
     if (!user || !gymId || !editingPostData) return;
     try {
-      await editPostMutate({ 
-        postId: editingPostData.id, 
-        gymId: gymId ?? null, 
-        userId: user.id, 
-        caption: content, 
-        imageUri: images[0] 
+      await editPostMutate({
+        postId: editingPostData.id,
+        gymId: gymId ?? null,
+        userId: user.id,
+        caption: content,
+        imageUri: images[0]
       });
       toast.success("Post updated successfully!");
       setEditingPostData(null);
@@ -189,7 +188,7 @@ export default function CommunityClient() {
   })) || [];
 
   const mappedStories: any[] = [];
-  
+
   if (user && !storiesData.some((s: any) => s.userId === user.id)) {
     mappedStories.push({
       id: user.id,
@@ -216,21 +215,21 @@ export default function CommunityClient() {
   })));
 
   return (
-    <div 
+    <div
       ref={scrollContainerRef}
       className="flex flex-col items-center w-full h-full bg-[#0E0F13] relative"
     >
       <div className="flex flex-col items-start w-full max-w-[976px] mx-auto pb-10">
-        
+
         <div className={`sticky top-0 z-40 w-full bg-[#0E0F13]/95 backdrop-blur-md flex flex-col px-4 sm:px-6 lg:px-8 transition-all duration-300 ${isScrolled ? 'py-2 shadow-md border-b border-[#232730]' : 'pt-4 sm:pt-6 lg:pt-8 pb-2'}`}>
           <div className="flex flex-col w-full">
-            <CommunityHeader 
+            <CommunityHeader
               onOpenCreatePost={() => setIsCreateModalOpen(true)}
               onOpenAddStory={() => setIsAddStoryModalOpen(true)}
               isScrolled={isScrolled}
             />
-            
-            <div 
+
+            <div
               className="grid transition-all duration-300 ease-out w-full"
               style={{
                 gridTemplateRows: isHeaderCollapsed ? '0fr' : '1fr',
@@ -241,13 +240,13 @@ export default function CommunityClient() {
                 <div className="pt-4 sm:pt-6">
                   {isStoriesLoading ? (
                     <div className="flex px-4 gap-4 overflow-x-hidden">
-                       <div className="w-[72px] h-[72px] rounded-full bg-[#1A1C22] animate-pulse shrink-0"></div>
-                       <div className="w-[72px] h-[72px] rounded-full bg-[#1A1C22] animate-pulse shrink-0"></div>
-                       <div className="w-[72px] h-[72px] rounded-full bg-[#1A1C22] animate-pulse shrink-0"></div>
+                      <div className="w-[72px] h-[72px] rounded-full bg-[#1A1C22] animate-pulse shrink-0"></div>
+                      <div className="w-[72px] h-[72px] rounded-full bg-[#1A1C22] animate-pulse shrink-0"></div>
+                      <div className="w-[72px] h-[72px] rounded-full bg-[#1A1C22] animate-pulse shrink-0"></div>
                     </div>
                   ) : (
-                    <StoriesRow 
-                      stories={mappedStories} 
+                    <StoriesRow
+                      stories={mappedStories}
                       isScrolled={isScrolled}
                       onStoryClick={(index) => setActiveStoryIndex(index)}
                       onAddStoryClick={() => setIsAddStoryModalOpen(true)}
@@ -257,9 +256,9 @@ export default function CommunityClient() {
               </div>
             </div>
           </div>
-          
+
           {isScrolled && (
-            <button 
+            <button
               onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
               className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 bg-[#161920] border border-[#232730] shadow-md rounded-full px-3 py-1 cursor-pointer z-50 flex items-center justify-center text-[#94A3B8] hover:text-white transition-colors"
             >
@@ -267,18 +266,18 @@ export default function CommunityClient() {
             </button>
           )}
         </div>
-        
+
         <div className="flex flex-col items-start gap-6 w-full px-4 sm:px-6 lg:px-8 pt-4">
           {isFeedLoading && mappedPosts.length === 0 ? (
             <div className="flex flex-col gap-6 w-full">
-               <div className="w-full h-64 bg-[#161920] rounded-2xl border border-[#232730] animate-pulse"></div>
-               <div className="w-full h-64 bg-[#161920] rounded-2xl border border-[#232730] animate-pulse"></div>
+              <div className="w-full h-64 bg-[#161920] rounded-2xl border border-[#232730] animate-pulse"></div>
+              <div className="w-full h-64 bg-[#161920] rounded-2xl border border-[#232730] animate-pulse"></div>
             </div>
           ) : (
             mappedPosts.map((post: any) => (
-              <PostCard 
-                key={post.id} 
-                post={post} 
+              <PostCard
+                key={post.id}
+                post={post}
                 onEdit={(postId) => {
                   const found = mappedPosts.find((p: any) => p.id === postId);
                   if (found) {
@@ -337,11 +336,11 @@ export default function CommunityClient() {
       )}
 
       {isCreateModalOpen && (
-        <CreatePostModal 
+        <CreatePostModal
           onClose={() => {
             setIsCreateModalOpen(false);
             setEditingPostData(null);
-          }} 
+          }}
           onPost={(content, images) => {
             if (editingPostData) {
               handleEditPost(content, images);
@@ -444,9 +443,9 @@ export default function CommunityClient() {
       )}
 
       {activeCommentPostId && (
-        <PostCommentsModal 
-          post={mappedPosts.find((p: any) => p.id === activeCommentPostId)!} 
-          onClose={() => setActiveCommentPostId(null)} 
+        <PostCommentsModal
+          post={mappedPosts.find((p: any) => p.id === activeCommentPostId)!}
+          onClose={() => setActiveCommentPostId(null)}
         />
       )}
     </div>

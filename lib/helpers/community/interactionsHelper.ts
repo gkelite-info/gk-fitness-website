@@ -1,8 +1,8 @@
 import { createClient } from '@/app/api/supabase/client';
-const supabase = createClient();
 import { fetchBlockedUsers } from './blockCache';
 
 export async function toggleLike(postId: string, userId: string) {
+  const supabase = createClient();
   try {
     // Check if like exists
     const { data: existingLike } = await supabase
@@ -45,6 +45,7 @@ export async function toggleLike(postId: string, userId: string) {
 }
 
 export async function toggleSave(postId: string, userId: string) {
+  const supabase = createClient();
   try {
     const { data: existingSave } = await supabase
       .from('gym_community_saves')
@@ -83,6 +84,7 @@ export async function toggleSave(postId: string, userId: string) {
 }
 
 export async function fetchComments(postId: string, currentUserId: string, sortBy: 'newest' | 'oldest' = 'oldest') {
+  const supabase = createClient();
   try {
     // 1. Fetch blocked users (both ways)
     const blockedUserIds = await fetchBlockedUsers(currentUserId);
@@ -142,6 +144,7 @@ export async function fetchComments(postId: string, currentUserId: string, sortB
 }
 
 export async function addComment(postId: string, userId: string, content: string, parentId?: string) {
+  const supabase = createClient();
   try {
     const { data, error } = await supabase
       .from('gym_community_comments')
@@ -169,6 +172,7 @@ export async function addComment(postId: string, userId: string, content: string
 }
 
 export async function deleteComment(commentId: string, userId: string, role?: string) {
+  const supabase = createClient();
   try {
     let query = supabase
       .from('gym_community_comments')
@@ -190,8 +194,10 @@ export async function deleteComment(commentId: string, userId: string, role?: st
 }
 
 export async function editComment(commentId: string, content: string, userId: string) { try { const { error } = await supabase.from('gym_community_comments').update({ content, updatedAt: new Date().toISOString() }).eq('gymCommunityCommentId', commentId).eq('authorId', userId); if (error) throw error; return true; } catch (error) { console.error('editComment Error:', error); throw error; } }
+  const supabase = createClient();
 
 export async function toggleCommentLike(commentId: string, userId: string) {
+  const supabase = createClient();
   try {
     const { data: existingLike, error: fetchError } = await supabase
       .from('gym_community_comment_likes')

@@ -1,6 +1,5 @@
 // @ts-nocheck
 import { createClient } from '@/app/api/supabase/client';
-const supabase = createClient();
 import { fetchBlockedUsers } from './blockCache';
 // import * as FileSystem from 'expo-file-system/legacy';
 // disabled import
@@ -29,6 +28,7 @@ export interface GymCommunityStory {
 }
 
 export async function fetchActiveStories(gymId: string, currentUserId: string) {
+  const supabase = createClient();
   try {
     // 1. Fetch blocked users (both ways) using cache helper
     const blockedUserIds = await fetchBlockedUsers(currentUserId);
@@ -121,6 +121,7 @@ export async function createStory(
   caption?: string,
   captionPositions?: string[]
 ) {
+  const supabase = createClient();
   try {
     const storyId = crypto.randomUUID();
     let mediaUrl = null;
@@ -191,6 +192,7 @@ export async function createStory(
 }
 
 export async function markStoryViewed(storyId: string, viewedBy: string) {
+  const supabase = createClient();
   try {
     const { error } = await supabase
       .from('gym_community_story_views')
@@ -213,6 +215,7 @@ export async function markStoryViewed(storyId: string, viewedBy: string) {
 }
 
 export async function deleteStory(storyId: string, userId: string) {
+  const supabase = createClient();
   try {
     const { error } = await supabase
       .from('gym_community_stories')
@@ -233,6 +236,7 @@ export async function deleteStory(storyId: string, userId: string) {
 }
 
 export async function fetchStoryViewers(storyId: string) {
+  const supabase = createClient();
   try {
     const { data, error } = await supabase
       .from('gym_community_story_views')
@@ -253,6 +257,7 @@ export async function fetchStoryViewers(storyId: string) {
 }
 
 export async function toggleStoryLike(gymId: string, storyId: string, userId: string, isCurrentlyLiked: boolean) {
+  const supabase = createClient();
   if (isCurrentlyLiked) {
     const { error } = await supabase
       .from('gym_community_story_likes')
@@ -276,6 +281,7 @@ export async function toggleStoryLike(gymId: string, storyId: string, userId: st
 }
 
 export async function fetchStoryComments(storyId: string) {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('gym_community_story_comments')
     .select(`
@@ -290,6 +296,7 @@ export async function fetchStoryComments(storyId: string) {
 }
 
 export async function addStoryComment(gymId: string, storyId: string, userId: string, content: string) {
+  const supabase = createClient();
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from('gym_community_story_comments')
@@ -312,6 +319,7 @@ export async function addStoryComment(gymId: string, storyId: string, userId: st
   return data;
 }
 export async function editStory(gymId: string, storyId: string, userId: string, mediaUri: string) {
+  const supabase = createClient();
   try {
     let mediaUrl = null;
     if (mediaUri) {

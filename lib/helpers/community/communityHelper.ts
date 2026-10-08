@@ -1,6 +1,5 @@
 // @ts-nocheck
 import { createClient } from '@/app/api/supabase/client';
-const supabase = createClient();
 // import * as FileSystem from 'expo-file-system/legacy';
 // disabled import
 
@@ -24,6 +23,7 @@ export interface CommunityPost {
 }
 
 export async function fetchCommunityPosts(gymId: string | null, currentUserId: string, page = 0, limit = 10) {
+  const supabase = createClient();
   try {
     const { data, error } = await supabase.rpc('get_community_feed', {
       p_gym_id: gymId,
@@ -66,6 +66,7 @@ export async function createCommunityPost(
   caption: string, 
   imageUri?: string | null
 ) {
+  const supabase = createClient();
   try {
     const postId = crypto.randomUUID();
     let imagePath = null;
@@ -127,6 +128,7 @@ export async function createCommunityPost(
 }
 
 export async function deleteCommunityPost(postId: string, userId: string, role?: string) {
+  const supabase = createClient();
   try {
     let query = supabase
       .from('gym_community_posts')
@@ -157,6 +159,7 @@ export async function editCommunityPost(
   caption: string, 
   imageUri?: string | null
 ) {
+  const supabase = createClient();
   try {
     let imagePath = undefined;
     if (imageUri) {
