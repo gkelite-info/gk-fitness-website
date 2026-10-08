@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { 
+import {
   MapPin, Phone, Envelope, Globe,
   Users, Barbell, CreditCard,
   Crown, ArrowsLeftRight, Bell, User, ShieldCheck, Question, SignOut,
@@ -10,12 +10,40 @@ import {
 } from "@phosphor-icons/react";
 import ConfirmationModal from "@/app/(screens)/components/reusable/ConfirmationModal";
 import { logoutUser } from "@/app/api/supabase/helpers";
+import { useUser } from "@/app/context/UserContext";
+import { useOwnerGymId } from "@/lib/hooks/auth/useOwnerGymId";
+import { useGym } from "@/lib/hooks/gyms/useGym";
+import { useMembershipPlans } from "@/lib/hooks/membership/useMembershipPlans";
+import { useGymTrainers } from "@/lib/hooks/trainers/useGymTrainers";
+import { useGymCustomers } from "@/lib/hooks/customers/useGymCustomers";
+import ProfileShimmer from "./ProfileShimmer";
 
 export default function ProfileClient() {
   const router = useRouter();
+  const { user, loading: isUserLoading } = useUser();
+  const { data: gymId, isLoading: isLoadingGymId } = useOwnerGymId(user?.id);
+  const { data: gym, isLoading: isLoadingGym } = useGym(gymId);
+
+  const { data: trainers = [], isLoading: isLoadingTrainers } = useGymTrainers(gymId || undefined);
+  const { data: customers = [], isLoading: isLoadingCustomers } = useGymCustomers(gymId || undefined);
+  const { data: membershipPlans = [], isLoading: isLoadingPlans } = useMembershipPlans(gymId || null);
+
+  const isLoading = isUserLoading || isLoadingGymId || isLoadingGym || isLoadingTrainers || isLoadingCustomers || isLoadingPlans;
+
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  if (isLoading) {
+    return <ProfileShimmer />;
+  }
+
+  const activeCustomers = customers.filter(c => c.is_Active !== false);
+  const activeTrainers = trainers.filter(t => t.is_Active !== false);
+  const totalActiveMembers = activeCustomers.length + activeTrainers.length;
+  
+  const totalTrainers = trainers.length;
+  const totalMembershipPlans = membershipPlans.length;
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -62,26 +90,26 @@ export default function ProfileClient() {
         </div>
 
         <div className="flex items-center gap-2">
-          <h2 className="font-['Nimbus_Sans'] font-bold text-2xl text-white">Gold Fitness</h2>
+          <h2 className="font-['Nimbus_Sans'] font-bold text-2xl text-white">{gym?.gymName || 'Gym Name'}</h2>
           <CheckCircle size={24} weight="fill" className="text-[#C8FF00]" />
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 w-full border-t border-[#232631] pt-6 mt-2">
           <div className="flex items-center gap-2 text-[#94A3B8]">
             <MapPin size={16} />
-            <span className="font-['Nimbus_Sans'] text-sm">Hyderabad, India</span>
+            <span className="font-['Nimbus_Sans'] text-sm">{gym?.city ? `${gym.city}, ${gym.state || 'India'}` : 'Location Setup'}</span>
           </div>
           <div className="flex items-center gap-2 text-[#94A3B8]">
             <Phone size={16} />
-            <span className="font-['Nimbus_Sans'] text-sm">+91 98765 43210</span>
+            <span className="font-['Nimbus_Sans'] text-sm">{gym?.phone || 'Add Phone'}</span>
           </div>
           <div className="flex items-center gap-2 text-[#94A3B8]">
             <Envelope size={16} />
-            <span className="font-['Nimbus_Sans'] text-sm">info@goldfitness.com</span>
+            <span className="font-['Nimbus_Sans'] text-sm">{gym?.gymEmail || 'Add Email'}</span>
           </div>
           <div className="flex items-center gap-2 text-[#94A3B8]">
             <Globe size={16} />
-            <span className="font-['Nimbus_Sans'] text-sm">www.goldfitness.in</span>
+            <span className="font-['Nimbus_Sans'] text-sm">{gym?.website || 'Add Website'}</span>
           </div>
         </div>
       </div>
@@ -95,20 +123,18 @@ export default function ProfileClient() {
             </div>
             <div className="flex flex-col gap-1 sm:gap-1 items-center sm:items-start">
               <span className="font-['Nimbus_Sans'] text-sm sm:text-xs text-[#94A3B8]">Active Members</span>
-              <span className="font-['Nimbus_Sans'] font-bold text-3xl sm:text-2xl text-white">324</span>
+              <span className="font-['Nimbus_Sans'] font-bold text-3xl sm:text-2xl text-white">{totalActiveMembers}</span>
             </div>
-            <span className="font-['Nimbus_Sans'] font-medium text-xs sm:text-[11px] text-[#C8FF00]">↑ 12 this month</span>
           </div>
-          
+
           <div className="bg-[#12141A] border border-[#232631] rounded-2xl p-6 sm:p-5 flex flex-col items-center sm:items-start text-center sm:text-left gap-4 sm:gap-3">
             <div className="w-12 h-12 sm:w-8 sm:h-8 bg-[#1E293B] rounded-lg flex items-center justify-center shrink-0 text-[24px] sm:text-[16px]">
               <Barbell size="1em" weight="fill" className="text-[#C8FF00]" />
             </div>
             <div className="flex flex-col gap-1 sm:gap-1 items-center sm:items-start">
               <span className="font-['Nimbus_Sans'] text-sm sm:text-xs text-[#94A3B8]">Total Trainers</span>
-              <span className="font-['Nimbus_Sans'] font-bold text-3xl sm:text-2xl text-white">18</span>
+              <span className="font-['Nimbus_Sans'] font-bold text-3xl sm:text-2xl text-white">{totalTrainers}</span>
             </div>
-            <span className="font-['Nimbus_Sans'] font-medium text-xs sm:text-[11px] text-[#C8FF00]">↑ 2 this month</span>
           </div>
 
           <div className="bg-[#12141A] border border-[#232631] rounded-2xl p-6 sm:p-5 flex flex-col items-center sm:items-start text-center sm:text-left gap-4 sm:gap-3">
@@ -117,7 +143,7 @@ export default function ProfileClient() {
             </div>
             <div className="flex flex-col gap-1 sm:gap-1 items-center sm:items-start">
               <span className="font-['Nimbus_Sans'] text-sm sm:text-xs text-[#94A3B8]">Membership Plans</span>
-              <span className="font-['Nimbus_Sans'] font-bold text-3xl sm:text-2xl text-white">3</span>
+              <span className="font-['Nimbus_Sans'] font-bold text-3xl sm:text-2xl text-white">{totalMembershipPlans}</span>
             </div>
           </div>
         </div>
@@ -130,12 +156,11 @@ export default function ProfileClient() {
             const Icon = item.icon;
             const isDestructive = item.isDestructive;
             return (
-              <div 
+              <div
                 key={index}
                 onClick={item.onClick}
-                className={`flex items-center justify-between p-4 sm:p-5 transition-colors cursor-pointer ${
-                  index !== menuItems.length - 1 ? 'border-b border-[#232631]' : ''
-                } hover:bg-[#1A1C22]`}
+                className={`flex items-center justify-between p-4 sm:p-5 transition-colors cursor-pointer ${index !== menuItems.length - 1 ? 'border-b border-[#232631]' : ''
+                  } hover:bg-[#1A1C22]`}
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isDestructive ? 'bg-[#F43F5E]/10' : 'bg-[#1E293B]'}`}>
@@ -152,7 +177,7 @@ export default function ProfileClient() {
                 </div>
 
                 {item.isToggle ? (
-                  <div 
+                  <div
                     onClick={(e) => { e.stopPropagation(); setNotificationsEnabled(!notificationsEnabled); }}
                     className={`w-11 h-6 rounded-full flex items-center p-1 cursor-pointer transition-colors ${notificationsEnabled ? 'bg-[#C8FF00]' : 'bg-[#334155]'}`}
                   >
