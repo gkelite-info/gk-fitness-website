@@ -1,4 +1,5 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
+const supabase = createClient();
 
 export interface CommunityProfile {
   gymCommunityProfileId: string;

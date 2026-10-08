@@ -1,8 +1,9 @@
 // @ts-nocheck
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
+const supabase = createClient();
 import { fetchBlockedUsers } from './blockCache';
 // import * as FileSystem from 'expo-file-system/legacy';
-import { base64ToArrayBuffer } from '@/components/imageCompressor';
+// disabled import
 
 export interface GymCommunityStory {
   gymCommunityStoryId: string;
@@ -125,25 +126,41 @@ export async function createStory(
     let mediaUrl = null;
 
     if (mediaUri) {
-      const base64 = await FileSystem.readAsStringAsync(mediaUri, { encoding: 'base64' });
-      const arrayBuffer = base64ToArrayBuffer(base64);
-      const ext = mediaUri.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `${gymId}/${storyId}.${ext}`;
+      
+      let fileBody = mediaUri;
+      if (mediaUri.startsWith('blob:')) {
+        const response = await fetch(mediaUri);
+        fileBody = await response.blob();
+      }
+
+      const ext = 'jpg';
+      const baseFolder = gymId ? gymId : 'global';
+      const fileName = `${baseFolder}/${storyId}.${ext}`;
+
       
       const isVideo = ext === 'mp4' || ext === 'mov' || ext === 'm4v';
       const contentType = isVideo ? `video/${ext === 'mov' ? 'quicktime' : ext}` : `image/${ext}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('community-stories')
-        .upload(fileName, arrayBuffer, { contentType });
-        
-      if (uploadError) throw uploadError;
       
-      const { data: publicUrlData } = supabase.storage
-        .from('community-stories')
-        .getPublicUrl(fileName);
-        
-      mediaUrl = publicUrlData.publicUrl;
+      
+      const formData = new FormData();
+      formData.append('file', fileBody);
+      formData.append('bucket', 'community-stories');
+      formData.append('path', fileName);
+      
+      const response = await fetch('/api/upload-community', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Upload failed');
+      }
+      
+      const { url } = await response.json();
+      mediaUrl = url;
+
     }
 
     const now = new Date();
@@ -293,4 +310,44 @@ export async function addStoryComment(gymId: string, storyId: string, userId: st
 
   if (error) throw error;
   return data;
+}
+export async function editStory(gymId: string, storyId: string, userId: string, mediaUri: string) {
+  try {
+    let mediaUrl = null;
+    if (mediaUri) {
+      if (mediaUri.startsWith('http')) {
+        mediaUrl = mediaUri;
+      } else {
+        let fileBody: any = mediaUri;
+        if (mediaUri.startsWith('blob:')) {
+          const response = await fetch(mediaUri);
+          fileBody = await response.blob();
+        }
+        const ext = 'jpg';
+        const baseFolder = gymId ? gymId : 'global';
+        const fileName = `${baseFolder}/${storyId}_edit_${Date.now()}.${ext}`;
+        const formData = new FormData();
+        formData.append('file', fileBody);
+        formData.append('bucket', 'community-stories');
+        formData.append('path', fileName);
+        const response = await fetch('/api/upload-community', { method: 'POST', body: formData });
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Upload failed');
+        }
+        const { url } = await response.json();
+        mediaUrl = url;
+      }
+    }
+    const updateData: any = { updatedAt: new Date().toISOString() };
+    if (mediaUrl !== null) {
+      updateData.mediaUrl = mediaUrl;
+    }
+    const { error } = await supabase.from('gym_community_stories').update(updateData).eq('gymCommunityStoryId', storyId).eq('createdBy', userId);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('[storiesHelper] editStory Error:', error);
+    throw error;
+  }
 }

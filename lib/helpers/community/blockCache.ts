@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
+const supabase = createClient();
 
 // Helper function to fetch blocked user IDs
 export async function fetchBlockedUsers(userId: string): Promise<string[]> {

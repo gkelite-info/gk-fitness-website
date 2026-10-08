@@ -1,4 +1,5 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
+const supabase = createClient();
 
 export async function blockUser(blockerId: string, blockedId: string) {
   try {

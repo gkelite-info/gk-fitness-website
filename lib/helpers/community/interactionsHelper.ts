@@ -1,4 +1,5 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
+const supabase = createClient();
 import { fetchBlockedUsers } from './blockCache';
 
 export async function toggleLike(postId: string, userId: string) {
@@ -100,13 +101,40 @@ export async function fetchComments(postId: string, currentUserId: string, sortB
       query = query.not('authorId', 'in', `(${blockedUserIds.join(',')})`);
     }
 
-    const { data, error } = await query;
-    if (error) throw error;
+    const { data: comments, error: commentsError } = await query;
+    if (commentsError) throw commentsError;
 
-    return data.map((comment: any) => ({
-      ...comment,
-      users: Array.isArray(comment.users) ? comment.users[0] : comment.users
-    }));
+    if (!comments || comments.length === 0) return [];
+
+    const commentIds = comments.map((c: any) => c.gymCommunityCommentId);
+    
+    // Fetch likes separately
+    const { data: likesData, error: likesError } = await supabase
+      .from('gym_community_comment_likes')
+      .select('gymCommunityCommentId, likedBy')
+      .in('gymCommunityCommentId', commentIds)
+      .eq('is_deleted', false);
+
+    if (likesError) {
+      // If table doesn't exist or other error, just ignore likes for now
+      console.warn('Could not fetch comment likes:', likesError);
+    }
+
+    const likesByComment = (likesData || []).reduce((acc: any, like: any) => {
+      if (!acc[like.gymCommunityCommentId]) acc[like.gymCommunityCommentId] = [];
+      acc[like.gymCommunityCommentId].push(like);
+      return acc;
+    }, {});
+
+    return comments.map((comment: any) => {
+      const likes = likesByComment[comment.gymCommunityCommentId] || [];
+      return {
+        ...comment,
+        users: Array.isArray(comment.users) ? comment.users[0] : comment.users,
+        likesCount: likes.length,
+        isLikedByMe: likes.some((l: any) => l.likedBy === currentUserId)
+      };
+    });
   } catch (error) {
     console.error('[interactionsHelper] fetchComments Error:', error);
     throw error;
@@ -160,3 +188,53 @@ export async function deleteComment(commentId: string, userId: string, role?: st
     throw error;
   }
 }
+
+export async function editComment(commentId: string, content: string, userId: string) { try { const { error } = await supabase.from('gym_community_comments').update({ content, updatedAt: new Date().toISOString() }).eq('gymCommunityCommentId', commentId).eq('authorId', userId); if (error) throw error; return true; } catch (error) { console.error('editComment Error:', error); throw error; } }
+
+export async function toggleCommentLike(commentId: string, userId: string) {
+  try {
+    const { data: existingLike, error: fetchError } = await supabase
+      .from('gym_community_comment_likes')
+      .select('*')
+      .eq('gymCommunityCommentId', commentId)
+      .eq('likedBy', userId)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('[toggleCommentLike] fetch error:', fetchError);
+      throw fetchError;
+    }
+
+    if (existingLike) {
+      if (existingLike.is_deleted) {
+        const { error } = await supabase
+          .from('gym_community_comment_likes')
+          .update({ is_deleted: false, updatedAt: new Date().toISOString(), deletedAt: null })
+          .eq('gymCommunityCommentLikeId', existingLike.gymCommunityCommentLikeId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('gym_community_comment_likes')
+          .update({ is_deleted: true, deletedAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
+          .eq('gymCommunityCommentLikeId', existingLike.gymCommunityCommentLikeId);
+        if (error) throw error;
+      }
+    } else {
+      const { error } = await supabase
+        .from('gym_community_comment_likes')
+        .insert([{ 
+          gymCommunityCommentLikeId: crypto.randomUUID(), 
+          gymCommunityCommentId: commentId, 
+          likedBy: userId, 
+          createdAt: new Date().toISOString(), 
+          updatedAt: new Date().toISOString() 
+        }]);
+      if (error) throw error;
+    }
+    return true;
+  } catch (error) {
+    console.error('toggleCommentLike Error:', error);
+    throw error;
+  }
+}
+

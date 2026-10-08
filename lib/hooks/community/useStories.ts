@@ -7,7 +7,8 @@ import {
   fetchStoryViewers,
   toggleStoryLike,
   fetchStoryComments,
-  addStoryComment
+  addStoryComment,
+  editStory
 } from '@/lib/helpers/community/storiesHelper';
 
 export function useActiveStories(gymId: string | null, userId: string | null) {
@@ -111,5 +112,16 @@ export function useStoryViewers(storyId: string | null) {
       return await fetchStoryViewers(storyId);
     },
     enabled: !!storyId,
+  });
+}
+
+export function useEditStory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ gymId, storyId, userId, mediaUri }: { gymId: string, storyId: string, userId: string, mediaUri: string }) => 
+      editStory(gymId, storyId, userId, mediaUri),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['community-stories', variables.gymId] });
+    }
   });
 }

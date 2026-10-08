@@ -1,7 +1,8 @@
 // @ts-nocheck
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
+const supabase = createClient();
 // import * as FileSystem from 'expo-file-system/legacy';
-import { base64ToArrayBuffer } from '@/components/imageCompressor';
+// disabled import
 
 export interface CommunityPost {
   gymCommunityPostId: string;
@@ -14,6 +15,7 @@ export interface CommunityPost {
     name: string;
     role: string;
     profilePhoto?: string | null;
+    gender?: string | null;
   };
   likesCount: number;
   commentsCount: number;
@@ -42,7 +44,8 @@ export async function fetchCommunityPosts(gymId: string | null, currentUserId: s
       users: {
         name: post.author_name,
         role: post.author_role,
-        profilePhoto: post.author_photo
+        profilePhoto: post.author_photo,
+        gender: post.author_gender
       },
       likesCount: Number(post.likes_count) || 0,
       commentsCount: Number(post.comments_count) || 0,
@@ -68,23 +71,37 @@ export async function createCommunityPost(
     let imagePath = null;
 
     if (imageUri) {
-      const base64 = await FileSystem.readAsStringAsync(imageUri, { encoding: 'base64' });
-      const arrayBuffer = base64ToArrayBuffer(base64);
-      const ext = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
+      
+      let fileBody = imageUri;
+      if (imageUri.startsWith('blob:')) {
+        const response = await fetch(imageUri);
+        fileBody = await response.blob();
+      }
+
+      const ext = 'jpg';
       const baseFolder = gymId ? gymId : 'global';
       const fileName = `${baseFolder}/${postId}.${ext}`;
       
-      const { error: uploadError } = await supabase.storage
-        .from('community-posts')
-        .upload(fileName, arrayBuffer, { contentType: `image/${ext}` });
-        
-      if (uploadError) throw uploadError;
       
-      const { data: publicUrlData } = supabase.storage
-        .from('community-posts')
-        .getPublicUrl(fileName);
-        
-      imagePath = publicUrlData.publicUrl;
+      const formData = new FormData();
+      formData.append('file', fileBody);
+      formData.append('bucket', 'community-posts');
+      formData.append('path', fileName);
+      
+      const response = await fetch('/api/upload-community', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Upload failed');
+      }
+      
+      const { url } = await response.json();
+      imagePath = url;
+
+
     }
 
     const { data, error } = await supabase
@@ -130,6 +147,52 @@ export async function deleteCommunityPost(postId: string, userId: string, role?:
     return true;
   } catch (error) {
     console.error('[communityHelper] deleteCommunityPost Error:', error);
+    throw error;
+  }
+}
+export async function editCommunityPost(
+  postId: string, 
+  gymId: string | null, 
+  userId: string, 
+  caption: string, 
+  imageUri?: string | null
+) {
+  try {
+    let imagePath = undefined;
+    if (imageUri) {
+      if (imageUri.startsWith('http')) {
+        imagePath = imageUri;
+      } else {
+        let fileBody: any = imageUri;
+        if (imageUri.startsWith('blob:')) {
+          const response = await fetch(imageUri);
+          fileBody = await response.blob();
+        }
+        const ext = 'jpg';
+        const baseFolder = gymId ? gymId : 'global';
+        const fileName = `${baseFolder}/${postId}_edit_${Date.now()}.${ext}`;
+        const formData = new FormData();
+        formData.append('file', fileBody);
+        formData.append('bucket', 'community-posts');
+        formData.append('path', fileName);
+        const response = await fetch('/api/upload-community', { method: 'POST', body: formData });
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Upload failed');
+        }
+        const { url } = await response.json();
+        imagePath = url;
+      }
+    }
+    const updateData: any = { caption, updatedAt: new Date().toISOString() };
+    if (imagePath !== undefined) {
+      updateData.imagePath = imagePath;
+    }
+    const { error } = await supabase.from('gym_community_posts').update(updateData).eq('gymCommunityPostId', postId).eq('createdBy', userId);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('[communityHelper] editCommunityPost Error:', error);
     throw error;
   }
 }

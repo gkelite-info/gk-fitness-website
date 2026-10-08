@@ -7,16 +7,19 @@ import { Post } from "./mockData";
 import PostMediaGrid from "./PostMediaGrid";
 import ShareModal from "./ShareModal";
 import ConfirmationModal from "@/app/(screens)/components/reusable/ConfirmationModal";
+import Avatar from "@/app/(screens)/components/reusable/Avatar";
 
 type Props = {
   post: Post;
   onEdit?: (postId: string) => void;
   onDelete?: (postId: string) => void;
   onCommentClick?: (postId: string) => void;
+  onLike?: () => Promise<void>;
+  onBookmark?: () => Promise<void>;
   hideCommentsClick?: boolean;
 };
 
-export default function PostCard({ post, onEdit, onDelete, onCommentClick, hideCommentsClick }: Props) {
+export default function PostCard({ post, onEdit, onDelete, onCommentClick, onLike, onBookmark, hideCommentsClick }: Props) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
@@ -26,7 +29,16 @@ export default function PostCard({ post, onEdit, onDelete, onCommentClick, hideC
   const [isBookmarked, setIsBookmarked] = useState(post.isBookmarked || false);
   const [showShareModal, setShowShareModal] = useState(false);
 
-  const handleLike = () => {
+  const handleLike = async () => {
+    if (onLike) {
+      try {
+        await onLike();
+      } catch (e) {
+        console.error(e);
+        return; // Early return on error, do not update local state
+      }
+    }
+
     if (isLiked) {
       setLikesCount(prev => prev - 1);
       setIsLiked(false);
@@ -61,7 +73,16 @@ export default function PostCard({ post, onEdit, onDelete, onCommentClick, hideC
     }
   };
 
-  const handleBookmark = () => {
+  const handleBookmark = async () => {
+    if (onBookmark) {
+      try {
+        await onBookmark();
+      } catch (e) {
+        console.error(e);
+        return;
+      }
+    }
+
     const newState = !isBookmarked;
     setIsBookmarked(newState);
     if (newState) {
@@ -117,9 +138,12 @@ export default function PostCard({ post, onEdit, onDelete, onCommentClick, hideC
       {/* Post Header */}
       <div className="flex flex-row justify-between items-center w-full">
         <div className="flex flex-row items-center gap-3">
-          <div className="w-10 h-10 rounded-full border border-[#334155] overflow-hidden shrink-0">
-            <img src={post.author.avatar} alt={post.author.name} className="w-full h-full object-cover" />
-          </div>
+          <Avatar 
+            src={post.author.avatar} 
+            gender={post.author.gender} 
+            alt={post.author.name}
+            className="w-10 h-10 border border-[#334155]"
+          />
           
           <div className="flex flex-col items-start">
             <div className="flex flex-row items-center gap-2">
