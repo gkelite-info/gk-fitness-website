@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import CommunityClient from "./_components/CommunityClient";
+import CommunityClient from "../../owner/community/_components/CommunityClient";
 
 export const metadata = {
   title: "Community - GK-Gym Life",

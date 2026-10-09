@@ -1,11 +1,13 @@
 "use client";
 
-import { MagnifyingGlass, UsersThree, Bell, Gear, List } from "@phosphor-icons/react";
+import { MagnifyingGlass, UsersThree, Bell, SignOut, List } from "@phosphor-icons/react";
 import { useUser } from "@/app/context/UserContext";
 import Avatar from "../reusable/Avatar";
 import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
 import AnnouncementsModal from "@/app/(screens)/owner/(dashboard)/_components/AnnouncementsModal";
+import ConfirmationModal from "../reusable/ConfirmationModal";
+import toast from "react-hot-toast";
 
 interface TopHeaderProps {
   onOpenSidebar?: () => void;
@@ -17,6 +19,10 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
   const pathname = usePathname();
   const [isAnnouncementsModalOpen, setIsAnnouncementsModalOpen] = useState(false);
   const [hasUnreadAnnouncements, setHasUnreadAnnouncements] = useState(true);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  const rolePrefix = profile?.role === "superadmin" ? "/superadmin" : "/owner";
+  const communityRoute = `${rolePrefix}/community`;
 
   const formattedRole = profile?.role
     ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
@@ -76,32 +82,20 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
       </div>
 
       <div className="flex items-center gap-4 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
-        {/* <div className="relative flex-grow sm:flex-grow-0 w-full sm:w-[200px] md:w-[280px] lg:w-[320px]">
-          <MagnifyingGlass
-            size={14}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]"
-            weight="bold"
-          />
-          <input
-            type="text"
-            placeholder="Search members, payments, etc..."
-            className="w-full h-[38px] bg-[#15161C] border border-[#232631] rounded-xl pl-10 pr-4 font-['Nimbus_Sans'] text-[12px] text-white placeholder:text-[#94A3B8] focus:outline-none focus:border-[#D4FF32] transition-colors"
-          />
-        </div> */}
 
         <div className="flex items-center gap-2 flex-shrink-0">
           <button 
-            onClick={() => router.push('/owner/community')}
+            onClick={() => router.push(communityRoute)}
             className={`cursor-pointer w-10 h-10 flex items-center justify-center rounded-xl transition-all ${
-              pathname.startsWith('/owner/community')
+              pathname.startsWith(communityRoute)
                 ? "bg-[rgba(212,255,50,0.1)] border border-[#D4FF32] shadow-[0_0_16px_rgba(212,255,50,0.2),inset_0_0_8px_rgba(212,255,50,0.2)]"
                 : "bg-[#15161C] border border-[#232631] hover:bg-[#1f212a]"
             }`}
           >
             <UsersThree 
               size={16} 
-              className={pathname.startsWith('/owner/community') ? "text-[#D4FF32]" : "text-[#CBD5E1]"} 
-              weight={pathname.startsWith('/owner/community') ? "fill" : "regular"} 
+              className={pathname.startsWith(communityRoute) ? "text-[#D4FF32]" : "text-[#CBD5E1]"} 
+              weight={pathname.startsWith(communityRoute) ? "fill" : "regular"} 
             />
           </button>
           <button
@@ -116,8 +110,11 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
               <div className="absolute right-[9px] top-[9px] w-2 h-2 bg-[#F43F5E] rounded-full shadow-[0_0_0_2px_#15161C]" />
             )}
           </button>
-          <button className="cursor-pointer w-10 h-10 flex items-center justify-center bg-[#15161C] border border-[#232631] rounded-xl hover:bg-[#1f212a] transition-colors">
-            <Gear size={16} className="text-[#CBD5E1]" weight="regular" />
+          <button 
+            onClick={() => setIsLogoutModalOpen(true)}
+            className="cursor-pointer w-10 h-10 flex items-center justify-center bg-[#15161C] border border-[#232631] rounded-xl hover:bg-red-500/10 hover:border-red-500/30 transition-colors group"
+          >
+            <SignOut size={16} className="text-[#EF4444] group-hover:text-red-400 transition-colors" weight="bold" />
           </button>
         </div>
       </div>
@@ -125,6 +122,21 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
       {isAnnouncementsModalOpen && (
         <AnnouncementsModal onClose={() => setIsAnnouncementsModalOpen(false)} />
       )}
+
+      <ConfirmationModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={() => {
+          setIsLogoutModalOpen(false);
+          toast.success("Logged out successfully");
+          router.push("/login");
+        }}
+        title="Confirm Logout"
+        message="Are you sure you want to log out of your account?"
+        confirmText="Logout"
+        cancelText="Cancel"
+        isDestructive={true}
+      />
     </header>
   );
 }

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Buildings, Users, ShieldCheck, Barbell } from "@phosphor-icons/react";
+import { House, Buildings, Users, ShieldCheck, Barbell, Receipt, Star } from "@phosphor-icons/react";
 import LogoutButton from "../../reusable/LogoutButton";
 
 const navLinks = [
   { name: "Dashboard", href: "/superadmin", icon: House },
   { name: "Gyms", href: "/superadmin/gyms", icon: Buildings },
   { name: "Users", href: "/superadmin/users", icon: Users },
+  { name: "Plans & Subscriptions", href: "/superadmin/plans", icon: Star },
   { name: "Settings", href: "/superadmin/settings", icon: ShieldCheck },
 ];
 
