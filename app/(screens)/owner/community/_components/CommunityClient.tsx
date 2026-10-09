@@ -10,6 +10,7 @@ import CreatePostModal from "./CreatePostModal";
 import AddStoryModal from "./AddStoryModal";
 import ViewStoryModal from "./ViewStoryModal";
 import PostCommentsModal from "./PostCommentsModal";
+import CommunitySkeleton from "./CommunitySkeleton";
 import { useUser } from "@/app/context/UserContext";
 import { useOwnerGymId } from "@/lib/hooks/auth/useOwnerGymId";
 import { useCommunityFeed, useCreatePost, useDeletePost, useEditPost } from "@/lib/hooks/community/useCommunityFeed";
@@ -214,6 +215,10 @@ export default function CommunityClient() {
     }))
   })));
 
+  if (isFeedLoading && mappedPosts.length === 0) {
+    return <CommunitySkeleton />;
+  }
+
   return (
     <div
       ref={scrollContainerRef}
@@ -268,16 +273,10 @@ export default function CommunityClient() {
         </div>
 
         <div className="flex flex-col items-start gap-6 w-full px-4 sm:px-6 lg:px-8 pt-4">
-          {isFeedLoading && mappedPosts.length === 0 ? (
-            <div className="flex flex-col gap-6 w-full">
-              <div className="w-full h-64 bg-[#161920] rounded-2xl border border-[#232730] animate-pulse"></div>
-              <div className="w-full h-64 bg-[#161920] rounded-2xl border border-[#232730] animate-pulse"></div>
-            </div>
-          ) : (
-            mappedPosts.map((post: any) => (
-              <PostCard
-                key={post.id}
-                post={post}
+          {mappedPosts.map((post: any) => (
+            <PostCard
+              key={post.id}
+              post={post}
                 onEdit={(postId) => {
                   const found = mappedPosts.find((p: any) => p.id === postId);
                   if (found) {
@@ -308,11 +307,10 @@ export default function CommunityClient() {
                   }
                 }}
               />
-            ))
-          )}
+            ))}
         </div>
 
-        {isFetchingNextPage && (
+        {isFetchingNextPage && mappedPosts.length > 0 && (
           <div className="flex flex-col items-center justify-center w-full py-8 gap-3">
             <CircleNotch size={32} weight="bold" className="text-[#C8FF00] animate-spin" />
             <span className="font-['Nimbus_Sans'] font-medium text-[14px] text-[#94A3B8]">

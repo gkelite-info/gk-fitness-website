@@ -176,7 +176,7 @@ export default function LoginPage() {
                   <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wide">
                     Password
                   </label>
-                  <a href="#" className="cursor-pointer text-xs font-semibold text-[#D4FF32] hover:underline">
+                  <a href="#" tabIndex={-1} className="cursor-pointer text-xs font-semibold text-[#D4FF32] hover:underline">
                     Forgot password?
                   </a>
                 </div>
@@ -197,6 +197,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
                     className="cursor-pointer absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-white transition-colors flex items-center justify-center p-1"
                   >
                     {showPassword ? <EyeSlash size={20} weight="fill" /> : <Eye size={20} weight="fill" />}
