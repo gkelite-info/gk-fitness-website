@@ -17,11 +17,11 @@ export default function LandingStickyMobileBar() {
         onClick={scrollToAudit}
         className="flex-1 h-12 rounded-xl bg-[#D4FF32] hover:bg-[#bde62b] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-center shadow-lg shadow-[#D4FF32]/10 active:scale-[0.98] cursor-pointer"
       >
-        Request my free audit
+        Request For Demo
       </button>
 
       <a
-        href="https://wa.me/919090639005?text=Hi,%20I%20want%20to%20know%20more%20about%20GK%20Fitness%20Powered%20Gyms"
+        href="https://wa.me/919090639005?text=Hi,%20I%20want%20to%20know%20more%20about%20GK-%20Gym%20Life%20Powered%20Gyms"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
@@ -32,7 +32,7 @@ export default function LandingStickyMobileBar() {
 
       <a
         href="tel:+919090639005"
-        aria-label="Call GK Fitness"
+        aria-label="Call GK- Gym Life"
         className="w-12 h-12 rounded-xl bg-[#15161C] border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors shrink-0"
       >
         <Phone size={20} weight="bold" />

@@ -1,45 +1,54 @@
+
 import { 
-  Fingerprint, 
-  Cpu, 
-  ArrowsClockwise, 
-  Browsers, 
-  ShieldCheck, 
+  User, 
+  Buildings, 
+  Users, 
+  Barbell, 
+  Globe, 
   Sparkle 
 } from "@phosphor-icons/react/dist/ssr";
 
 export default function LandingSystemDesign() {
-  const architecturalLayers = [
+  const roles = [
     {
       step: "01",
-      title: "Edge Hardware Layer",
-      subtitle: "Biometrics & Turnstiles",
-      desc: "Connects directly to fingerprint and facial recognition scanners via TCP/IP protocols. Enforces instant gate authorization and morning/evening shift batch restrictions in under 400ms.",
-      badges: ["0.4s response time", "Anti-passback protection", "Offline mode sync"],
-      icon: Fingerprint,
+      title: "Gym Owner",
+      subtitle: "Operations & Analytics",
+      desc: "Get real-time insights into daily revenue, active member count, trainer performance, and full operational control from anywhere.",
+      badges: ["Revenue Analytics", "Staff Management", "Growth Metrics"],
+      icon: Buildings,
     },
     {
       step: "02",
-      title: "Event-Driven Automation Engine",
-      subtitle: "WhatsApp, Alerts & Triggers",
-      desc: "Background cron schedulers continuously monitor member expiration thresholds, daily attendance streaks, and follow-up deadlines to dispatch automated WhatsApp reminders and payment links.",
-      badges: ["Daily threshold scanning", "Automated WhatsApp API", "Instant payment slips"],
-      icon: ArrowsClockwise,
+      title: "Gym Customer",
+      subtitle: "Member Portal & Access",
+      desc: "Track daily workouts, follow customized nutrition meal plans, check membership status, and check in effortlessly with QR codes.",
+      badges: ["Workout Tracking", "Diet Plans", "QR Check-in"],
+      icon: Users,
     },
     {
       step: "03",
-      title: "Fitness & Nutrition Engine",
-      subtitle: "Workouts, Videos & Diets",
-      desc: "A proprietary content and coaching engine allowing trainers to structure exercise splits with exercise video demonstration guides and personalized macro nutrition meal plans.",
-      badges: ["Exercise video library", "Macro nutrition planner", "Client progress tracker"],
-      icon: Cpu,
+      title: "Gym Trainer",
+      subtitle: "Client Management",
+      desc: "Manage assigned clients, schedule floor training sessions, update meal plans dynamically, and track attendance and body transformations.",
+      badges: ["Client Roster", "Session Scheduling", "Result Tracking"],
+      icon: Barbell,
     },
     {
       step: "04",
-      title: "Multi-Role Experience Layer",
-      subtitle: "5 Dedicated Web Portals",
-      desc: "Strict role-based interfaces with isolated permissions for Gym Owners, Floor Trainers, Global Online Coaches, Gym Members/Athletes, and Superadmin Fleet Managers.",
-      badges: ["Isolated permission trees", "Mobile responsive PWA", "Bank-grade data encryption"],
-      icon: Browsers,
+      title: "Individual Customer",
+      subtitle: "Personal Fitness App",
+      desc: "Access customized workout routines, personalized nutrition diet charts, and track daily progress directly from their smartphone.",
+      badges: ["Workout Tracker", "Diet Charts", "Progress Analytics"],
+      icon: User,
+    },
+    {
+      step: "05",
+      title: "Global Trainer",
+      subtitle: "Online Coaching Hub",
+      desc: "Expand reach beyond the physical gym by managing remote clients, providing virtual guidance, and conducting online classes globally.",
+      badges: ["Remote Coaching", "Virtual Classes", "Global Reach"],
+      icon: Globe,
     },
   ];
 
@@ -49,18 +58,18 @@ export default function LandingSystemDesign() {
         <div className="text-center max-w-3xl mx-auto mb-8">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/10 text-xs font-bold text-[#D4FF32] uppercase tracking-wider mb-4">
             <Sparkle size={14} weight="fill" />
-            System Architecture
+            Ecosystem Roles
           </div>
           <h2 className="text-3xl sm:text-5xl font-black uppercase italic tracking-tight leading-[1.1]">
-            HOW GK FITNESS IS <span className="text-[#D4FF32] not-italic">DESIGNED.</span>
+            HOW GK- GYM LIFE IS <span className="text-[#D4FF32] not-italic">DESIGNED.</span>
           </h2>
           <p className="mt-4 text-sm sm:text-base text-[#94A3B8] leading-relaxed">
-            Built from the ground up as a closed-loop operating system where hardware, software, and human operations synchronize in real time.
+            Built from the ground up as a closed-loop operating system where everyone — from owners to customers — gets a dedicated experience.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-          {architecturalLayers.map((layer) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+          {roles.map((layer) => {
             const Icon = layer.icon;
             return (
               <div
@@ -75,7 +84,7 @@ export default function LandingSystemDesign() {
                       </div>
                       <div>
                         <span className="text-[11px] font-bold text-[#D4FF32] uppercase tracking-wider block">
-                          Layer {layer.step} • {layer.subtitle}
+                          Role {layer.step} • {layer.subtitle}
                         </span>
                         <h3 className="text-lg sm:text-xl font-bold text-white mt-0.5">
                           {layer.title}

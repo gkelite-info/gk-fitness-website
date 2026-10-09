@@ -8,9 +8,14 @@ import { submitConsultationRequest, ConsultationFormData } from "@/app/actions/c
 interface LandingConsultationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  selectedRole?: string;
 }
 
-export default function LandingConsultationModal({ isOpen, onClose }: LandingConsultationModalProps) {
+export default function LandingConsultationModal({ 
+  isOpen, 
+  onClose,
+  selectedRole = "Gym Owner"
+}: LandingConsultationModalProps) {
   const [formData, setFormData] = useState<ConsultationFormData>({
     fullName: "",
     gymName: "",
@@ -33,14 +38,17 @@ export default function LandingConsultationModal({ isOpen, onClose }: LandingCon
     }
 
     setLoading(true);
-    const res = await submitConsultationRequest(formData);
+    const res = await submitConsultationRequest({
+      ...formData,
+      notes: `Role: ${selectedRole}${formData.notes ? ` - ${formData.notes}` : ""}`,
+    });
     setLoading(false);
 
     if (res.success) {
-      toast.success(res.message || "Consultation request received!");
+      toast.success(res.message || "Demo request received!");
       setSubmitted(true);
     } else {
-      toast.error(res.error || "Failed to submit request.");
+      toast.error(res.error || "Failed to submit demo request.");
     }
   };
 
@@ -61,38 +69,45 @@ export default function LandingConsultationModal({ isOpen, onClose }: LandingCon
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
       <div className="relative w-full max-w-lg bg-[#14151A] border border-[#232631] rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between p-5 sm:p-6 border-b border-[#232631] shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#D4FF32]/10 border border-[#D4FF32]/30 flex items-center justify-center text-[#D4FF32]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#D4FF32]/10 border border-[#D4FF32]/30 flex items-center justify-center text-[#D4FF32]">
               <Sparkle size={18} weight="fill" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-white">Book Free Consultation</h3>
-              <p className="text-xs text-[#94A3B8]">Transform your gym with GK Fitness</p>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-bold text-white">Book Your Demo</h3>
+                {selectedRole && (
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#D4FF32]/15 text-[#D4FF32] border border-[#D4FF32]/25">
+                    {selectedRole}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[#94A3B8] mt-0.5">Experience how GK- Gym Life powers your ecosystem</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleResetAndClose}
-            className="p-1.5 rounded-lg text-[#94A3B8] hover:text-white hover:bg-[#1E2028] transition-colors"
+            className="p-1.5 rounded-lg text-[#94A3B8] hover:text-white hover:bg-[#1E2028] transition-colors cursor-pointer"
           >
             <X size={20} weight="bold" />
           </button>
         </div>
 
-        <div className="p-5 sm:p-6 overflow-y-auto">
+        <div className="p-5 sm:p-6 overflow-y-auto scrollbar-themed">
           {submitted ? (
             <div className="text-center py-8 flex flex-col items-center">
               <div className="w-16 h-16 rounded-full bg-[#D4FF32]/10 border border-[#D4FF32]/30 flex items-center justify-center text-[#D4FF32] mb-4">
                 <CheckCircle size={36} weight="fill" />
               </div>
-              <h4 className="text-xl font-bold text-white">Request Received!</h4>
+              <h4 className="text-xl font-bold text-white">Demo Request Received!</h4>
               <p className="text-sm text-[#94A3B8] mt-2 max-w-sm">
-                Thank you for your interest. A GK Fitness operations specialist will get in touch with you shortly to schedule your live walkthrough.
+                Thank you for your interest. A GK- Gym Life specialist will connect with you today for a personalized walkthrough tailored to your needs.
               </p>
               <button
                 type="button"
                 onClick={handleResetAndClose}
-                className="mt-6 h-11 px-6 rounded-xl bg-[#D4FF32] text-black font-bold text-sm cursor-pointer"
+                className="mt-6 h-11 px-6 rounded-xl bg-[#D4FF32] text-black font-bold text-sm cursor-pointer hover:bg-[#C2EF2B] transition-colors"
               >
                 Done
               </button>
@@ -116,7 +131,7 @@ export default function LandingConsultationModal({ isOpen, onClose }: LandingCon
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5">
-                    Gym / Fitness Club Name *
+                    Gym / Club / Business Name *
                   </label>
                   <input
                     type="text"
@@ -157,7 +172,7 @@ export default function LandingConsultationModal({ isOpen, onClose }: LandingCon
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5">
-                    Current Active Members
+                    Current Scale / Member Count
                   </label>
                   <select
                     value={formData.memberCount}
@@ -174,11 +189,11 @@ export default function LandingConsultationModal({ isOpen, onClose }: LandingCon
 
               <div>
                 <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5">
-                  Specific Challenges (Optional)
+                  Specific Requirements or Questions (Optional)
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="e.g. We struggle with proxy attendance and lost renewal follow-ups..."
+                  placeholder="e.g. Interested in trainer assignment, manual renewals, and member diet tracking..."
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   className="w-full p-3 rounded-xl bg-[#0C0D10] border border-[#232631] text-white text-sm focus:border-[#D4FF32] outline-none transition-colors resize-none"
@@ -188,7 +203,7 @@ export default function LandingConsultationModal({ isOpen, onClose }: LandingCon
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 rounded-xl bg-[#D4FF32] hover:bg-[#C2EF2B] text-black font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(212,255,50,0.3)] active:scale-[0.98] cursor-pointer disabled:opacity-60"
+                className="w-full h-12 rounded-xl bg-[#D4FF32] hover:bg-[#C2EF2B] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(212,255,50,0.3)] active:scale-[0.98] cursor-pointer disabled:opacity-60"
               >
                 {loading ? (
                   <>
@@ -196,7 +211,7 @@ export default function LandingConsultationModal({ isOpen, onClose }: LandingCon
                     Submitting Request...
                   </>
                 ) : (
-                  "Confirm Free Consultation"
+                  "Request For Demo"
                 )}
               </button>
             </form>

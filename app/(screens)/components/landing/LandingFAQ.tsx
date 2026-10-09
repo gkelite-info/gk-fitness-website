@@ -8,8 +8,8 @@ export default function LandingFAQ() {
 
   const faqs = [
     {
-      question: "Does GK Fitness work with standard biometric fingerprint and face scanners?",
-      answer: "Yes. GK Fitness natively connects with biometric controllers and turnstiles. The system enforces active membership validity and morning/evening shift rules in real time, automatically deauthorizing gate access when a plan expires.",
+      question: "Does GK- Gym Life work with standard biometric fingerprint and face scanners?",
+      answer: "Yes. GK- Gym Life natively connects with biometric controllers and turnstiles. The system enforces active membership validity and morning/evening shift rules in real time, automatically deauthorizing gate access when a plan expires.",
     },
     {
       question: "How do the automated WhatsApp and SMS renewal alerts function?",
@@ -40,7 +40,7 @@ export default function LandingFAQ() {
             Frequently Asked Questions
           </h2>
           <p className="mt-3 text-sm text-[#94A3B8]">
-            Everything you need to know about partnering with GK Fitness Powered Gyms.
+            Everything you need to know about partnering with GK- Gym Life Powered Gyms.
           </p>
         </div>
 

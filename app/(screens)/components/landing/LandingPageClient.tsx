@@ -9,7 +9,7 @@ import LandingPillarsCarousel from "./LandingPillarsCarousel";
 import LandingSystemDesign from "./LandingSystemDesign";
 import LandingKeyMoments from "./LandingKeyMoments";
 import LandingRoiCalculator from "./LandingRoiCalculator";
-import LandingFAQ from "./LandingFAQ";
+import LandingReviews from "./LandingReviews";
 import LandingFooter from "./LandingFooter";
 import LandingStickyMobileBar from "./LandingStickyMobileBar";
 
@@ -33,7 +33,7 @@ export default function LandingPageClient() {
         <LandingSystemDesign />
         <LandingKeyMoments />
         <LandingRoiCalculator onOpenConsultation={scrollToAudit} />
-        <LandingFAQ />
+        <LandingReviews />
       </main>
       <LandingFooter />
       <LandingStickyMobileBar />
