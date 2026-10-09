@@ -2,12 +2,16 @@ import Image from "next/image";
 
 export default function LandingGymWall() {
   const gymShots = [
-    { src: "/images/landing/hero-biometric.jpg", label: "GK Elite Hub · Delhi NCR" },
-    { src: "/images/landing/owner-dashboard.jpg", label: "GK Performance · Sector 16" },
-    { src: "/images/gym-hero.jpg", label: "GK Iron Forge · Indirapuram" },
-    { src: "/images/landing/trainer-session.jpg", label: "GK Studio · Dwarka" },
-    { src: "/images/landing/member-app.jpg", label: "GK Strength Lab · Noida" },
-    { src: "/images/landing/global-trainer.jpg", label: "GK Virtual Arena · Remote" },
+    { src: "/images/landing_page/Neon Gym Reception Enquiries.png", label: "Front Desk · Lead Inquiries & Walk-ins" },
+    { src: "/images/landing_page/Fitlevel Gym Check-In Experience.png", label: "Turnstile Gate · Biometric & QR Check-in" },
+    { src: "/images/landing_page/Push Day_ Stronger Than Yesterday.png", label: "Training Floor · Workout Splits & Coaching" },
+    { src: "/images/landing_page/Weekly Meal Planner at the Gym.png", label: "Nutrition Hub · Custom Member Meal Plans" },
+    { src: "/images/landing_page/Gym Manager Reviewing Financial Dashboard.png", label: "Analytics Hub · Live Revenue & Billing Dash" },
+    { src: "/images/landing_page/Gym Reception Follow-Up Conversation.png", label: "Front Counter · WhatsApp Automated Follow-ups" },
+    { src: "/images/landing_page/Gym Owner Reviewing Expenses.png", label: "Owner Portal · Expense & Cash Flow Audits" },
+    { src: "/images/landing_page/Gym Staff Inspecting Equipment.png", label: "Floor Audit · Equipment & Maintenance Checks" },
+    { src: "/images/landing_page/Gym Announcements in Action.png", label: "Community · Live Broadcasts & Announcements" },
+    { src: "/images/landing_page/Post-Workout Performance Dashboard.png", label: "Member App · Attendance & Milestone Tracker" },
   ];
 
   const duplicatedShots = [...gymShots, ...gymShots];
@@ -22,14 +26,10 @@ export default function LandingGymWall() {
           >
             <Image
               src={gym.src}
-              alt={gym.label}
+              alt="Gym Life Operational Shot"
               fill
-              className="object-cover brightness-90 group-hover:scale-105 transition-transform duration-500"
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-            <span className="absolute bottom-2 left-2.5 max-w-[calc(100%-20px)] truncate rounded bg-black/75 backdrop-blur-sm px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-white/95 border border-white/10">
-              {gym.label}
-            </span>
           </div>
         ))}
       </div>

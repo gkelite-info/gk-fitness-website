@@ -37,7 +37,7 @@ export default function LandingChaosVsControl() {
             </span>
           </h2>
           <p className="mt-4 text-sm sm:text-base text-[#94A3B8] max-w-2xl mx-auto">
-            Compare traditional gym chaos against the streamlined, automated power of the GK Fitness ecosystem.
+            Compare traditional gym chaos against the streamlined, automated power of the GK- Gym Life ecosystem.
           </p>
         </div>
 

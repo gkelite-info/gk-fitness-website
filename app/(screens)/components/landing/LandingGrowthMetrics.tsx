@@ -43,7 +43,7 @@ export default function LandingGrowthMetrics({ onOpenConsultation }: LandingGrow
             Tangible ROI
           </span>
           <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight mt-4">
-            Proven Results From Gyms Operating On GK Fitness
+            Proven Results From Gyms Operating On GK- Gym Life
           </h2>
           <p className="mt-4 text-sm sm:text-base text-[#94A3B8]">
             Built by gym operators for gym operators. The numbers speak for themselves.
@@ -78,7 +78,7 @@ export default function LandingGrowthMetrics({ onOpenConsultation }: LandingGrow
         <div className="mt-14 rounded-2xl border border-[#D4FF32]/30 p-8 sm:p-12 text-center relative overflow-hidden shadow-[0_0_40px_rgba(212,255,50,0.08)]">
           <Image
             src="/images/gym-hero.jpg"
-            alt="GK Fitness Gym Interior"
+            alt="GK- Gym Life Gym Interior"
             fill
             className="object-cover brightness-[0.25]"
           />
