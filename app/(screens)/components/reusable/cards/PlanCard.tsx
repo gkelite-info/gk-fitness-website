@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Check, Circle, CurrencyInr, Trash, Eye, PencilSimple } from "@phosphor-icons/react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import ConfirmationModal from "../ConfirmationModal";
+import { useDeleteSubscription } from "@/lib/hooks/superadmin/subscriptions/subscriptions";
 
 export interface PlanCardProps {
   id: string;
@@ -27,6 +28,7 @@ export default function PlanCard({
 }: PlanCardProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const deleteMutation = useDeleteSubscription();
 
   let bgClass = "bg-[#111722]";
   let borderClass = "border-[#1B2533]";
@@ -58,20 +60,7 @@ export default function PlanCard({
     badgeText = "text-[#C084FC]";
   }
 
-  const [localStatus, setLocalStatus] = useState(status);
-  const [isDeleted, setIsDeleted] = useState(false);
-
-  useEffect(() => {
-    const savedStatus = localStorage.getItem(`mock_plan_status_${id}`);
-    if (savedStatus) setLocalStatus(savedStatus);
-    
-    const savedDeleted = localStorage.getItem(`mock_plan_deleted_${id}`);
-    if (savedDeleted === 'true') setIsDeleted(true);
-  }, [id]);
-
-  if (isDeleted) return null;
-
-  const isInactive = localStatus.toLowerCase() === "inactive" || localStatus.toLowerCase() === "deactivated";
+  const isInactive = status.toLowerCase() === "inactive" || status.toLowerCase() === "deactivated";
   const statusBgStyle = isInactive ? "bg-red-500/10" : "bg-[#13281B]";
   const statusBorderStyle = isInactive ? "border-red-500/20" : "border-[#1E462D]";
   const statusDotColor = isInactive ? "text-red-500" : "text-[#4ADE80]";
@@ -79,12 +68,17 @@ export default function PlanCard({
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsDeleting(false);
-    setIsDeleteModalOpen(false);
-    setIsDeleted(true);
-    localStorage.setItem(`mock_plan_deleted_${id}`, 'true');
-    toast.success("Plan deleted successfully", { id: `delete-plan-${id}` });
+    try {
+      console.log("[PlanCard] Deleting subscription plan:", id);
+      await deleteMutation.mutateAsync(id);
+      toast.success("Plan deleted successfully", { id: `delete-plan-${id}` });
+    } catch (err) {
+      console.error("[PlanCard] Failed to delete plan:", err);
+      toast.error("Failed to delete plan");
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+    }
   };
 
   return (
@@ -97,7 +91,7 @@ export default function PlanCard({
             <h3 className="text-[15px] sm:text-[16px] font-bold text-white break-words">{name}</h3>
             <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full ${statusBgStyle} border ${statusBorderStyle} shrink-0`}>
               <Circle size={5} weight="fill" className={statusDotColor} />
-              <span className={`text-[9px] font-medium ${statusTextColor} uppercase tracking-wider`}>{localStatus}</span>
+              <span className={`text-[9px] font-medium ${statusTextColor} uppercase tracking-wider`}>{status}</span>
             </div>
           </div>
 
