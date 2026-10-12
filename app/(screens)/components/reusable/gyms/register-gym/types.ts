@@ -101,4 +101,4 @@ export function getMockGymEditData(gymId: string): GymFormData {
     logoUrl: p.logo,
     qrCodeGenerated: true,
   };
-}
+} 
