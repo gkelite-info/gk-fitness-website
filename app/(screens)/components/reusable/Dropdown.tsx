@@ -19,6 +19,7 @@ interface DropdownProps {
   triggerClassName?: string;
   multiSelect?: boolean;
   icon?: React.ReactNode;
+  noTruncate?: boolean;
 }
 
 export default function Dropdown({
@@ -31,6 +32,7 @@ export default function Dropdown({
   triggerClassName,
   multiSelect = false,
   icon,
+  noTruncate = false,
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [openUpwards, setOpenUpwards] = useState(false);
@@ -122,9 +124,9 @@ export default function Dropdown({
       >
         {icon && <div className="mr-1.5 flex shrink-0 items-center text-[#9CA3AF] group-hover:text-[#D1D5DB] transition-colors">{icon}</div>}
         <span
-          className={`flex-1 text-left font-sans font-normal text-xs leading-4 truncate ${
-            hasSelection ? "text-[#D1D5DB]" : "text-[#6B7280]"
-          }`}
+          className={`flex-1 text-left font-sans text-xs sm:text-sm leading-4 ${
+            noTruncate ? "whitespace-nowrap" : "truncate"
+          } ${hasSelection ? "text-[#D1D5DB]" : "text-[#6B7280]"}`}
         >
           {getDisplayText()}
         </span>
@@ -145,7 +147,9 @@ export default function Dropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: openUpwards ? 5 : -5, scale: 0.98 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className={`absolute left-0 w-full z-50 bg-[#1A2029] border border-[#303744] shadow-xl rounded-lg overflow-x-hidden flex flex-col py-1 scrollbar-themed ${
+            className={`absolute left-0 ${
+              noTruncate ? "min-w-full w-max max-w-[340px]" : "w-full"
+            } z-50 bg-[#1A2029] border border-[#303744] shadow-xl rounded-lg overflow-x-hidden flex flex-col py-1 scrollbar-themed ${
               openUpwards ? "bottom-full mb-1" : "top-full mt-1"
             }`}
             style={{ maxHeight: "250px", overflowY: "auto" }}
@@ -175,7 +179,7 @@ export default function Dropdown({
                       )}
                     </div>
                   )}
-                  <span className={`truncate flex-1 ${multiSelect && isSelected ? "text-white font-medium" : ""}`}>
+                  <span className={`${noTruncate ? "whitespace-nowrap" : "truncate"} flex-1 ${multiSelect && isSelected ? "text-white font-medium" : ""}`}>
                     {option.label}
                   </span>
                 </button>
