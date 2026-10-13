@@ -1,13 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { X, Sparkle, CircleNotch, CheckCircle } from "@phosphor-icons/react";
+import { useState, useEffect } from "react";
+import { X, Sparkle, CircleNotch, ArrowRight, CheckCircle } from "@phosphor-icons/react";
 import toast from "react-hot-toast";
-import { submitConsultationRequest, ConsultationFormData } from "@/app/actions/consultation";
+import { submitConsultationRequest, ConsultationRole } from "@/app/actions/consultation";
+import DemoBookingFields from "@/app/(screens)/components/reusable/DemoBookingFields";
+import {
+  capitalizeWords,
+  sanitizeIndianMobile,
+  validateField,
+  validateDemoForm,
+  DemoFormErrors,
+  DemoFormValues,
+} from "@/lib/validations/demoValidation";
 
 interface LandingConsultationModalProps {
   isOpen: boolean;
   onClose: () => void;
+<<<<<<< Updated upstream
 }
 
 export default function LandingConsultationModal({ isOpen, onClose }: LandingConsultationModalProps) {
@@ -19,21 +29,112 @@ export default function LandingConsultationModal({ isOpen, onClose }: LandingCon
     memberCount: "100 - 300",
     notes: "",
   });
+=======
+  selectedRole?: string;
+  subscriptionPlanId?: string | null;
+}
+
+export default function LandingConsultationModal({ 
+  isOpen, 
+  onClose,
+  selectedRole = "Gym Owner",
+  subscriptionPlanId = null,
+}: LandingConsultationModalProps) {
+  const [role, setRole] = useState<ConsultationRole>("owner");
+  const [name, setName] = useState("");
+  const [gymName, setGymName] = useState("");
+  const [city, setCity] = useState("");
+  const [phone, setPhone] = useState("");
+  const [agreeContact, setAgreeContact] = useState(true);
+  const [agreeMeta, setAgreeMeta] = useState(false);
+>>>>>>> Stashed changes
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState<DemoFormErrors>({});
+  const [touched, setTouched] = useState<Partial<Record<keyof DemoFormValues, boolean>>>({});
+
+  useEffect(() => {
+    if (selectedRole) {
+      const lower = selectedRole.toLowerCase();
+      if (lower.includes("customer")) setRole("customer");
+      else if (lower.includes("trainer")) setRole("trainer");
+      else setRole("owner");
+    }
+  }, [selectedRole]);
 
   if (!isOpen) return null;
+
+  const handleBlur = (field: keyof DemoFormValues) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const val = field === "name" ? name : field === "gymName" ? gymName : field === "city" ? city : field === "phone" ? phone : agreeContact;
+    const err = validateField(field, val);
+    setErrors((prev) => ({ ...prev, [field]: err || undefined }));
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const sanitized = sanitizeIndianMobile(e.target.value);
+    setPhone(sanitized);
+    if (touched.phone) {
+      const err = validateField("phone", sanitized);
+      setErrors((prev) => ({ ...prev, phone: err || undefined }));
+    }
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = capitalizeWords(e.target.value);
+    setName(formatted);
+    if (touched.name) {
+      const err = validateField("name", formatted);
+      setErrors((prev) => ({ ...prev, name: err || undefined }));
+    }
+  };
+
+  const handleGymNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = capitalizeWords(e.target.value);
+    setGymName(formatted);
+    if (touched.gymName) {
+      const err = validateField("gymName", formatted);
+      setErrors((prev) => ({ ...prev, gymName: err || undefined }));
+    }
+  };
+
+  const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = capitalizeWords(e.target.value);
+    setCity(formatted);
+    if (touched.city) {
+      const err = validateField("city", formatted);
+      setErrors((prev) => ({ ...prev, city: err || undefined }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.fullName.trim() || !formData.gymName.trim() || !formData.phone.trim()) {
-      toast.error("Please fill in your name, gym name, and phone number.");
+    const formErrors = validateDemoForm({ name, gymName, city, phone, agreeContact });
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
+      setTouched({ name: true, gymName: true, city: true, phone: true, agreeContact: true });
+      const firstErr = Object.values(formErrors)[0];
+      if (firstErr) toast.error(firstErr);
       return;
     }
 
     setLoading(true);
+<<<<<<< Updated upstream
     const res = await submitConsultationRequest(formData);
+=======
+    const res = await submitConsultationRequest({
+      fullName: name.trim(),
+      gymName: gymName.trim(),
+      phone,
+      city: city.trim(),
+      role,
+      agreeContact,
+      agreeMeta,
+      subscriptionPlanId,
+      notes: selectedRole ? `Plan: ${selectedRole} | Role: ${role}` : `Role: ${role}`,
+    });
+>>>>>>> Stashed changes
     setLoading(false);
 
     if (res.success) {
@@ -46,14 +147,15 @@ export default function LandingConsultationModal({ isOpen, onClose }: LandingCon
 
   const handleResetAndClose = () => {
     setSubmitted(false);
-    setFormData({
-      fullName: "",
-      gymName: "",
-      phone: "",
-      city: "",
-      memberCount: "100 - 300",
-      notes: "",
-    });
+    setName("");
+    setGymName("");
+    setCity("");
+    setPhone("");
+    setRole("owner");
+    setAgreeContact(true);
+    setAgreeMeta(false);
+    setErrors({});
+    setTouched({});
     onClose();
   };
 
@@ -66,14 +168,32 @@ export default function LandingConsultationModal({ isOpen, onClose }: LandingCon
               <Sparkle size={18} weight="fill" />
             </div>
             <div>
+<<<<<<< Updated upstream
               <h3 className="text-base sm:text-lg font-bold text-white">Book Free Consultation</h3>
               <p className="text-xs text-[#94A3B8]">Transform your gym with GK Fitness</p>
+=======
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-bold text-white">Book Your Demo</h3>
+                {selectedRole && (
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#D4FF32]/15 text-[#D4FF32] border border-[#D4FF32]/25">
+                    {selectedRole}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[#94A3B8] mt-0.5">
+                For owners and co-owners of gyms of 2,500+ sq ft, running or opening soon. No payment or plan selection is needed to request it.
+              </p>
+>>>>>>> Stashed changes
             </div>
           </div>
           <button
             type="button"
             onClick={handleResetAndClose}
+<<<<<<< Updated upstream
             className="p-1.5 rounded-lg text-[#94A3B8] hover:text-white hover:bg-[#1E2028] transition-colors"
+=======
+            className="p-1.5 rounded-lg text-[#94A3B8] hover:text-white hover:bg-[#1E2028] transition-colors cursor-pointer shrink-0"
+>>>>>>> Stashed changes
           >
             <X size={20} weight="bold" />
           </button>
@@ -98,6 +218,7 @@ export default function LandingConsultationModal({ isOpen, onClose }: LandingCon
               </button>
             </div>
           ) : (
+<<<<<<< Updated upstream
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5">
@@ -184,21 +305,63 @@ export default function LandingConsultationModal({ isOpen, onClose }: LandingCon
                   className="w-full p-3 rounded-xl bg-[#0C0D10] border border-[#232631] text-white text-sm focus:border-[#D4FF32] outline-none transition-colors resize-none"
                 />
               </div>
+=======
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
+              <DemoBookingFields
+                role={role}
+                onRoleChange={setRole}
+                name={name}
+                onNameChange={handleNameChange}
+                gymName={gymName}
+                onGymNameChange={handleGymNameChange}
+                city={city}
+                onCityChange={handleCityChange}
+                phone={phone}
+                onPhoneChange={handlePhoneChange}
+                agreeContact={agreeContact}
+                onAgreeContactChange={(val) => {
+                  setAgreeContact(val);
+                  if (touched.agreeContact) {
+                    setErrors((prev) => ({ ...prev, agreeContact: validateField("agreeContact", val) || undefined }));
+                  }
+                }}
+                agreeMeta={agreeMeta}
+                onAgreeMetaChange={setAgreeMeta}
+                errors={errors}
+                touched={touched}
+                onBlur={handleBlur}
+              />
+>>>>>>> Stashed changes
 
               <button
                 type="submit"
                 disabled={loading}
+<<<<<<< Updated upstream
                 className="w-full h-12 rounded-xl bg-[#D4FF32] hover:bg-[#C2EF2B] text-black font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(212,255,50,0.3)] active:scale-[0.98] cursor-pointer disabled:opacity-60"
+=======
+                className="w-full h-12 rounded-xl bg-[#D4FF32] hover:bg-[#C2EF2B] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-[0_4px_20px_rgba(212,255,50,0.35)] active:scale-[0.98] cursor-pointer disabled:opacity-50 mt-4"
+>>>>>>> Stashed changes
               >
                 {loading ? (
                   <>
-                    <CircleNotch size={18} className="animate-spin" />
-                    Submitting Request...
+                    <CircleNotch size={18} className="animate-spin text-black" />
+                    Submitting...
                   </>
                 ) : (
+<<<<<<< Updated upstream
                   "Confirm Free Consultation"
+=======
+                  <>
+                    Request For Demo
+                    <ArrowRight size={16} weight="bold" />
+                  </>
+>>>>>>> Stashed changes
                 )}
               </button>
+
+              <p className="text-center text-[11px] text-[#94A3B8]">
+                Send it and we call the same day.
+              </p>
             </form>
           )}
         </div>

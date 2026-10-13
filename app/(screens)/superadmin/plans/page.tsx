@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "@phosphor-icons/react";
 import Pagination from "../../components/reusable/Pagination";
 import PlanCard from "../../components/reusable/cards/PlanCard";
+import { getSubscriptionPlansAction } from "@/app/actions/subscriptions";
 
 const MOCK_OWNER_PLANS = Array.from({ length: 4 }).map((_, i) => ({
   id: `owner-${i}`,
@@ -43,13 +44,42 @@ function PlansSubscriptionsContent() {
   const currentTab = searchParams.get("tab") || "gyms";
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [plans, setPlans] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const itemsPerPage = 12;
 
   useEffect(() => {
     setCurrentPage(1);
+    async function fetchPlans() {
+      setIsLoading(true);
+      try {
+        const target = currentTab === "customers" ? "customer" : "gyms";
+        const res = await getSubscriptionPlansAction(target);
+        if (res.success && res.data && res.data.length > 0) {
+          setPlans(
+            res.data.map((p) => ({
+              id: p.id,
+              name: p.name,
+              status: "Active",
+              price: p.price ? p.price.toLocaleString("en-IN") : "0",
+              billingCycle: "/ month",
+              badge: p.label,
+              features: p.features,
+            }))
+          );
+        } else {
+          setPlans(currentTab === "customers" ? MOCK_CUSTOMER_PLANS : MOCK_OWNER_PLANS);
+        }
+      } catch {
+        setPlans(currentTab === "customers" ? MOCK_CUSTOMER_PLANS : MOCK_OWNER_PLANS);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchPlans();
   }, [currentTab]);
 
-  const activePlans = currentTab === "gyms" ? MOCK_OWNER_PLANS : MOCK_CUSTOMER_PLANS;
+  const activePlans = plans;
   
   const totalItems = activePlans.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);

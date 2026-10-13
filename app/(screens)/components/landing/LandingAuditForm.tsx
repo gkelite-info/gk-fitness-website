@@ -3,12 +3,25 @@
 import { useState } from "react";
 import { CircleNotch, CheckCircle, ArrowRight } from "@phosphor-icons/react";
 import toast from "react-hot-toast";
-import { submitConsultationRequest } from "@/app/actions/consultation";
+import { submitConsultationRequest, ConsultationRole } from "@/app/actions/consultation";
+import DemoBookingFields from "@/app/(screens)/components/reusable/DemoBookingFields";
+import {
+  capitalizeWords,
+  sanitizeIndianMobile,
+  validateField,
+  validateDemoForm,
+  DemoFormErrors,
+  DemoFormValues,
+} from "@/lib/validations/demoValidation";
 
 export default function LandingAuditForm() {
+<<<<<<< Updated upstream
   const [role, setRole] = useState("Owner / Co-owner");
   const [operating, setOperating] = useState("Yes, operating now");
   const [floorArea, setFloorArea] = useState("");
+=======
+  const [role, setRole] = useState<ConsultationRole>("owner");
+>>>>>>> Stashed changes
   const [name, setName] = useState("");
   const [gymName, setGymName] = useState("");
   const [city, setCity] = useState("");
@@ -17,10 +30,56 @@ export default function LandingAuditForm() {
   const [agreeMeta, setAgreeMeta] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState<DemoFormErrors>({});
+  const [touched, setTouched] = useState<Partial<Record<keyof DemoFormValues, boolean>>>({});
+
+  const handleBlur = (field: keyof DemoFormValues) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const val = field === "name" ? name : field === "gymName" ? gymName : field === "city" ? city : field === "phone" ? phone : agreeContact;
+    const err = validateField(field, val);
+    setErrors((prev) => ({ ...prev, [field]: err || undefined }));
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const sanitized = sanitizeIndianMobile(e.target.value);
+    setPhone(sanitized);
+    if (touched.phone) {
+      const err = validateField("phone", sanitized);
+      setErrors((prev) => ({ ...prev, phone: err || undefined }));
+    }
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = capitalizeWords(e.target.value);
+    setName(formatted);
+    if (touched.name) {
+      const err = validateField("name", formatted);
+      setErrors((prev) => ({ ...prev, name: err || undefined }));
+    }
+  };
+
+  const handleGymNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = capitalizeWords(e.target.value);
+    setGymName(formatted);
+    if (touched.gymName) {
+      const err = validateField("gymName", formatted);
+      setErrors((prev) => ({ ...prev, gymName: err || undefined }));
+    }
+  };
+
+  const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = capitalizeWords(e.target.value);
+    setCity(formatted);
+    if (touched.city) {
+      const err = validateField("city", formatted);
+      setErrors((prev) => ({ ...prev, city: err || undefined }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+<<<<<<< Updated upstream
     if (!name.trim() || !gymName.trim() || !phone.trim() || !city.trim()) {
       toast.error("Please fill in all required fields.");
       return;
@@ -28,16 +87,32 @@ export default function LandingAuditForm() {
 
     if (!agreeContact) {
       toast.error("Please agree to let GK Fitness contact you regarding this enquiry.");
+=======
+    const formErrors = validateDemoForm({ name, gymName, city, phone, agreeContact });
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
+      setTouched({ name: true, gymName: true, city: true, phone: true, agreeContact: true });
+      const firstErr = Object.values(formErrors)[0];
+      if (firstErr) toast.error(firstErr);
+>>>>>>> Stashed changes
       return;
     }
 
     setLoading(true);
     const res = await submitConsultationRequest({
-      fullName: name,
-      gymName,
+      fullName: name.trim(),
+      gymName: gymName.trim(),
       phone,
+<<<<<<< Updated upstream
       city,
       memberCount: `${floorArea || "2500+"} sq ft (${operating})`,
+=======
+      city: city.trim(),
+      role,
+      agreeContact,
+      agreeMeta,
+      memberCount: "N/A",
+>>>>>>> Stashed changes
       notes: `Role: ${role}`,
     });
     setLoading(false);
@@ -48,6 +123,19 @@ export default function LandingAuditForm() {
     } else {
       toast.error(res.error || "Submission failed. Please try again.");
     }
+  };
+
+  const handleReset = () => {
+    setSubmitted(false);
+    setName("");
+    setGymName("");
+    setCity("");
+    setPhone("");
+    setRole("owner");
+    setAgreeContact(true);
+    setAgreeMeta(false);
+    setErrors({});
+    setTouched({});
   };
 
   if (submitted) {
@@ -62,8 +150,8 @@ export default function LandingAuditForm() {
         </p>
         <button
           type="button"
-          onClick={() => setSubmitted(false)}
-          className="mt-6 h-10 px-6 rounded-xl bg-[#D4FF32] text-black font-extrabold text-xs uppercase tracking-wider"
+          onClick={handleReset}
+          className="mt-6 h-10 px-6 rounded-xl bg-[#D4FF32] text-black font-extrabold text-xs uppercase tracking-wider cursor-pointer"
         >
           Submit Another Request
         </button>
@@ -82,6 +170,7 @@ export default function LandingAuditForm() {
         </p>
       </div>
 
+<<<<<<< Updated upstream
       <form onSubmit={handleSubmit} className="space-y-3.5">
         <div>
           <label className="block text-xs font-medium text-[#CBD5E1] mb-1">
@@ -203,6 +292,33 @@ export default function LandingAuditForm() {
             <span>Optional: allow GK Fitness to share hashed contact identifiers and enquiry outcomes with Meta to measure its ads.</span>
           </label>
         </div>
+=======
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        <DemoBookingFields
+          role={role}
+          onRoleChange={setRole}
+          name={name}
+          onNameChange={handleNameChange}
+          gymName={gymName}
+          onGymNameChange={handleGymNameChange}
+          city={city}
+          onCityChange={handleCityChange}
+          phone={phone}
+          onPhoneChange={handlePhoneChange}
+          agreeContact={agreeContact}
+          onAgreeContactChange={(val) => {
+            setAgreeContact(val);
+            if (touched.agreeContact) {
+              setErrors((prev) => ({ ...prev, agreeContact: validateField("agreeContact", val) || undefined }));
+            }
+          }}
+          agreeMeta={agreeMeta}
+          onAgreeMetaChange={setAgreeMeta}
+          errors={errors}
+          touched={touched}
+          onBlur={handleBlur}
+        />
+>>>>>>> Stashed changes
 
         <button
           type="submit"
