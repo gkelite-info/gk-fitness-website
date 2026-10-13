@@ -10,6 +10,7 @@ import LandingPillarsCarousel from "./LandingPillarsCarousel";
 import LandingSystemDesign from "./LandingSystemDesign";
 import LandingKeyMoments from "./LandingKeyMoments";
 import LandingRoiCalculator from "./LandingRoiCalculator";
+import LandingReviews from "./LandingReviews";
 import LandingFAQ from "./LandingFAQ";
 import LandingFooter from "./LandingFooter";
 import LandingStickyMobileBar from "./LandingStickyMobileBar";
@@ -34,13 +35,10 @@ export default function LandingPageClient() {
         <LandingSystemDesign />
         <LandingKeyMoments />
         <LandingRoiCalculator onOpenConsultation={scrollToAudit} />
-<<<<<<< Updated upstream
-        <LandingFAQ />
-=======
         <Suspense fallback={null}>
           <LandingReviews />
         </Suspense>
->>>>>>> Stashed changes
+        <LandingFAQ />
       </main>
       <LandingFooter />
       <LandingStickyMobileBar />
