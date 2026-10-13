@@ -28,10 +28,23 @@ export async function updateSession(request: NextRequest) {
 
   const isAuthPage = request.nextUrl.pathname.startsWith('/login');
 
-  if (!user && !isAuthPage) {
+  const createRedirectResponse = (pathname: string) => {
     const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+    url.pathname = pathname;
+    const redirectResponse = NextResponse.redirect(url);
+    
+    // Important: Keep any cookies (like refreshed auth tokens) set by Supabase
+    supabaseResponse.headers.forEach((value, key) => {
+      if (key.toLowerCase() === 'set-cookie') {
+        redirectResponse.headers.append('set-cookie', value);
+      }
+    });
+    
+    return redirectResponse;
+  };
+
+  if (!user && !isAuthPage) {
+    return createRedirectResponse('/login');
   }
 
   if (user && isAuthPage) {
@@ -42,16 +55,13 @@ export async function updateSession(request: NextRequest) {
       .single();
       
     const role = userData?.role || 'customer';
-    const url = request.nextUrl.clone();
     
-    if (role === 'superadmin') url.pathname = '/superadmin';
-    else if (role === 'owner') url.pathname = '/owner';
-    else if (role === 'trainer') url.pathname = '/trainer';
-    else if (role === 'globaltrainer') url.pathname = '/globaltrainer';
-    else if (role === 'customer') url.pathname = '/customer';
-    else url.pathname = '/';
-    
-    return NextResponse.redirect(url);
+    if (role === 'superadmin') return createRedirectResponse('/superadmin');
+    else if (role === 'owner') return createRedirectResponse('/owner');
+    else if (role === 'trainer') return createRedirectResponse('/trainer');
+    else if (role === 'globaltrainer') return createRedirectResponse('/globaltrainer');
+    else if (role === 'customer') return createRedirectResponse('/customer');
+    else return createRedirectResponse('/');
   }
 
   const pathname = request.nextUrl.pathname;
@@ -64,11 +74,11 @@ export async function updateSession(request: NextRequest) {
       
     const role = userData?.role || 'customer';
     
-    if (pathname.startsWith('/superadmin') && role !== 'superadmin') return NextResponse.redirect(new URL('/' + role, request.url));
-    if (pathname.startsWith('/owner') && role !== 'owner') return NextResponse.redirect(new URL('/' + role, request.url));
-    if (pathname.startsWith('/trainer') && role !== 'trainer') return NextResponse.redirect(new URL('/' + role, request.url));
-    if (pathname.startsWith('/globaltrainer') && role !== 'globaltrainer') return NextResponse.redirect(new URL('/' + role, request.url));
-    if (pathname.startsWith('/customer') && role !== 'customer') return NextResponse.redirect(new URL('/' + role, request.url));
+    if (pathname.startsWith('/superadmin') && role !== 'superadmin') return createRedirectResponse('/' + role);
+    if (pathname.startsWith('/owner') && role !== 'owner') return createRedirectResponse('/' + role);
+    if (pathname.startsWith('/trainer') && role !== 'trainer') return createRedirectResponse('/' + role);
+    if (pathname.startsWith('/globaltrainer') && role !== 'globaltrainer') return createRedirectResponse('/' + role);
+    if (pathname.startsWith('/customer') && role !== 'customer') return createRedirectResponse('/' + role);
   }
 
   return supabaseResponse;

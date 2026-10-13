@@ -21,6 +21,12 @@ export async function loginUser(email: string, password: string) {
     .eq("userId", data.user.id)
     .single();
 
+  if (userData?.role && data.user.user_metadata?.role !== userData.role) {
+    await supabase.auth.updateUser({
+      data: { role: userData.role },
+    });
+  }
+
   return { success: true, role: userData?.role };
 }
 

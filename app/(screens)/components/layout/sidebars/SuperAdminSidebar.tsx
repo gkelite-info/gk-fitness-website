@@ -2,13 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Buildings, Users, ShieldCheck, Barbell, Receipt, Star } from "@phosphor-icons/react";
+import { Barbell, Users, MagnifyingGlass, Star, ShieldCheck } from "@phosphor-icons/react";
 import LogoutButton from "../../reusable/LogoutButton";
 
-const navLinks = [
-  { name: "Dashboard", href: "/superadmin", icon: House },
-  { name: "Gyms", href: "/superadmin/gyms", icon: Buildings },
-  { name: "Users", href: "/superadmin/users", icon: Users },
+interface NavItem {
+  name: string;
+  href: string;
+  icon: typeof Barbell;
+  badge?: number;
+}
+
+const navLinks: NavItem[] = [
+  { name: "Gyms", href: "/superadmin/gyms", icon: Barbell, badge: 120 },
+  { name: "Trainers", href: "/superadmin/trainers", icon: Users, badge: 48 },
+  { name: "Explore", href: "/superadmin/explore", icon: MagnifyingGlass },
   { name: "Plans & Subscriptions", href: "/superadmin/plans", icon: Star },
   { name: "Settings", href: "/superadmin/settings", icon: ShieldCheck },
 ];
@@ -33,15 +40,21 @@ export default function SuperAdminSidebar() {
             </span>
           </div>
         </div>
+
         <div className="flex flex-col items-start gap-2 w-full">
           {navLinks.map((link) => {
-            const isActive = pathname === link.href || (link.href !== "/superadmin" && pathname.startsWith(`${link.href}/`));
+            const isGymsLink = link.href === "/superadmin/gyms";
+            const isActive =
+              (isGymsLink && (pathname === "/superadmin" || pathname.startsWith("/superadmin/gyms"))) ||
+              (!isGymsLink && (pathname === link.href || pathname.startsWith(`${link.href}/`)));
+
             const Icon = link.icon;
+
             return (
               <Link
                 key={link.name}
                 href={link.href}
-                className={`flex flex-row items-center px-4 py-3 gap-3.5 w-full h-[46px] rounded-2xl transition-all ${
+                className={`flex flex-row items-center px-4 py-3 gap-3 w-full h-[46px] rounded-2xl transition-all ${
                   isActive
                     ? "bg-gradient-to-r from-[rgba(212,255,50,0.18)] to-[rgba(212,255,50,0.05)] border border-[#D4FF32] sidebar-glow text-[#D4FF32]"
                     : "text-[#94A3B8] hover:text-white"
@@ -50,11 +63,27 @@ export default function SuperAdminSidebar() {
                 <Icon
                   size={20}
                   weight={isActive ? "fill" : "regular"}
-                  className={isActive ? "text-[#D4FF32]" : "text-[#94A3B8] group-hover:text-white"}
+                  className={isActive ? "text-[#D4FF32] shrink-0" : "text-[#94A3B8] group-hover:text-white shrink-0"}
                 />
-                <span className={`font-['Nimbus_Sans'] text-sm leading-5 tracking-[0.35px] ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                <span
+                  className={`font-['Nimbus_Sans'] text-sm leading-5 tracking-[0.35px] whitespace-nowrap ${
+                    isActive ? "font-semibold" : "font-medium"
+                  }`}
+                >
                   {link.name}
                 </span>
+
+                {link.badge !== undefined && (
+                  <span
+                    className={`ml-auto px-2 py-0.5 rounded-full text-xs font-bold shrink-0 transition-colors ${
+                      isActive
+                        ? "bg-[#D4FF32] text-black shadow-[0_0_8px_rgba(212,255,50,0.35)]"
+                        : "bg-[#181A20] text-[#64748B]"
+                    }`}
+                  >
+                    {link.badge}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -67,5 +96,3 @@ export default function SuperAdminSidebar() {
     </div>
   );
 }
-
-

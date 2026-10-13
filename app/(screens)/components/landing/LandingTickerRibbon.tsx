@@ -1,11 +1,11 @@
 export default function LandingTickerRibbon() {
   const items = [
-    "200+ GYMS POWERED FOR GROWTH",
+    "500+ GYMS ALREADY POWERED",
+    "PRESENT IN 4+ CITIES",
+    "1L+ REGISTERED USERS",
     "ZERO OPERATIONAL CHAOS",
-    "90 DAYS TURNAROUND",
     "A DEDICATED MANAGER FOR YOUR GYM",
     "OWNERSHIP STAYS 100% YOURS",
-    "REAL-TIME BIOMETRIC REVENUE AUDIT",
   ];
 
   const duplicatedItems = [...items, ...items];

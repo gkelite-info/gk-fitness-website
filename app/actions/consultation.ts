@@ -75,7 +75,7 @@ export async function submitConsultationRequest(data: ConsultationFormData): Pro
     return {
       success: true,
       data: bookingRes.data,
-      message: "Demo request received! A GK- Gym Life specialist will connect with you within 24 hours.",
+      message: "Consultation request received! A GK- Gym Life specialist will connect with you within 24 hours.",
     };
   } catch (error: any) {
     return {

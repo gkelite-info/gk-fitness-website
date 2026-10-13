@@ -13,14 +13,14 @@ export default function LandingFooter() {
                 <div className="relative w-9 h-9 rounded-xl overflow-hidden bg-[#15161C] border border-[#232631] flex items-center justify-center">
                   <Image
                     src="/512x512 2.png"
-                    alt="GK Fitness Logo"
+                    alt="GK- Gym Life Logo"
                     width={36}
                     height={36}
                     className="object-contain"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-black text-white text-base tracking-tight">GK FITNESS</span>
+                  <span className="font-black text-white text-base tracking-tight">GK- GYM LIFE</span>
                   <span className="text-[10px] font-black text-[#D4FF32] uppercase tracking-wider">
                     Powered Gyms Ecosystem
                   </span>
@@ -33,7 +33,7 @@ export default function LandingFooter() {
             </div>
 
             <div className="mt-6 text-xs text-[#94A3B8]">
-              Ready to automate your fitness center? Partner with GK Fitness today.
+              Ready to automate your fitness center? Partner with GK- Gym Life today.
             </div>
           </div>
 
@@ -104,7 +104,7 @@ export default function LandingFooter() {
         </div>
 
         <div className="pt-8 border-t border-[#1C1E26] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#94A3B8]">
-          <p>© {new Date().getFullYear()} GK Fitness Technologies. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} GK- Gym Life Technologies. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <span className="text-[#D4FF32] font-medium">Enterprise Grade Security & 99.9% Uptime</span>
           </div>
