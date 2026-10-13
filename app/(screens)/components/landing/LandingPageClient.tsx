@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import LandingHeader from "./LandingHeader";
 import LandingGymWall from "./LandingGymWall";
 import LandingHero from "./LandingHero";
@@ -10,6 +11,7 @@ import LandingSystemDesign from "./LandingSystemDesign";
 import LandingKeyMoments from "./LandingKeyMoments";
 import LandingRoiCalculator from "./LandingRoiCalculator";
 import LandingReviews from "./LandingReviews";
+import LandingFAQ from "./LandingFAQ";
 import LandingFooter from "./LandingFooter";
 import LandingStickyMobileBar from "./LandingStickyMobileBar";
 
@@ -33,7 +35,10 @@ export default function LandingPageClient() {
         <LandingSystemDesign />
         <LandingKeyMoments />
         <LandingRoiCalculator onOpenConsultation={scrollToAudit} />
-        <LandingReviews />
+        <Suspense fallback={null}>
+          <LandingReviews />
+        </Suspense>
+        <LandingFAQ />
       </main>
       <LandingFooter />
       <LandingStickyMobileBar />

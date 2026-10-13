@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import { X, Star, CalendarBlank, Image as ImageIcon } from "@phosphor-icons/react";
+import { useState, useEffect } from "react";
+import { X, Star, CalendarBlank, Image as ImageIcon, VideoCamera } from "@phosphor-icons/react";
+import ReviewVideoPlayer from "./ReviewVideoPlayer";
 
-interface ReviewItem {
+export interface ReviewItem {
   id: string;
   initials: string;
   initialsBg: string;
@@ -13,6 +14,7 @@ interface ReviewItem {
   rating: number;
   text: string;
   photos: string[];
+  videos?: string[];
   date: string;
 }
 
@@ -26,27 +28,44 @@ export default function ReviewDetailModal({
   onClose,
 }: ReviewDetailModalProps) {
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
+  const [activeVideo, setActiveVideo] = useState<string | null>(null);
+
+  const uniqueVideos = Array.from(new Set(review?.videos || []));
+  const uniquePhotos = Array.from(new Set(review?.photos || []));
+
+  useEffect(() => {
+    if (uniqueVideos.length > 0) {
+      setActiveVideo(uniqueVideos[0]);
+    } else {
+      setActiveVideo(null);
+    }
+    setActivePhoto(null);
+  }, [review]);
 
   if (!review) return null;
+
+  const cleanText = review.text.replace(/^["'\s]+|["'\s]+$/g, "");
 
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-2xl bg-[#14151A] border border-[#232631] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
       >
-        <div className="flex items-center justify-between p-5 border-b border-[#232631] shrink-0">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#232631] shrink-0">
           <div className="flex items-center gap-3">
             <div
-              className={`w-11 h-11 rounded-full flex items-center justify-center font-black text-sm shrink-0 border border-white/10 ${review.initialsBg}`}
+              className={`w-10 sm:w-11 h-10 sm:h-11 rounded-full flex items-center justify-center font-black text-sm shrink-0 border border-white/10 ${review.initialsBg}`}
             >
               {review.initials}
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">{review.name}</h3>
+              <h3 className="text-sm sm:text-base font-bold text-white leading-tight">
+                {review.name}
+              </h3>
               <p className="text-xs text-[#94A3B8]">{review.role}</p>
             </div>
           </div>
@@ -60,36 +79,67 @@ export default function ReviewDetailModal({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-[#94A3B8] hover:text-white hover:bg-[#1E2028] transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-[#94A3B8] hover:text-white hover:bg-[#1E2028] transition-colors cursor-pointer shrink-0"
             >
               <X size={20} weight="bold" />
             </button>
           </div>
         </div>
 
-        <div className="p-5 sm:p-6 overflow-y-auto scrollbar-themed space-y-6">
-          <div>
-            <p className="text-sm sm:text-base text-[#CBD5E1] leading-relaxed">
-              &ldquo;{review.text}&rdquo;
+        <div className="p-4 sm:p-6 overflow-y-auto scrollbar-themed space-y-5">
+          <div className="bg-[#0C0D10] border border-[#232631] rounded-xl p-4 sm:p-5">
+            <p className="text-sm sm:text-base text-[#E2E8F0] leading-relaxed">
+              &ldquo;{cleanText}&rdquo;
             </p>
             <div className="mt-3 flex items-center gap-1.5 text-xs text-[#94A3B8]">
-              <CalendarBlank size={15} />
-              <span>{review.date}</span>
+              <CalendarBlank size={14} />
+              <span>Posted on {review.date}</span>
             </div>
           </div>
 
-          {review.photos.length > 0 && (
-            <div>
-              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#94A3B8] mb-3">
-                <ImageIcon size={16} weight="bold" />
-                <span>All Attached Photos ({review.photos.length})</span>
+          {uniqueVideos.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#D4FF32]">
+                  <VideoCamera size={16} weight="bold" />
+                  Workout Video ({uniqueVideos.length})
+                </span>
+                {uniqueVideos.length > 1 && (
+                  <div className="flex items-center gap-1.5">
+                    {uniqueVideos.map((vid, vIdx) => (
+                      <button
+                        key={vIdx}
+                        type="button"
+                        onClick={() => setActiveVideo(vid)}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                          activeVideo === vid
+                            ? "bg-[#D4FF32] text-black"
+                            : "bg-[#1E2028] text-[#CBD5E1] hover:text-white"
+                        }`}
+                      >
+                        Clip {vIdx + 1}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {review.photos.map((photo, idx) => (
+
+              {activeVideo && <ReviewVideoPlayer src={activeVideo} />}
+            </div>
+          )}
+
+          {uniquePhotos.length > 0 && (
+            <div>
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#94A3B8] mb-2.5">
+                <ImageIcon size={16} weight="bold" />
+                <span>Attached Photos ({uniquePhotos.length})</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {uniquePhotos.map((photo, idx) => (
                   <div
                     key={idx}
                     onClick={() => setActivePhoto(photo)}
-                    className="relative h-44 rounded-xl overflow-hidden border border-white/10 hover:border-[#D4FF32] cursor-pointer group transition-all"
+                    className="relative h-28 sm:h-36 rounded-xl overflow-hidden border border-white/10 hover:border-[#D4FF32] cursor-pointer group transition-all"
                   >
                     <Image
                       src={photo}

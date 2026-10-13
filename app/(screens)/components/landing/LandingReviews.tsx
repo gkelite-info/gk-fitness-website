@@ -1,64 +1,102 @@
 "use client";
 
-import Image from "next/image";
-import { useState } from "react";
-import { Star, CalendarBlank, Image as ImageIcon, Plus } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { Camera, Plus } from "@phosphor-icons/react";
 import UploadReviewModal from "./UploadReviewModal";
-import ReviewDetailModal from "./ReviewDetailModal";
-
-const INITIAL_REVIEWS = [
-  {
-    id: "1",
-    initials: "S",
-    initialsBg: "bg-[#D4FF32]/20 text-[#D4FF32]",
-    name: "Saraswathi",
-    role: "Gym Owner • FitZone Club",
-    rating: 5,
-    text: "Switching to GK- Gym Life completely transformed our gym operations. We used to lose so many walk-in leads and renewal follow-ups every month. Now with the manual renewal tracking and centralized member database, our monthly revenue jumped by over 30% with zero confusion.",
-    photos: [
-      "/images/landing_page/Gym Manager Reviewing Financial Dashboard.png",
-      "/images/landing_page/Gym Owner Reviewing Expenses.png",
-      "/images/landing_page/Neon Gym Reception Enquiries.png",
-    ],
-    date: "Oct 06, 2026",
-  },
-  {
-    id: "2",
-    initials: "KS",
-    initialsBg: "bg-blue-500/20 text-blue-400",
-    name: "K. Sai Saraswathi",
-    role: "Head Coach • Olympus Fitness",
-    rating: 5,
-    text: "As a coach managing multiple floor trainers, assigning workout routines and custom diet plans was chaos before GK- Gym Life. Now every trainer prescribes weekly splits and nutrition charts directly to members. The QR check-in and inventory tracking are flawless.",
-    photos: [
-      "/images/landing_page/Push Day_ Stronger Than Yesterday.png",
-      "/images/landing_page/Weekly Meal Planner at the Gym.png",
-      "/images/landing_page/Gym Staff Inspecting Equipment.png",
-      "/images/landing_page/Fitlevel Gym Check-In Experience.png",
-    ],
-    date: "Oct 04, 2026",
-  },
-  {
-    id: "3",
-    initials: "CD",
-    initialsBg: "bg-amber-500/20 text-amber-400",
-    name: "Chatla Deekshitha",
-    role: "Gym Customer • Iron Pulse Club",
-    rating: 5,
-    text: "I love the member app! Every morning I check my personalized workout split and custom nutrition meal plan before hitting the gym. Checking in with the QR code is instant, and logging my body transformation progress keeps me consistent every single week.",
-    photos: [
-      "/images/landing_page/Fitlevel Gym Check-In Experience.png",
-      "/images/landing_page/Post-Workout Performance Dashboard.png",
-      "/images/landing_page/Gym Announcements in Action.png",
-    ],
-    date: "Sep 28, 2026",
-  },
-];
+import ReviewDetailModal, { ReviewItem } from "./ReviewDetailModal";
+import LandingReviewCard from "./LandingReviewCard";
+import { getReviewsAction } from "@/app/actions/reviews";
 
 export default function LandingReviews() {
-  const [reviews, setReviews] = useState(INITIAL_REVIEWS);
-  const [selectedReview, setSelectedReview] = useState<(typeof INITIAL_REVIEWS)[0] | null>(null);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [selectedReview, setSelectedReview] = useState<ReviewItem | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const isUploadModalOpen =
+    searchParams.get("uploadReview") === "true" ||
+    searchParams.get("modal") === "upload-review";
+
+  const handleOpenUploadModal = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("uploadReview", "true");
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const handleCloseUploadModal = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("uploadReview");
+    params.delete("modal");
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
+
+  useEffect(() => {
+    async function loadDbReviews() {
+      try {
+        const res = await getReviewsAction({ limit: 12 });
+        if (res.success && res.data && res.data.length > 0) {
+          const mapped: ReviewItem[] = res.data.map((r) => {
+            const initials =
+              r.fullname
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2) || "U";
+
+            const isVideo =
+              r.attachmentUrl &&
+              (r.attachmentUrl.endsWith(".mp4") ||
+                r.attachmentUrl.endsWith(".webm") ||
+                r.attachmentUrl.endsWith(".mov") ||
+                r.attachmentUrl.includes("video"));
+
+            return {
+              id: r.reviewId,
+              initials,
+              initialsBg: "bg-[#D4FF32]/20 text-[#D4FF32]",
+              name: r.fullname,
+              role:
+                r.role === "owner"
+                  ? "Gym Owner"
+                  : r.role === "trainer"
+                  ? "Trainer / Coach"
+                  : r.role === "globaltrainer"
+                  ? "Global Trainer"
+                  : r.role === "globalcustomer"
+                  ? "Global Customer"
+                  : r.role === "superadmin"
+                  ? "Super Admin"
+                  : "Gym Member",
+              rating: Math.round(r.ratings),
+              text: r.review || "",
+              videos: isVideo && r.attachmentUrl ? [r.attachmentUrl] : [],
+              photos: !isVideo && r.attachmentUrl ? [r.attachmentUrl] : [],
+              date: new Intl.DateTimeFormat("en-US", {
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+              }).format(new Date(r.createdAt)),
+            };
+          });
+
+          setReviews(mapped);
+        } else {
+          setReviews([]);
+        }
+      } catch {
+        setReviews([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadDbReviews();
+  }, []);
 
   const handleAddNewReview = (newRev: {
     name: string;
@@ -66,16 +104,18 @@ export default function LandingReviews() {
     rating: number;
     text: string;
     photos: string[];
+    videos: string[];
     date: string;
   }) => {
-    const initials = newRev.name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) || "U";
+    const initials =
+      newRev.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2) || "U";
 
-    const item = {
+    const item: ReviewItem = {
       id: Date.now().toString(),
       initials,
       initialsBg: "bg-[#D4FF32]/20 text-[#D4FF32]",
@@ -83,6 +123,7 @@ export default function LandingReviews() {
       role: newRev.role,
       rating: newRev.rating,
       text: newRev.text,
+      videos: newRev.videos,
       photos: newRev.photos,
       date: newRev.date,
     };
@@ -104,112 +145,62 @@ export default function LandingReviews() {
 
             <button
               type="button"
-              onClick={() => setIsUploadModalOpen(true)}
+              onClick={handleOpenUploadModal}
               className="h-10 sm:h-11 px-4 sm:px-5 rounded-xl bg-[#D4FF32] hover:bg-[#C2EF2B] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(212,255,50,0.25)] shrink-0 cursor-pointer self-start sm:self-auto active:scale-[0.98] whitespace-nowrap"
             >
-              <Plus size={16} weight="bold" />
+              <Camera size={16} weight="bold" />
               Upload Review &amp; Photos
+              {/* Video uploading in comment: &amp; Videos */}
             </button>
           </div>
           <p className="mt-2 text-xs sm:text-sm text-[#94A3B8]">
-            Real stories. Real results. Real gym transformations across GK- Gym Life.
+            Real stories. Real results. Real member photos and transformations across GK- Gym Life.
+            {/* Video uploading in comment: Real gym workout videos and transformations */}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {reviews.map((rev) => (
-            <div
-              key={rev.id}
-              className="rounded-2xl bg-[#121319] border border-white/10 hover:border-[#D4FF32]/40 p-6 flex flex-col justify-between transition-all duration-300 shadow-xl hover:shadow-[0_0_25px_rgba(212,255,50,0.06)] group"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-3 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-11 h-11 rounded-full flex items-center justify-center font-black text-sm shrink-0 border border-white/10 ${rev.initialsBg}`}>
-                      {rev.initials}
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-white group-hover:text-[#D4FF32] transition-colors">
-                        {rev.name}
-                      </h3>
-                      <p className="text-xs text-[#94A3B8]">
-                        {rev.role}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-0.5 text-amber-400 shrink-0">
-                    {Array.from({ length: rev.rating }).map((_, i) => (
-                      <Star key={i} size={15} weight="fill" />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="relative mb-5">
-                  <p className="text-xs sm:text-sm text-[#CBD5E1] leading-relaxed line-clamp-4">
-                    &ldquo;{rev.text}&rdquo;
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedReview(rev)}
-                    className="text-xs font-bold text-[#D4FF32] hover:text-[#C2EF2B] hover:underline transition-colors mt-2 inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    View More →
-                  </button>
-                </div>
-
-                {rev.photos.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[#94A3B8] mb-2.5">
-                      <span className="flex items-center gap-1.5">
-                        <ImageIcon size={14} weight="bold" />
-                        Attached Photos ({rev.photos.length})
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 sm:gap-2.5 w-full">
-                      {rev.photos.slice(0, 3).map((photo, pIdx) => {
-                        const isThirdAndHasMore = pIdx === 2 && rev.photos.length > 3;
-                        const remainingCount = rev.photos.length - 3;
-
-                        return (
-                          <div
-                            key={pIdx}
-                            onClick={() => setSelectedReview(rev)}
-                            className="relative h-20 sm:h-22 rounded-xl overflow-hidden border border-white/10 hover:border-[#D4FF32] cursor-pointer group/photo transition-all"
-                          >
-                            <Image
-                              src={photo}
-                              alt={`${rev.name} photo ${pIdx + 1}`}
-                              fill
-                              className="object-cover group-hover/photo:scale-105 transition-transform duration-300"
-                            />
-                            {isThirdAndHasMore && (
-                              <div className="absolute inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center transition-colors group-hover/photo:bg-black/60">
-                                <span className="text-white font-black text-sm tracking-wide">
-                                  +{remainingCount}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-3 border-t border-white/[0.08] flex items-center gap-1.5 text-[11px] text-[#94A3B8]">
-                <CalendarBlank size={14} />
-                <span>{rev.date}</span>
-              </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="h-64 rounded-2xl bg-[#121319] border border-white/5" />
+            ))}
+          </div>
+        ) : reviews.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {reviews.map((rev) => (
+              <LandingReviewCard
+                key={rev.id}
+                review={rev}
+                onSelectReview={setSelectedReview}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="w-full py-16 px-6 rounded-2xl bg-[#121319] border border-white/10 flex flex-col items-center justify-center text-center">
+            <div className="w-14 h-14 rounded-full bg-[#D4FF32]/10 border border-[#D4FF32]/20 flex items-center justify-center text-[#D4FF32] mb-4">
+              <Camera size={26} weight="bold" />
             </div>
-          ))}
-        </div>
+            <h3 className="text-base sm:text-lg font-bold text-white mb-1.5">No Reviews Yet</h3>
+            <p className="text-xs sm:text-sm text-[#94A3B8] max-w-md mb-6">
+              Be the first to share your fitness journey, photos, and experience with the GK- Gym Life community.
+              {/* Video uploading in comment: workout videos */}
+            </p>
+            <button
+              type="button"
+              onClick={handleOpenUploadModal}
+              className="h-11 px-5 rounded-xl bg-[#D4FF32] hover:bg-[#C2EF2B] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(212,255,50,0.25)] cursor-pointer active:scale-[0.98]"
+            >
+              <Plus size={16} weight="bold" />
+              Upload First Review &amp; Photo
+              {/* Video uploading in comment: &amp; Video */}
+            </button>
+          </div>
+        )}
       </div>
 
       <UploadReviewModal
         isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
+        onClose={handleCloseUploadModal}
         onSubmitReview={handleAddNewReview}
       />
 

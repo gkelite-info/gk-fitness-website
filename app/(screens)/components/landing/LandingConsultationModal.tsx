@@ -1,46 +1,121 @@
 "use client";
 
-import { useState } from "react";
-import { X, Sparkle, CircleNotch, CheckCircle } from "@phosphor-icons/react";
+import { useState, useEffect } from "react";
+import { X, Sparkle, CircleNotch, ArrowRight, CheckCircle } from "@phosphor-icons/react";
 import toast from "react-hot-toast";
-import { submitConsultationRequest, ConsultationFormData } from "@/app/actions/consultation";
+import { submitConsultationRequest, ConsultationRole } from "@/app/actions/consultation";
+import DemoBookingFields from "@/app/(screens)/components/reusable/DemoBookingFields";
+import {
+  capitalizeWords,
+  sanitizeIndianMobile,
+  validateField,
+  validateDemoForm,
+  DemoFormErrors,
+  DemoFormValues,
+} from "@/lib/validations/demoValidation";
 
 interface LandingConsultationModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedRole?: string;
+  subscriptionPlanId?: string | null;
 }
 
 export default function LandingConsultationModal({ 
   isOpen, 
   onClose,
-  selectedRole = "Gym Owner"
+  selectedRole = "Gym Owner",
+  subscriptionPlanId = null,
 }: LandingConsultationModalProps) {
-  const [formData, setFormData] = useState<ConsultationFormData>({
-    fullName: "",
-    gymName: "",
-    phone: "",
-    city: "",
-    memberCount: "100 - 300",
-    notes: "",
-  });
+  const [role, setRole] = useState<ConsultationRole>("owner");
+  const [name, setName] = useState("");
+  const [gymName, setGymName] = useState("");
+  const [city, setCity] = useState("");
+  const [phone, setPhone] = useState("");
+  const [agreeContact, setAgreeContact] = useState(true);
+  const [agreeMeta, setAgreeMeta] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState<DemoFormErrors>({});
+  const [touched, setTouched] = useState<Partial<Record<keyof DemoFormValues, boolean>>>({});
+
+  useEffect(() => {
+    if (selectedRole) {
+      const lower = selectedRole.toLowerCase();
+      if (lower.includes("customer")) setRole("customer");
+      else if (lower.includes("trainer")) setRole("trainer");
+      else setRole("owner");
+    }
+  }, [selectedRole]);
 
   if (!isOpen) return null;
+
+  const handleBlur = (field: keyof DemoFormValues) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const val = field === "name" ? name : field === "gymName" ? gymName : field === "city" ? city : field === "phone" ? phone : agreeContact;
+    const err = validateField(field, val);
+    setErrors((prev) => ({ ...prev, [field]: err || undefined }));
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const sanitized = sanitizeIndianMobile(e.target.value);
+    setPhone(sanitized);
+    if (touched.phone) {
+      const err = validateField("phone", sanitized);
+      setErrors((prev) => ({ ...prev, phone: err || undefined }));
+    }
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = capitalizeWords(e.target.value);
+    setName(formatted);
+    if (touched.name) {
+      const err = validateField("name", formatted);
+      setErrors((prev) => ({ ...prev, name: err || undefined }));
+    }
+  };
+
+  const handleGymNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = capitalizeWords(e.target.value);
+    setGymName(formatted);
+    if (touched.gymName) {
+      const err = validateField("gymName", formatted);
+      setErrors((prev) => ({ ...prev, gymName: err || undefined }));
+    }
+  };
+
+  const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = capitalizeWords(e.target.value);
+    setCity(formatted);
+    if (touched.city) {
+      const err = validateField("city", formatted);
+      setErrors((prev) => ({ ...prev, city: err || undefined }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.fullName.trim() || !formData.gymName.trim() || !formData.phone.trim()) {
-      toast.error("Please fill in your name, gym name, and phone number.");
+    const formErrors = validateDemoForm({ name, gymName, city, phone, agreeContact });
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
+      setTouched({ name: true, gymName: true, city: true, phone: true, agreeContact: true });
+      const firstErr = Object.values(formErrors)[0];
+      if (firstErr) toast.error(firstErr);
       return;
     }
 
     setLoading(true);
     const res = await submitConsultationRequest({
-      ...formData,
-      notes: `Role: ${selectedRole}${formData.notes ? ` - ${formData.notes}` : ""}`,
+      fullName: name.trim(),
+      gymName: gymName.trim(),
+      phone,
+      city: city.trim(),
+      role,
+      agreeContact,
+      agreeMeta,
+      subscriptionPlanId,
+      notes: selectedRole ? `Plan: ${selectedRole} | Role: ${role}` : `Role: ${role}`,
     });
     setLoading(false);
 
@@ -54,14 +129,15 @@ export default function LandingConsultationModal({
 
   const handleResetAndClose = () => {
     setSubmitted(false);
-    setFormData({
-      fullName: "",
-      gymName: "",
-      phone: "",
-      city: "",
-      memberCount: "100 - 300",
-      notes: "",
-    });
+    setName("");
+    setGymName("");
+    setCity("");
+    setPhone("");
+    setRole("owner");
+    setAgreeContact(true);
+    setAgreeMeta(false);
+    setErrors({});
+    setTouched({});
     onClose();
   };
 
@@ -82,13 +158,15 @@ export default function LandingConsultationModal({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-[#94A3B8] mt-0.5">Experience how GK- Gym Life powers your ecosystem</p>
+              <p className="text-xs text-[#94A3B8] mt-0.5">
+                For owners and co-owners of gyms of 2,500+ sq ft, running or opening soon. No payment or plan selection is needed to request it.
+              </p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleResetAndClose}
-            className="p-1.5 rounded-lg text-[#94A3B8] hover:text-white hover:bg-[#1E2028] transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-[#94A3B8] hover:text-white hover:bg-[#1E2028] transition-colors cursor-pointer shrink-0"
           >
             <X size={20} weight="bold" />
           </button>
@@ -113,107 +191,53 @@ export default function LandingConsultationModal({
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5">
-                  Your Full Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Rahul Sharma"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="w-full h-11 px-3.5 rounded-xl bg-[#0C0D10] border border-[#232631] text-white text-sm focus:border-[#D4FF32] outline-none transition-colors"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5">
-                    Gym / Club / Business Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Iron Pulse Gym"
-                    value={formData.gymName}
-                    onChange={(e) => setFormData({ ...formData, gymName: e.target.value })}
-                    className="w-full h-11 px-3.5 rounded-xl bg-[#0C0D10] border border-[#232631] text-white text-sm focus:border-[#D4FF32] outline-none transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5">
-                    Phone / WhatsApp Number *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="e.g. +91 9876543210"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full h-11 px-3.5 rounded-xl bg-[#0C0D10] border border-[#232631] text-white text-sm focus:border-[#D4FF32] outline-none transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5">
-                    City / Location
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Mumbai, Bangalore"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full h-11 px-3.5 rounded-xl bg-[#0C0D10] border border-[#232631] text-white text-sm focus:border-[#D4FF32] outline-none transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5">
-                    Current Scale / Member Count
-                  </label>
-                  <select
-                    value={formData.memberCount}
-                    onChange={(e) => setFormData({ ...formData, memberCount: e.target.value })}
-                    className="w-full h-11 px-3.5 rounded-xl bg-[#0C0D10] border border-[#232631] text-white text-sm focus:border-[#D4FF32] outline-none transition-colors"
-                  >
-                    <option value="Under 100">Under 100 members</option>
-                    <option value="100 - 300">100 - 300 members</option>
-                    <option value="300 - 600">300 - 600 members</option>
-                    <option value="600+">600+ members</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5">
-                  Specific Requirements or Questions (Optional)
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="e.g. Interested in trainer assignment, manual renewals, and member diet tracking..."
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full p-3 rounded-xl bg-[#0C0D10] border border-[#232631] text-white text-sm focus:border-[#D4FF32] outline-none transition-colors resize-none"
-                />
-              </div>
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
+              <DemoBookingFields
+                role={role}
+                onRoleChange={setRole}
+                name={name}
+                onNameChange={handleNameChange}
+                gymName={gymName}
+                onGymNameChange={handleGymNameChange}
+                city={city}
+                onCityChange={handleCityChange}
+                phone={phone}
+                onPhoneChange={handlePhoneChange}
+                agreeContact={agreeContact}
+                onAgreeContactChange={(val) => {
+                  setAgreeContact(val);
+                  if (touched.agreeContact) {
+                    setErrors((prev) => ({ ...prev, agreeContact: validateField("agreeContact", val) || undefined }));
+                  }
+                }}
+                agreeMeta={agreeMeta}
+                onAgreeMetaChange={setAgreeMeta}
+                errors={errors}
+                touched={touched}
+                onBlur={handleBlur}
+              />
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 rounded-xl bg-[#D4FF32] hover:bg-[#C2EF2B] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(212,255,50,0.3)] active:scale-[0.98] cursor-pointer disabled:opacity-60"
+                className="w-full h-12 rounded-xl bg-[#D4FF32] hover:bg-[#C2EF2B] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-[0_4px_20px_rgba(212,255,50,0.35)] active:scale-[0.98] cursor-pointer disabled:opacity-50 mt-4"
               >
                 {loading ? (
                   <>
-                    <CircleNotch size={18} className="animate-spin" />
-                    Submitting Request...
+                    <CircleNotch size={18} className="animate-spin text-black" />
+                    Submitting...
                   </>
                 ) : (
-                  "Request For Demo"
+                  <>
+                    Request For Demo
+                    <ArrowRight size={16} weight="bold" />
+                  </>
                 )}
               </button>
+
+              <p className="text-center text-[11px] text-[#94A3B8]">
+                Send it and we call the same day.
+              </p>
             </form>
           )}
         </div>
