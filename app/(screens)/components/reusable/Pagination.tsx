@@ -39,6 +39,7 @@ export default function Pagination({ currentPage, totalPages, totalItems, itemsP
 
   // Logic to calculate page numbers to display
   const getPageNumbers = () => {
+    if (totalItems <= 0 || totalPages <= 0) return [];
     const pages = [];
     
     if (totalPages <= 7) {
@@ -59,8 +60,8 @@ export default function Pagination({ currentPage, totalPages, totalItems, itemsP
   };
 
   const pages = getPageNumbers();
-  const startItem = (currentPage - 1) * itemsPerPage + 1;
-  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const endItem = totalItems === 0 ? 0 : Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
     <div 
@@ -71,7 +72,8 @@ export default function Pagination({ currentPage, totalPages, totalItems, itemsP
         Showing <strong className="text-white font-semibold">{startItem}</strong> to <strong className="text-white font-semibold">{endItem}</strong> of <strong className="text-white font-semibold">{totalItems}</strong> entries
       </span>
       
-      <div className="flex flex-row flex-wrap items-center justify-center gap-1 sm:gap-1.5 shrink-0">
+      {totalItems > 0 && totalPages > 0 && (
+        <div className="flex flex-row flex-wrap items-center justify-center gap-1 sm:gap-1.5 shrink-0">
         <button
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
@@ -131,6 +133,7 @@ export default function Pagination({ currentPage, totalPages, totalItems, itemsP
           <CaretDoubleRight size={14} weight="bold" />
         </button>
       </div>
+      )}
     </div>
   );
 }

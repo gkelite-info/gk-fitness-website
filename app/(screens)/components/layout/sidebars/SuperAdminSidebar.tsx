@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Barbell, Users, MagnifyingGlass, Star, ShieldCheck, EnvelopeSimple } from "@phosphor-icons/react";
+import {
+  SquaresFour,
+  Barbell,
+  Users,
+  MagnifyingGlass,
+  Star,
+  ShieldCheck,
+  EnvelopeSimple
+} from "@phosphor-icons/react";
 import LogoutButton from "../../reusable/LogoutButton";
 
 interface NavItem {
@@ -13,6 +21,7 @@ interface NavItem {
 }
 
 const navLinks: NavItem[] = [
+  { name: "Dashboard", href: "/superadmin", icon: SquaresFour },
   { name: "Gyms", href: "/superadmin/gyms", icon: Barbell, badge: 120 },
   { name: "Demo Requests", href: "/superadmin/demo-requests", icon: EnvelopeSimple },
   { name: "Trainers", href: "/superadmin/trainers", icon: Users, badge: 48 },
@@ -25,7 +34,7 @@ export default function SuperAdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="w-[256px] h-full bg-[#0E0F13] border-r-[2px] border-[#232631] flex flex-col justify-between items-start px-4 py-6">
+    <div className="w-[256px] h-full bg-[#0E0F13] border-r-[2px] border-[#232631] flex flex-col justify-between items-start px-4 py-6 shrink-0">
       <div className="flex flex-col items-start gap-8 w-full">
         <div className="flex flex-row items-center gap-3 px-3 w-full">
           <div className="w-10 h-10 bg-[#D4FF32] rounded-xl flex items-center justify-center relative z-10 shadow-[0_10px_15px_-3px_rgba(212,255,50,0.2),0_4px_6px_-4px_rgba(212,255,50,0.2)]">
@@ -44,10 +53,10 @@ export default function SuperAdminSidebar() {
 
         <div className="flex flex-col items-start gap-2 w-full">
           {navLinks.map((link) => {
-            const isGymsLink = link.href === "/superadmin/gyms";
-            const isActive =
-              (isGymsLink && (pathname === "/superadmin" || pathname.startsWith("/superadmin/gyms"))) ||
-              (!isGymsLink && (pathname === link.href || pathname.startsWith(`${link.href}/`)));
+            const isDashboard = link.href === "/superadmin";
+            const isActive = isDashboard
+              ? pathname === "/superadmin" || pathname.startsWith("/superadmin/users")
+              : pathname === link.href || pathname.startsWith(`${link.href}/`);
 
             const Icon = link.icon;
 
@@ -55,7 +64,7 @@ export default function SuperAdminSidebar() {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`flex flex-row items-center px-4 py-3 gap-3 w-full h-[46px] rounded-2xl transition-all ${
+                className={`flex flex-row items-center px-4 py-3 gap-3 w-full h-[46px] rounded-2xl transition-all cursor-pointer ${
                   isActive
                     ? "bg-gradient-to-r from-[rgba(212,255,50,0.18)] to-[rgba(212,255,50,0.05)] border border-[#D4FF32] sidebar-glow text-[#D4FF32]"
                     : "text-[#94A3B8] hover:text-white"

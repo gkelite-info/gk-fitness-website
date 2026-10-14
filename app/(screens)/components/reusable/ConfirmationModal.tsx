@@ -16,6 +16,9 @@ interface ConfirmationModalProps {
   isConfirming?: boolean;
   confirmingText?: string;
   isDestructive?: boolean;
+  icon?: React.ReactNode;
+  iconContainerClassName?: string;
+  confirmButtonClassName?: string;
 }
 
 export default function ConfirmationModal({
@@ -29,6 +32,9 @@ export default function ConfirmationModal({
   isConfirming = false,
   confirmingText = "Processing...",
   isDestructive = true,
+  icon,
+  iconContainerClassName,
+  confirmButtonClassName,
 }: ConfirmationModalProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -69,15 +75,21 @@ export default function ConfirmationModal({
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 20 }}
-              className={`w-16 h-16 rounded-full flex items-center justify-center mb-5 shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)] ${isDestructive ? 'bg-gradient-to-b from-[#2F1B1E] to-[#201315] border border-[#482025] text-[#F43F5E]' : 'bg-gradient-to-b from-[#192B15] to-[#111c0f] border border-[rgba(210,248,41,0.2)] text-[#D2F829]'}`}
+              className={`w-16 h-16 rounded-full flex items-center justify-center mb-5 shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)] ${
+                iconContainerClassName
+                  ? iconContainerClassName
+                  : isDestructive
+                  ? "bg-gradient-to-b from-[#2F1B1E] to-[#201315] border border-[#482025] text-[#F43F5E]"
+                  : "bg-gradient-to-b from-[#192B15] to-[#111c0f] border border-[rgba(212,255,50,0.25)] text-[#D4FF32]"
+              }`}
             >
-              <WarningCircle size={32} weight="duotone" />
+              {icon || <WarningCircle size={32} weight="duotone" />}
             </motion.div>
 
-            <h2 className="font-['Nimbus_Sans'] font-bold text-xl leading-7 text-white tracking-[-0.4px] mb-2">
+            <h2 className="font-bold text-xl leading-7 text-white tracking-[-0.4px] mb-2">
               {title}
             </h2>
-            <p className="font-['Nimbus_Sans'] font-medium text-sm leading-5 text-[#94A3B8] mb-8 px-2">
+            <p className="font-medium text-sm leading-5 text-[#94A3B8] mb-8 px-2">
               {message}
             </p>
 
@@ -86,10 +98,12 @@ export default function ConfirmationModal({
                 type="button"
                 onClick={onConfirm}
                 disabled={isConfirming}
-                className={`flex items-center justify-center w-full h-[46px] rounded-xl font-['Nimbus_Sans'] font-bold text-[15px] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${
-                  isDestructive
+                className={`flex items-center justify-center w-full h-[46px] rounded-xl font-bold text-[15px] transition-all cursor-pointer active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed ${
+                  confirmButtonClassName
+                    ? confirmButtonClassName
+                    : isDestructive
                     ? "bg-[#E11D48] text-white hover:bg-[#BE123C] shadow-[0_4px_12px_rgba(225,29,72,0.2)]"
-                    : "bg-[#D2F829] text-black hover:bg-[#c2ef2b] shadow-[0_4px_12px_rgba(210,248,41,0.2)]"
+                    : "bg-[#D4FF32] text-black hover:bg-[#c2ef2b] shadow-[0_4px_12px_rgba(212,255,50,0.25)]"
                 }`}
               >
                 {isConfirming ? (

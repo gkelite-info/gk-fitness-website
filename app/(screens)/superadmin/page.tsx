@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import SuperAdminDashboardView from "@/app/(screens)/components/reusable/superadmin-dashboard/SuperAdminDashboardView";
 
-export default function SuperadminDashboard() {
-  redirect("/superadmin/gyms");
+export default function SuperadminDashboardPage() {
+  return <SuperAdminDashboardView />;
 }

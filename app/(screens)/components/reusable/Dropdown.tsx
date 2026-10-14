@@ -20,6 +20,8 @@ interface DropdownProps {
   multiSelect?: boolean;
   icon?: React.ReactNode;
   noTruncate?: boolean;
+  direction?: "auto" | "down" | "up";
+  align?: "left" | "right";
 }
 
 export default function Dropdown({
@@ -33,6 +35,8 @@ export default function Dropdown({
   multiSelect = false,
   icon,
   noTruncate = false,
+  direction = "auto",
+  align = "left",
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [openUpwards, setOpenUpwards] = useState(false);
@@ -40,43 +44,36 @@ export default function Dropdown({
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Handle clicking outside to close
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
-    
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  // Smart positioning logic
   useEffect(() => {
+    if (direction === "down") {
+      setOpenUpwards(false);
+      return;
+    }
+    if (direction === "up") {
+      setOpenUpwards(true);
+      return;
+    }
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const windowHeight = window.innerHeight;
-      
-      const dropdownHeight = 250; 
-      
+      const actualHeight = Math.min(250, options.length * 36 + 16);
       const spaceBelow = windowHeight - rect.bottom;
       const spaceAbove = rect.top;
-      
-      if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
-        setOpenUpwards(true);
-      } else {
-        setOpenUpwards(false);
-      }
+      setOpenUpwards(spaceBelow < actualHeight && spaceAbove > actualHeight);
     }
-  }, [isOpen]);
+  }, [isOpen, direction, options.length]);
 
   const handleSelect = (option: DropdownOption) => {
     if (!multiSelect) {
@@ -99,17 +96,14 @@ export default function Dropdown({
     }
     const currentValues = Array.isArray(value) ? value : [];
     if (currentValues.length === 0) return placeholder;
-    
-    const selectedLabels = options
-      .filter((opt) => currentValues.includes(opt.value))
-      .map((opt) => opt.label);
-      
-    return selectedLabels.join(", ");
+    return options.filter((opt) => currentValues.includes(opt.value)).map((opt) => opt.label).join(", ");
   };
 
   const hasSelection = multiSelect 
     ? Array.isArray(value) && value.length > 0
     : !!options.find((opt) => opt.value === value);
+
+  const alignClass = align === "right" ? "right-0" : "left-0";
 
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
@@ -124,7 +118,7 @@ export default function Dropdown({
       >
         {icon && <div className="mr-1.5 flex shrink-0 items-center text-[#9CA3AF] group-hover:text-[#D1D5DB] transition-colors">{icon}</div>}
         <span
-          className={`flex-1 text-left font-sans text-xs sm:text-sm leading-4 ${
+          className={`min-w-0 flex-1 text-left font-sans text-xs sm:text-sm leading-4 ${
             noTruncate ? "whitespace-nowrap" : "truncate"
           } ${hasSelection ? "text-[#D1D5DB]" : "text-[#6B7280]"}`}
         >
@@ -133,7 +127,7 @@ export default function Dropdown({
         <motion.div
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.2 }}
-          className="ml-2 text-[#6B7280] group-hover:text-[#D1D5DB]"
+          className="ml-2 shrink-0 flex items-center text-[#6B7280] group-hover:text-[#D1D5DB]"
         >
           <CaretDown size={14} weight="bold" />
         </motion.div>
@@ -147,7 +141,7 @@ export default function Dropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: openUpwards ? 5 : -5, scale: 0.98 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className={`absolute left-0 ${
+            className={`absolute ${alignClass} ${
               noTruncate ? "min-w-full w-max max-w-[340px]" : "w-full"
             } z-50 bg-[#1A2029] border border-[#303744] shadow-xl rounded-lg overflow-x-hidden flex flex-col py-1 scrollbar-themed ${
               openUpwards ? "bottom-full mb-1" : "top-full mt-1"

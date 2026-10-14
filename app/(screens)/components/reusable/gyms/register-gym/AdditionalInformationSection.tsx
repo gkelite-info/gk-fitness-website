@@ -12,7 +12,7 @@ export default function AdditionalInformationSection({
 }: AdditionalInformationSectionProps) {
   const maxNotesLength = 500;
   const inputClass =
-    "w-full h-11 px-3.5 rounded-xl bg-[#1B202D] border border-[#232B3C] text-sm text-white placeholder-[#4A5568] outline-none focus:outline-none focus-visible:outline-none focus:border-[#D4FF32] transition-colors";
+    "w-full h-11 px-3.5 rounded-xl bg-[#1B202D] border border-[#232B3C] text-sm text-white placeholder-[#4A5568] outline-none focus:outline-none focus-visible:outline-none focus:border-[#D4FF32] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 
   return (
     <div className="w-full bg-[#121620] border border-[#1E2433] rounded-2xl p-5 sm:p-6 flex flex-col gap-5">

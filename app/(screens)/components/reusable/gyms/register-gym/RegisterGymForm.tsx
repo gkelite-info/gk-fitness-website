@@ -10,6 +10,7 @@ import OwnerInformationSection from "./OwnerInformationSection";
 import AdditionalInformationSection from "./AdditionalInformationSection";
 import GymLogoUploadCard from "./GymLogoUploadCard";
 import GymQrCard from "./GymQrCard";
+import GymSuccessModal from "./GymSuccessModal";
 
 interface RegisterGymFormProps {
   mode?: "create" | "edit";
@@ -33,6 +34,7 @@ export default function RegisterGymForm({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleFieldChange = <K extends keyof GymFormData>(
     key: K,
@@ -92,14 +94,9 @@ export default function RegisterGymForm({
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
-      toast.success(
-        isEdit ? "Gym updated successfully!" : "Gym registered successfully!",
-        { id: "gym-submit-success" }
-      );
+      setShowSuccessModal(true);
       if (onSuccess) {
         onSuccess(formData);
-      } else {
-        router.push("/superadmin/gyms");
       }
     }, 500);
   };
@@ -174,6 +171,14 @@ export default function RegisterGymForm({
           </div>
         </div>
       </form>
+
+      <GymSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        mode={mode}
+        formData={formData}
+        gymId={gymId}
+      />
     </div>
   );
 }
