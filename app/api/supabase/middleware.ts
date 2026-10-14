@@ -47,7 +47,7 @@ export async function updateSession(request: NextRequest) {
     return createRedirectResponse('/login');
   }
 
-  if (user && isAuthPage) {
+  if (user && isAuthPage && !request.nextUrl.searchParams.has('role')) {
     const { data: userData } = await supabase
       .from('users')
       .select('role')
@@ -68,12 +68,11 @@ export async function updateSession(request: NextRequest) {
   if (user && !isAuthPage) {
     const { data: userData } = await supabase
       .from('users')
-      .select('role')
+      .select('role, isEmailVerified')
       .eq('userId', user.id)
       .single();
       
     const role = userData?.role || 'customer';
-    
     if (pathname.startsWith('/superadmin') && role !== 'superadmin') return createRedirectResponse('/' + role);
     if (pathname.startsWith('/owner') && role !== 'owner') return createRedirectResponse('/' + role);
     if (pathname.startsWith('/trainer') && role !== 'trainer') return createRedirectResponse('/' + role);

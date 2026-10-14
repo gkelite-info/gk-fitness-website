@@ -1,7 +1,9 @@
 export interface DemoFormValues {
   name: string;
+  email: string;
   gymName: string;
   city: string;
+  memberCount: string;
   phone: string;
   agreeContact: boolean;
 }
@@ -32,6 +34,13 @@ export function validateField(field: keyof DemoFormValues, value: any): string |
       if (!/^[A-Za-z\s.'-]+$/.test(trimmed)) return "Name can only contain letters, spaces, and dots.";
       return null;
     }
+    case "email": {
+      const trimmed = (value || "").trim();
+      if (!trimmed) return "Email address is required.";
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmed)) return "Please enter a valid email address.";
+      return null;
+    }
     case "gymName": {
       const trimmed = (value || "").trim();
       if (!trimmed) return "Gym name is required.";
@@ -43,6 +52,11 @@ export function validateField(field: keyof DemoFormValues, value: any): string |
       if (!trimmed) return "Gym city is required.";
       if (trimmed.length < 2) return "City must be at least 2 characters.";
       if (!/^[A-Za-z\s.-]+$/.test(trimmed)) return "City can only contain letters and spaces.";
+      return null;
+    }
+    case "memberCount": {
+      const trimmed = (value || "").trim();
+      if (!trimmed) return "Active member count is required.";
       return null;
     }
     case "phone": {
@@ -67,11 +81,17 @@ export function validateDemoForm(values: DemoFormValues): DemoFormErrors {
   const nameErr = validateField("name", values.name);
   if (nameErr) errors.name = nameErr;
 
+  const emailErr = validateField("email", values.email);
+  if (emailErr) errors.email = emailErr;
+
   const gymErr = validateField("gymName", values.gymName);
   if (gymErr) errors.gymName = gymErr;
 
   const cityErr = validateField("city", values.city);
   if (cityErr) errors.city = cityErr;
+
+  const memberCountErr = validateField("memberCount", values.memberCount);
+  if (memberCountErr) errors.memberCount = memberCountErr;
 
   const phoneErr = validateField("phone", values.phone);
   if (phoneErr) errors.phone = phoneErr;
