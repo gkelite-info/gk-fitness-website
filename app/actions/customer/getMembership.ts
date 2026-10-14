@@ -45,35 +45,37 @@ export async function getMembership() {
     .order("createdAt", { ascending: false });
 
   if (!plans || plans.length === 0) {
-    return { status: "none", gymId };
+    return { status: "none", gymId, customerId };
   }
 
-  const activePlan = plans.find((p: any) => p.is_Active && p.endDate);
+  const activePlan = plans.find((p: any) => (p.is_Active ?? p.isActive) && p.endDate && new Date(p.endDate) > new Date());
+  const latestPlan = activePlan || plans[0];
 
-  if (!activePlan) {
-    return { status: "none", gymId };
-  }
-
-  const end = new Date(activePlan.endDate);
+  const end = latestPlan?.endDate ? new Date(latestPlan.endDate) : null;
   const now = new Date();
-  const diffTime = end.getTime() - now.getTime();
+  const diffTime = end ? end.getTime() - now.getTime() : 0;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   const currentDaysLeft = diffDays > 0 ? diffDays : 0;
+  const isExpired = end ? end.getTime() <= now.getTime() : true;
+  const isActive = Boolean(latestPlan?.is_Active ?? latestPlan?.isActive);
 
-  if (diffDays <= 0) {
+  if (isExpired || !isActive) {
     return {
       status: "expired",
-      planName: "EXPIRED",
+      planName: latestPlan?.plan?.planName?.toUpperCase() || "PLAN EXPIRED",
       daysLeft: 0,
       progressPercentage: 0,
       gymId,
-      planId: activePlan.planId,
+      customerId,
+      planId: latestPlan?.planId,
+      startDate: latestPlan?.startDate,
+      endDate: latestPlan?.endDate,
     };
   }
 
   let progressPercentage = 0;
-  if (activePlan.startDate) {
-    const start = new Date(activePlan.startDate);
+  if (latestPlan?.startDate && end) {
+    const start = new Date(latestPlan.startDate);
     const totalTime = end.getTime() - start.getTime();
     const totalDays = Math.ceil(totalTime / (1000 * 60 * 60 * 24));
     if (totalDays > 0) {
@@ -84,12 +86,14 @@ export async function getMembership() {
 
   return {
     status: "active",
-    planName: activePlan.plan?.planName?.toUpperCase() || "MEMBER",
+    planName: latestPlan?.plan?.planName?.toUpperCase() || "MEMBER",
     daysLeft: currentDaysLeft,
     progressPercentage,
     gymId,
-    planId: activePlan.planId,
-    startDate: activePlan.startDate,
-    endDate: activePlan.endDate,
+    customerId,
+    planId: latestPlan?.planId,
+    startDate: latestPlan?.startDate,
+    endDate: latestPlan?.endDate,
   };
 }
+

@@ -12,6 +12,8 @@ export function base64ToArrayBuffer(base64: string): ArrayBuffer {
   return bytes.buffer;
 }
 
+export type GymLabelType = 'basic' | 'silver' | 'white' | 'premiumwhite';
+
 export interface GymAttributes {
   gymId?: string;
   gymName: string;
@@ -34,6 +36,7 @@ export interface GymAttributes {
   deletedAt?: string | Date | null;
   website?: string | null;
   qrPath?: string | null;
+  label?: GymLabelType | string | null;
 }
 
 export interface SaveGymParams {
@@ -54,6 +57,7 @@ export interface SaveGymParams {
   createdBy: string;
   website?: string | null;
   qrPath?: string | null;
+  label?: GymLabelType | string | null;
 }
 
 
@@ -158,6 +162,7 @@ export async function saveGym(gymData: SaveGymParams) {
         logo: gymData.logo,
         website: gymData.website,
         qrPath: gymData.qrPath,
+        label: gymData.label !== undefined ? gymData.label : undefined,
         isActive: gymData.isActive ?? true,
         updatedAt: now,
       })
@@ -191,6 +196,7 @@ export async function saveGym(gymData: SaveGymParams) {
           logo: gymData.logo || null,
           website: gymData.website || null,
           qrPath: gymData.qrPath || null,
+          label: gymData.label || 'basic',
           isActive: gymData.isActive ?? true,
           is_deleted: false,
           createdBy: gymData.createdBy,
@@ -319,4 +325,5 @@ export async function uploadGymQR(base64Data: string, gymId: string): Promise<st
     throw error;
   }
 }
+
 

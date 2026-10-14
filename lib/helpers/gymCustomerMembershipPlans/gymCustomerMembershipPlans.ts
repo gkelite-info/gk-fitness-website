@@ -54,6 +54,33 @@ export async function fetchGymCustomerMembershipPlans(gymId?: string, customerId
     throw error;
   }
 
+  if ((!data || data.length === 0) && customerId) {
+    const { data: custRecord } = await supabase
+      .from('gym_customers')
+      .select('customerId')
+      .or(`userId.eq.${customerId},email.eq.${customerId}`)
+      .maybeSingle();
+
+    if (custRecord?.customerId && custRecord.customerId !== customerId) {
+      let fallbackQuery = supabase
+        .from('gym_customer_membership_plans')
+        .select('*, plan:gym_membership_plans(planName, durationMonths, price), gym_customers(fullName, email, phone, gymId, is_Active, creator:users!gym_customers_createdBy_fkey(profilePhoto, status, createdAt))')
+        .eq('is_deleted', false)
+        .eq('customerId', custRecord.customerId)
+        .order('createdAt', { ascending: false })
+        .limit(50);
+
+      if (gymId) {
+        fallbackQuery = fallbackQuery.eq('gymId', gymId);
+      }
+
+      const { data: fallbackData } = await fallbackQuery;
+      if (fallbackData && fallbackData.length > 0) {
+        return fallbackData;
+      }
+    }
+  }
+
   return data ?? [];
 }
 

@@ -21,22 +21,21 @@ const accessDurationOptions: DropdownOption[] = [
 
 export default function MemberAppAccessClient() {
   const router = useRouter();
-  
+
   const [priorNotification, setPriorNotification] = useState<string>("7");
   const [allowAccess, setAllowAccess] = useState<boolean>(true);
   const [accessDuration, setAccessDuration] = useState<string>("30");
 
   const handleSave = () => {
-    console.log("Saving preferences...", { priorNotification, allowAccess, accessDuration });
-    router.back(); 
+    router.back();
   };
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col h-full p-4 sm:p-6 lg:p-8 pt-6 gap-6 overflow-y-auto scrollbar-themed text-white">
       <div className="flex flex-col gap-2 w-full shrink-0">
         <div className="flex items-center gap-3">
-          <button 
-            onClick={() => router.back()} 
+          <button
+            onClick={() => router.back()}
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
           >
             <ArrowLeft size={20} weight="bold" />
@@ -51,7 +50,7 @@ export default function MemberAppAccessClient() {
       </div>
 
       <div className="flex flex-col gap-4 w-full">
-        
+
         <div className="bg-[#12141A] border border-[#232631] rounded-2xl p-5 sm:p-6 flex flex-col gap-5">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
             <div className="w-12 h-12 bg-[#B45309]/10 border border-[#B45309]/20 rounded-xl flex items-center justify-center shrink-0">
@@ -62,7 +61,7 @@ export default function MemberAppAccessClient() {
               <p className="font-['Nimbus_Sans'] text-[12px] sm:text-[13px] text-[#94A3B8]">Send a notification to members before their membership expires.</p>
             </div>
           </div>
-          
+
           <div className="w-full relative">
             <Dropdown
               options={priorNotificationOptions}
@@ -110,7 +109,7 @@ export default function MemberAppAccessClient() {
               <p className="font-['Nimbus_Sans'] text-[12px] sm:text-[13px] text-[#94A3B8]">Select the duration for app access after expiry.</p>
             </div>
           </div>
-          
+
           <div className="w-full relative">
             <Dropdown
               options={accessDurationOptions}
@@ -131,10 +130,10 @@ export default function MemberAppAccessClient() {
 
           <div className="bg-[#0A0B0E] border border-[#232631] rounded-xl p-5 flex flex-col gap-5 mt-2">
             <div className="flex items-center gap-2 w-fit bg-[#C8FF00]/10 px-2.5 py-1.5 rounded-md border border-[#C8FF00]/20">
-               <CalendarBlank size={14} weight="bold" className="text-[#C8FF00]" />
-               <span className="text-[#C8FF00] font-['Nimbus_Sans'] text-[11px] font-bold uppercase tracking-wider">Example</span>
+              <CalendarBlank size={14} weight="bold" className="text-[#C8FF00]" />
+              <span className="text-[#C8FF00] font-['Nimbus_Sans'] text-[11px] font-bold uppercase tracking-wider">Example</span>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-5 sm:gap-2">
               <div className="flex flex-col items-center sm:items-start gap-1.5">
                 <span className="font-['Nimbus_Sans'] text-[12px] text-[#94A3B8]">Membership expires on</span>
@@ -143,7 +142,7 @@ export default function MemberAppAccessClient() {
                   <span className="font-['Nimbus_Sans'] font-medium text-[15px] text-white">10 Aug 2026</span>
                 </div>
               </div>
-              
+
               <div className="hidden sm:flex shrink-0 opacity-50">
                 <ArrowRight size={20} className="text-[#C8FF00]" />
               </div>

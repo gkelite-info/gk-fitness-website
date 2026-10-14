@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getMembership } from "@/app/actions/customer/getMembership";
 import MembershipCard from "./components/MembershipCard";
 import TodayWorkoutCard from "./components/TodayWorkoutCard";
@@ -16,13 +17,16 @@ export default async function CustomerDashboard() {
         </h1>
       </div>
 
-      <MembershipCard 
-        planName={membership?.planName || "NO PLAN"} 
-        daysLeft={membership?.daysLeft || 0}
-        progressPercentage={membership?.progressPercentage || 0}
-        status={(membership?.status as "active" | "expired" | "none") || "none"}
-        gymId={membership?.gymId || ""}
-      />
+      <Suspense fallback={<div className="h-44 bg-[#141414] border border-[#222222] rounded-3xl animate-pulse mb-4" />}>
+        <MembershipCard 
+          planName={membership?.planName || "NO PLAN"} 
+          daysLeft={membership?.daysLeft || 0}
+          progressPercentage={membership?.progressPercentage || 0}
+          status={(membership?.status as "active" | "expired" | "none") || "none"}
+          gymId={membership?.gymId || ""}
+          customerId={membership?.customerId || ""}
+        />
+      </Suspense>
 
       <TodayWorkoutCard />
       

@@ -1,7 +1,8 @@
 "use client";
 
 import { Star, QrCode, ArrowRight } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import UpgradePlanModal from "./UpgradePlanModal";
 
 interface MembershipCardProps {
@@ -10,10 +11,49 @@ interface MembershipCardProps {
   progressPercentage: number;
   status: "active" | "expired" | "none";
   gymId: string;
+  customerId?: string;
 }
 
-export default function MembershipCard({ planName, daysLeft, progressPercentage, status, gymId }: MembershipCardProps) {
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+export default function MembershipCard({
+  planName,
+  daysLeft,
+  progressPercentage,
+  status,
+  gymId,
+  customerId,
+}: MembershipCardProps) {
+  const searchParams = useSearchParams();
+  const actionParam = searchParams.get("action");
+  const planIdParam = searchParams.get("planId");
+
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(
+    actionParam === "renew" || !!planIdParam
+  );
+
+  useEffect(() => {
+    if (actionParam === "renew" || planIdParam) {
+      setIsUpgradeModalOpen(true);
+    }
+  }, [actionParam, planIdParam]);
+
+  const handleOpenModal = () => {
+    setIsUpgradeModalOpen(true);
+    if (typeof window !== "undefined") {
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set("action", "renew");
+      window.history.replaceState(null, "", currentUrl.toString());
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsUpgradeModalOpen(false);
+    if (typeof window !== "undefined") {
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.delete("action");
+      currentUrl.searchParams.delete("planId");
+      window.history.replaceState(null, "", currentUrl.toString());
+    }
+  };
 
   return (
     <>
@@ -36,15 +76,15 @@ export default function MembershipCard({ planName, daysLeft, progressPercentage,
               </div>
 
               <div className="w-full h-1.5 bg-[#262626] rounded-full overflow-hidden mb-4">
-                <div 
-                  className="h-full bg-[#D7FF00] rounded-full transition-all duration-500 ease-out" 
-                  style={{ width: `${progressPercentage}%` }} 
+                <div
+                  className="h-full bg-[#D7FF00] rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${progressPercentage}%` }}
                 />
               </div>
-              
-              <button 
-                onClick={() => setIsUpgradeModalOpen(true)}
-                className="flex items-center gap-1.5 text-[#8E8E93] hover:text-white transition-colors"
+
+              <button
+                onClick={handleOpenModal}
+                className="flex items-center gap-1.5 text-[#8E8E93] hover:text-white transition-colors cursor-pointer"
               >
                 <span className="text-xs font-medium">Upgrade Plan</span>
                 <ArrowRight size={12} weight="bold" />
@@ -56,14 +96,14 @@ export default function MembershipCard({ planName, daysLeft, progressPercentage,
                 {status === "expired" ? "Plan Expired" : "No Active Plan"}
               </h3>
               <p className="text-[#8E8E93] text-xs font-medium mb-4">
-                {status === "expired" 
-                  ? "Renew your plan to continue your journey." 
+                {status === "expired"
+                  ? "Renew your plan to continue your journey."
                   : "Get a membership plan to unlock all features."}
               </p>
-              
-              <button 
-                onClick={() => setIsUpgradeModalOpen(true)}
-                className="bg-[#D7FF00] py-2.5 px-5 rounded-xl self-start active:opacity-80 transition-opacity flex items-center justify-center"
+
+              <button
+                onClick={handleOpenModal}
+                className="bg-[#D7FF00] py-2.5 px-5 rounded-xl self-start active:opacity-80 transition-opacity flex items-center justify-center cursor-pointer"
               >
                 <span className="text-black text-xs font-bold tracking-wide">
                   {status === "expired" ? "RENEW PLAN" : "GET A PLAN"}
@@ -77,7 +117,7 @@ export default function MembershipCard({ planName, daysLeft, progressPercentage,
           <>
             <div className="w-[1px] h-20 bg-[#262626] mx-2" />
 
-            <a 
+            <a
               href="gk-fitness://checkin"
               className="flex flex-col items-center justify-center pl-2 active:opacity-80 hover:opacity-90 transition-opacity cursor-pointer"
             >
@@ -90,11 +130,12 @@ export default function MembershipCard({ planName, daysLeft, progressPercentage,
           </>
         )}
       </div>
-      
+
       {isUpgradeModalOpen && (
-        <UpgradePlanModal 
-          gymId={gymId} 
-          onClose={() => setIsUpgradeModalOpen(false)} 
+        <UpgradePlanModal
+          gymId={gymId}
+          customerId={customerId}
+          onClose={handleCloseModal}
         />
       )}
     </>

@@ -100,7 +100,6 @@ export default function PlanForm({ isEdit = false, initialData }: PlanFormProps)
   };
 
   const handleSubmit = async () => {
-    console.log("[PlanForm] Validate form inputs (isEdit:", isEdit, "):", { planName, labelName, planFor, price, selectedFeatures });
     if (!planName.trim()) {
       console.warn("[PlanForm] Validation failed: planName is empty");
       toast.error("Plan Name is required", { id: "plan-name-req" });
@@ -136,40 +135,30 @@ export default function PlanForm({ isEdit = false, initialData }: PlanFormProps)
         isActive: true,
       };
 
-      console.log("[PlanForm] Saving subscription payload:", planPayload);
       const savedPlan = await saveSubscriptionMutation.mutateAsync(planPayload);
-      console.log("[PlanForm] Subscription saved response:", savedPlan);
 
       const targetPlanId = initialData?.subscriptionPlanId || savedPlan?.subscriptionPlanId;
       if (!targetPlanId) throw new Error("Missing targetPlanId after saving subscription");
 
       if (isEdit && dbFeatures && dbFeatures.length > 0) {
-        console.log("[PlanForm] Syncing features with existing DB features:", dbFeatures);
         const existingNames = dbFeatures.map((f: { featureName: string }) => f.featureName);
         const featuresToAdd = selectedFeatures.filter((name) => !existingNames.includes(name));
         const featuresToRemove = dbFeatures.filter((f: { featureName: string; subscriptionFeatureId: string }) => !selectedFeatures.includes(f.featureName));
 
-        console.log("[PlanForm] Features to add:", featuresToAdd, "Features to remove:", featuresToRemove);
         for (const feat of featuresToAdd) {
-          console.log("[PlanForm] Adding feature:", feat);
           await saveFeatureMutation.mutateAsync({ subscriptionPlanId: targetPlanId, featureName: feat });
         }
         for (const feat of featuresToRemove) {
           if (feat.subscriptionFeatureId) {
-            console.log("[PlanForm] Removing feature:", feat.subscriptionFeatureId);
             await deleteFeatureMutation.mutateAsync(feat.subscriptionFeatureId);
           }
         }
       } else {
-        console.log(`[PlanForm] Inserting ${selectedFeatures.length} features for planId:`, targetPlanId);
         for (const feature of selectedFeatures) {
-          console.log(`[PlanForm] Saving feature "${feature}"...`);
           const res = await saveFeatureMutation.mutateAsync({ subscriptionPlanId: targetPlanId, featureName: feature });
-          console.log(`[PlanForm] Feature "${feature}" saved:`, res);
         }
       }
 
-      console.log("[PlanForm] Completed plan & feature mutations successfully!");
       toast.success(isEdit ? "Plan updated successfully!" : "Plan created successfully!", { id: "plan-success" });
       setTimeout(() => router.back(), 1200);
     } catch (error: any) {

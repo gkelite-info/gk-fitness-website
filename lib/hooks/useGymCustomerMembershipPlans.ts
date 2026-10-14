@@ -10,7 +10,10 @@ export function useGymCustomerMembershipPlans(userId: string | null, customerId?
 
       const gymId = await getOwnerGymId(userId);
       
-      if (!gymId) return [];
+      if (!gymId) {
+        const { fetchGymCustomerMembershipPlans } = await import('@/lib/helpers/gymCustomerMembershipPlans/gymCustomerMembershipPlans');
+        return await fetchGymCustomerMembershipPlans(undefined, customerId || userId);
+      }
 
       const supabase = createClient();
       let query = supabase
