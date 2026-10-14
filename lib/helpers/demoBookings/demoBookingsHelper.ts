@@ -11,6 +11,7 @@ export type GymRole =
 
 export interface CreateDemoBookingParams {
   name: string;
+  email?: string | null;
   gymName: string;
   gymCity: string;
   mobile: string;
@@ -27,7 +28,6 @@ export interface DemoBookingRecord {
   gymCity: string;
   mobile: string;
   memberCount: string | null;
-  gymRole: GymRole | null;
   requirement: string | null;
   subscriptionPlanId: string | null;
   isCompleted: boolean;
@@ -58,19 +58,12 @@ export async function createDemoBooking(params: CreateDemoBookingParams): Promis
     const demoBookingId = crypto.randomUUID();
     const now = new Date().toISOString();
 
-    const allowedRoles: GymRole[] = [
-      "owner",
-      "trainer",
-      "customer",
-      "globaltrainer",
-      "globalcustomer",
-      "superadmin",
-    ];
+    const requirementParts = [
+      params.email ? `Email: ${params.email.trim()}` : null,
+      params.requirement ? params.requirement.trim() : null,
+    ].filter(Boolean);
 
-    let validatedRole: GymRole | null = null;
-    if (params.gymRole && allowedRoles.includes(params.gymRole as GymRole)) {
-      validatedRole = params.gymRole as GymRole;
-    }
+    const requirementText = requirementParts.join(" | ");
 
     const payload = {
       demoBookingId,
@@ -79,8 +72,7 @@ export async function createDemoBooking(params: CreateDemoBookingParams): Promis
       gymCity: params.gymCity.trim(),
       mobile: params.mobile.trim(),
       memberCount: params.memberCount ? params.memberCount.trim() : null,
-      gymRole: validatedRole,
-      requirement: params.requirement ? params.requirement.trim() : null,
+      requirement: requirementText ? requirementText.slice(0, 255) : null,
       subscriptionPlanId: params.subscriptionPlanId || null,
       isCompleted: false,
       createdAt: now,

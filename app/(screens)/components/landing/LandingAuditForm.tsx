@@ -17,8 +17,10 @@ import {
 export default function LandingAuditForm() {
   const [role, setRole] = useState<ConsultationRole>("owner");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [gymName, setGymName] = useState("");
   const [city, setCity] = useState("");
+  const [memberCount, setMemberCount] = useState("");
   const [phone, setPhone] = useState("");
   const [agreeContact, setAgreeContact] = useState(true);
   const [agreeMeta, setAgreeMeta] = useState(false);
@@ -29,7 +31,20 @@ export default function LandingAuditForm() {
 
   const handleBlur = (field: keyof DemoFormValues) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
-    const val = field === "name" ? name : field === "gymName" ? gymName : field === "city" ? city : field === "phone" ? phone : agreeContact;
+    const val =
+      field === "name"
+        ? name
+        : field === "email"
+        ? email
+        : field === "gymName"
+        ? gymName
+        : field === "city"
+        ? city
+        : field === "memberCount"
+        ? memberCount
+        : field === "phone"
+        ? phone
+        : agreeContact;
     const err = validateField(field, val);
     setErrors((prev) => ({ ...prev, [field]: err || undefined }));
   };
@@ -52,6 +67,15 @@ export default function LandingAuditForm() {
     }
   };
 
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setEmail(val);
+    if (touched.email) {
+      const err = validateField("email", val);
+      setErrors((prev) => ({ ...prev, email: err || undefined }));
+    }
+  };
+
   const handleGymNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = capitalizeWords(e.target.value);
     setGymName(formatted);
@@ -70,13 +94,22 @@ export default function LandingAuditForm() {
     }
   };
 
+  const handleMemberCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setMemberCount(val);
+    if (touched.memberCount) {
+      const err = validateField("memberCount", val);
+      setErrors((prev) => ({ ...prev, memberCount: err || undefined }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const formErrors = validateDemoForm({ name, gymName, city, phone, agreeContact });
+    const formErrors = validateDemoForm({ name, email, gymName, city, memberCount, phone, agreeContact });
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
-      setTouched({ name: true, gymName: true, city: true, phone: true, agreeContact: true });
+      setTouched({ name: true, email: true, gymName: true, city: true, memberCount: true, phone: true, agreeContact: true });
       const firstErr = Object.values(formErrors)[0];
       if (firstErr) toast.error(firstErr);
       return;
@@ -85,13 +118,14 @@ export default function LandingAuditForm() {
     setLoading(true);
     const res = await submitConsultationRequest({
       fullName: name.trim(),
+      email: email.trim(),
       gymName: gymName.trim(),
       phone,
       city: city.trim(),
       role,
       agreeContact,
       agreeMeta,
-      memberCount: "N/A",
+      memberCount: memberCount.trim(),
       notes: `Role: ${role}`,
     });
     setLoading(false);
@@ -107,8 +141,10 @@ export default function LandingAuditForm() {
   const handleReset = () => {
     setSubmitted(false);
     setName("");
+    setEmail("");
     setGymName("");
     setCity("");
+    setMemberCount("");
     setPhone("");
     setRole("owner");
     setAgreeContact(true);
@@ -155,10 +191,14 @@ export default function LandingAuditForm() {
           onRoleChange={setRole}
           name={name}
           onNameChange={handleNameChange}
+          email={email}
+          onEmailChange={handleEmailChange}
           gymName={gymName}
           onGymNameChange={handleGymNameChange}
           city={city}
           onCityChange={handleCityChange}
+          memberCount={memberCount}
+          onMemberCountChange={handleMemberCountChange}
           phone={phone}
           onPhoneChange={handlePhoneChange}
           agreeContact={agreeContact}

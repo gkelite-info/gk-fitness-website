@@ -2,14 +2,18 @@ import { ConsultationRole } from "@/app/actions/consultation";
 import { DemoFormErrors, DemoFormValues } from "@/lib/validations/demoValidation";
 
 interface DemoBookingFieldsProps {
-  role: ConsultationRole;
-  onRoleChange: (role: ConsultationRole) => void;
+  role?: ConsultationRole;
+  onRoleChange?: (role: ConsultationRole) => void;
   name: string;
   onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  email: string;
+  onEmailChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   gymName: string;
   onGymNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   city: string;
   onCityChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  memberCount: string;
+  onMemberCountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   phone: string;
   onPhoneChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   agreeContact: boolean;
@@ -22,14 +26,18 @@ interface DemoBookingFieldsProps {
 }
 
 export default function DemoBookingFields({
-  role,
+  role = "owner",
   onRoleChange,
   name,
   onNameChange,
+  email,
+  onEmailChange,
   gymName,
   onGymNameChange,
   city,
   onCityChange,
+  memberCount,
+  onMemberCountChange,
   phone,
   onPhoneChange,
   agreeContact,
@@ -46,18 +54,13 @@ export default function DemoBookingFields({
         <label className="block text-xs font-medium text-[#CBD5E1] mb-1">
           What is your role in this gym?
         </label>
-        <select
-          value={role}
-          onChange={(e) => onRoleChange(e.target.value as ConsultationRole)}
-          className="w-full h-11 px-3.5 rounded-xl bg-[#090A0E] border border-white/10 text-white text-sm focus:border-[#D4FF32] outline-none"
-        >
-          <option value="owner">Owner</option>
-          <option value="trainer">Trainer</option>
-          <option value="customer">Customer</option>
-          <option value="globaltrainer">Global Trainer</option>
-          <option value="globalcustomer">Global Customer</option>
-          <option value="superadmin">Super Admin</option>
-        </select>
+        <input
+          type="text"
+          value={role ? (role === "owner" ? "Owner" : role.charAt(0).toUpperCase() + role.slice(1)) : "Owner"}
+          readOnly
+          disabled
+          className="w-full h-11 px-3.5 rounded-xl bg-[#090A0E] border border-white/10 text-white/90 text-sm outline-none cursor-not-allowed select-none opacity-80"
+        />
       </div>
 
       <div>
@@ -78,6 +81,27 @@ export default function DemoBookingFields({
         />
         {touched.name && errors.name && (
           <p className="text-[11px] text-red-400 mt-1">{errors.name}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-[#CBD5E1] mb-1">
+          Your email address
+        </label>
+        <input
+          type="email"
+          placeholder="e.g. rahul@example.com"
+          value={email}
+          onChange={onEmailChange}
+          onBlur={() => onBlur("email")}
+          className={`w-full h-11 px-3.5 rounded-xl bg-[#090A0E] border text-white text-sm outline-none transition-colors ${
+            touched.email && errors.email
+              ? "border-red-500/80 focus:border-red-500 ring-1 ring-red-500/20"
+              : "border-white/10 focus:border-[#D4FF32]"
+          }`}
+        />
+        {touched.email && errors.email && (
+          <p className="text-[11px] text-red-400 mt-1">{errors.email}</p>
         )}
       </div>
 
@@ -122,6 +146,27 @@ export default function DemoBookingFields({
             <p className="text-[11px] text-red-400 mt-1">{errors.city}</p>
           )}
         </div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-[#CBD5E1] mb-1">
+          Active member count
+        </label>
+        <input
+          type="text"
+          placeholder="e.g. 250"
+          value={memberCount}
+          onChange={onMemberCountChange}
+          onBlur={() => onBlur("memberCount")}
+          className={`w-full h-11 px-3.5 rounded-xl bg-[#090A0E] border text-white text-sm outline-none transition-colors ${
+            touched.memberCount && errors.memberCount
+              ? "border-red-500/80 focus:border-red-500 ring-1 ring-red-500/20"
+              : "border-white/10 focus:border-[#D4FF32]"
+          }`}
+        />
+        {touched.memberCount && errors.memberCount && (
+          <p className="text-[11px] text-red-400 mt-1">{errors.memberCount}</p>
+        )}
       </div>
 
       <div>

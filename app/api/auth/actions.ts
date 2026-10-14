@@ -59,3 +59,39 @@ export async function rollbackAuthUser(userId: string) {
 
   return { success: true };
 }
+
+export async function getCurrentUserRole() {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const { data: userData } = await supabase
+      .from("users")
+      .select("role, name, email, isEmailVerified")
+      .eq("userId", user.id)
+      .maybeSingle();
+
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: userData?.name || user.user_metadata?.name || "",
+        role: userData?.role || user.user_metadata?.role || "customer",
+        isEmailVerified: userData?.isEmailVerified === true,
+      },
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || "Failed to fetch user role",
+    };
+  }
+}
+

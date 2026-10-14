@@ -11,6 +11,7 @@ export type ConsultationRole = GymRole;
 
 export interface ConsultationFormData {
   fullName: string;
+  email?: string;
   gymName: string;
   phone: string;
   city: string;
@@ -32,6 +33,14 @@ export async function submitConsultationRequest(data: ConsultationFormData): Pro
     const fullName = data.fullName?.trim();
     if (!fullName || fullName.length < 2) {
       return { success: false, error: "Please enter a valid name (minimum 2 characters)." };
+    }
+
+    const email = data.email?.trim();
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return { success: false, error: "Please enter a valid email address." };
+      }
     }
 
     const gymName = data.gymName?.trim();
@@ -56,11 +65,12 @@ export async function submitConsultationRequest(data: ConsultationFormData): Pro
 
     const bookingRes = await createDemoBooking({
       name: capitalizeWords(fullName),
+      email: email || null,
       gymName: capitalizeWords(gymName),
       gymCity: capitalizeWords(city),
       mobile: normalizedPhone,
       gymRole: data.role || "owner",
-      memberCount: data.memberCount || null,
+      memberCount: data.memberCount || "100 - 300",
       requirement: data.notes || null,
       subscriptionPlanId: data.subscriptionPlanId || null,
     });

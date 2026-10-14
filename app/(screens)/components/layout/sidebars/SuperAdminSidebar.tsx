@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Barbell, Users, MagnifyingGlass, Star, ShieldCheck } from "@phosphor-icons/react";
+import { Barbell, Users, MagnifyingGlass, Star, ShieldCheck, EnvelopeSimple } from "@phosphor-icons/react";
 import LogoutButton from "../../reusable/LogoutButton";
 
 interface NavItem {
@@ -14,6 +14,7 @@ interface NavItem {
 
 const navLinks: NavItem[] = [
   { name: "Gyms", href: "/superadmin/gyms", icon: Barbell, badge: 120 },
+  { name: "Demo Requests", href: "/superadmin/demo-requests", icon: EnvelopeSimple },
   { name: "Trainers", href: "/superadmin/trainers", icon: Users, badge: 48 },
   { name: "Explore", href: "/superadmin/explore", icon: MagnifyingGlass },
   { name: "Plans & Subscriptions", href: "/superadmin/plans", icon: Star },
