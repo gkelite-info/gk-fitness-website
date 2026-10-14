@@ -1,6 +1,11 @@
+"use client";
+
 import Image from "next/image";
+import { useMemo } from "react";
 import { MapPin, CalendarBlank, Users, CaretRight, PencilSimple, Trash } from "@phosphor-icons/react";
 import { GymItem } from "../gyms/types";
+import { useGymCustomers } from "@/lib/hooks/customers/useGymCustomers";
+import { getGymLogoUrl } from "@/lib/helpers/gym/gymHelper";
 
 interface GymCardProps {
   gym: GymItem;
@@ -11,6 +16,26 @@ interface GymCardProps {
 
 export default function GymCard({ gym, onSelect, onEdit, onDelete }: GymCardProps) {
   const isActive = gym.status === "active";
+  const { data: customers = [] } = useGymCustomers(gym.id);
+
+  const activeCount = useMemo(() => {
+    if (!customers || customers.length === 0) return gym.activeMembers;
+    return customers.filter((c: any) => !c.is_deleted && (c.isActive ?? c.is_Active ?? false)).length;
+  }, [customers, gym.activeMembers]);
+
+  const inactiveCount = useMemo(() => {
+    if (!customers || customers.length === 0) return gym.inactiveMembers;
+    return customers.filter((c: any) => !c.is_deleted && !(c.isActive ?? c.is_Active ?? false)).length;
+  }, [customers, gym.inactiveMembers]);
+
+  const totalCount = useMemo(() => {
+    if (!customers || customers.length === 0) return gym.totalMembers;
+    return customers.filter((c: any) => !c.is_deleted).length;
+  }, [customers, gym.totalMembers]);
+
+  const logoUrl = useMemo(() => {
+    return getGymLogoUrl(gym.imageUrl);
+  }, [gym.imageUrl]);
 
   return (
     <div className="w-full bg-[#13151D] border border-[#222634] hover:border-[#343B4E] rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 group hover:shadow-[0_8px_30px_rgba(0,0,0,0.35)] min-w-0 overflow-hidden">
@@ -18,7 +43,7 @@ export default function GymCard({ gym, onSelect, onEdit, onDelete }: GymCardProp
         <div className="flex items-start gap-3.5">
           <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 border border-[#252A38] bg-[#1B1E28]">
             <Image
-              src={gym.imageUrl}
+              src={logoUrl}
               alt={gym.name}
               fill
               sizes="(max-width: 768px) 64px, 64px"
@@ -71,7 +96,7 @@ export default function GymCard({ gym, onSelect, onEdit, onDelete }: GymCardProp
             <div className="flex items-center gap-1.5 mt-0.5">
               <Users size={16} weight="fill" className="text-[#94A3B8] shrink-0" />
               <span className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-none">
-                {gym.totalMembers.toLocaleString()}
+                {totalCount.toLocaleString()}
               </span>
             </div>
           </div>
@@ -117,9 +142,9 @@ export default function GymCard({ gym, onSelect, onEdit, onDelete }: GymCardProp
         </div>
 
         <div className="flex items-center gap-1.5 text-[11px] sm:text-xs min-w-0">
-          <span className="text-[#D4FF32] font-semibold truncate">{gym.activeMembers} Active</span>
+          <span className="text-[#D4FF32] font-semibold truncate">{activeCount} Active</span>
           <span className="text-[#64748B] shrink-0">•</span>
-          <span className="text-[#EF4444] font-medium truncate">{gym.inactiveMembers} Inactive</span>
+          <span className="text-[#EF4444] font-medium truncate">{inactiveCount} Inactive</span>
         </div>
       </div>
     </div>

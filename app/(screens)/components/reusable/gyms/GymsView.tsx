@@ -2,19 +2,26 @@
 
 import { useState, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import GymCard from "../cards/GymCard";
 import GymListRow from "./GymListRow";
 import GymsHeader from "./GymsHeader";
 import GymsFilterTabs from "./GymsFilterTabs";
+import GymsSkeleton from "./GymsSkeleton";
 import ConfirmationModal from "../ConfirmationModal";
 import Pagination from "../Pagination";
 import toast from "react-hot-toast";
-import { GymItem, GymFilterTab, GymSortOption, ViewMode, getInitialGyms } from "./types";
+import { GymItem, GymFilterTab, GymSortOption, ViewMode } from "./types";
+import { useGyms } from "@/lib/hooks/gyms/useGyms";
+import { deleteGym, getGymLogoUrl } from "@/lib/helpers/gym/gymHelper";
 
 export default function GymsView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
+
+  const { data: rawGyms = [], isLoading } = useGyms();
 
   const tabParam = (searchParams.get("tab") as GymFilterTab) || "all";
   const currentTab: GymFilterTab = ["all", "active", "inactive"].includes(tabParam)
@@ -22,8 +29,6 @@ export default function GymsView() {
     : "all";
 
   const monthParam = searchParams.get("month") || "";
-
-  const [gymsList, setGymsList] = useState<GymItem[]>(getInitialGyms);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState<GymSortOption>("recent");
@@ -33,6 +38,45 @@ export default function GymsView() {
 
   const [gymToDelete, setGymToDelete] = useState<GymItem | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const mappedGyms: GymItem[] = useMemo(() => {
+    if (!rawGyms || rawGyms.length === 0) return [];
+    return (rawGyms as any[]).map((gym: any) => {
+      const regDate = gym.createdAt ? new Date(gym.createdAt) : null;
+      const regMonth =
+        regDate && !isNaN(regDate.getTime())
+          ? regDate.toISOString().slice(0, 7)
+          : "";
+
+      const sinceText = gym.establishYear
+        ? `Since ${gym.establishYear}`
+        : regDate && !isNaN(regDate.getTime())
+        ? `Since ${regDate.toLocaleDateString("en-US", {
+            month: "short",
+            year: "numeric",
+          })}`
+        : "Since 2026";
+
+      return {
+        id: gym.gymId,
+        name: gym.gymName || "Unnamed Gym",
+        city: gym.city
+          ? `${gym.city}${gym.state ? `, ${gym.state}` : ""}`
+          : gym.address || "India",
+        area: gym.address || gym.city || "Main Branch",
+        since: sinceText,
+        registeredMonth: regMonth,
+        status: gym.isActive ? "active" : "inactive",
+        imageUrl: getGymLogoUrl(gym.logo),
+        totalMembers: 0,
+        activeMembers: 0,
+        inactiveMembers: 0,
+        phone: gym.phone || "",
+        email: gym.gymEmail || "",
+      };
+    });
+  }, [rawGyms]);
 
   const handleTabChange = (newTab: GymFilterTab) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -62,17 +106,17 @@ export default function GymsView() {
   };
 
   const counts = useMemo(() => {
-    let baseList = gymsList;
+    let baseList = mappedGyms;
     if (monthParam) {
       baseList = baseList.filter((g) => g.registeredMonth === monthParam);
     }
     const active = baseList.filter((g) => g.status === "active").length;
     const inactive = baseList.filter((g) => g.status === "inactive").length;
     return { all: baseList.length, active, inactive };
-  }, [gymsList, monthParam]);
+  }, [mappedGyms, monthParam]);
 
   const filteredGyms = useMemo(() => {
-    let list = gymsList;
+    let list = mappedGyms;
     if (currentTab === "active") list = list.filter((g) => g.status === "active");
     if (currentTab === "inactive") list = list.filter((g) => g.status === "inactive");
 
@@ -95,12 +139,10 @@ export default function GymsView() {
 
     if (sortOption === "name") {
       list = [...list].sort((a, b) => a.area.localeCompare(b.area));
-    } else if (sortOption === "members") {
-      list = [...list].sort((a, b) => b.totalMembers - a.totalMembers);
     }
 
     return list;
-  }, [gymsList, currentTab, monthParam, searchQuery, sortOption]);
+  }, [mappedGyms, currentTab, monthParam, searchQuery, sortOption]);
 
   const totalPages = Math.ceil(filteredGyms.length / itemsPerPage) || 1;
   const paginatedGyms = useMemo(() => {
@@ -113,15 +155,27 @@ export default function GymsView() {
     setIsDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!gymToDelete) return;
-    setGymsList((prev) => prev.filter((g) => g.id !== gymToDelete.id));
-    toast.success(`Gym "${gymToDelete.name} - ${gymToDelete.area}" deleted successfully`, {
-      id: "delete-gym-toast",
-    });
-    setIsDeleteModalOpen(false);
-    setGymToDelete(null);
+    try {
+      setIsDeleting(true);
+      await deleteGym(gymToDelete.id);
+      await queryClient.invalidateQueries({ queryKey: ["gyms"] });
+      toast.success(`Gym "${gymToDelete.name}" deleted successfully`, {
+        id: "delete-gym-toast",
+      });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete gym");
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+      setGymToDelete(null);
+    }
   };
+
+  if (isLoading) {
+    return <GymsSkeleton />;
+  }
 
   return (
     <div className="w-full min-h-screen bg-[#0C0D10] text-white p-4 sm:p-6 lg:p-8 flex flex-col gap-6 max-w-full overflow-x-hidden min-w-0">
@@ -189,13 +243,15 @@ export default function GymsView() {
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => {
-          setIsDeleteModalOpen(false);
-          setGymToDelete(null);
+          if (!isDeleting) {
+            setIsDeleteModalOpen(false);
+            setGymToDelete(null);
+          }
         }}
         onConfirm={handleConfirmDelete}
         title="Delete Gym"
         message={`Are you sure you want to delete "${gymToDelete?.name} - ${gymToDelete?.area}"? This action cannot be undone.`}
-        confirmText="Delete Gym"
+        confirmText={isDeleting ? "Deleting..." : "Delete Gym"}
         isDestructive={true}
       />
     </div>

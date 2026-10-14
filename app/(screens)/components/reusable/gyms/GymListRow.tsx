@@ -1,6 +1,11 @@
+"use client";
+
 import Image from "next/image";
+import { useMemo } from "react";
 import { MapPin, CalendarBlank, Users, CaretRight, PencilSimple, Trash } from "@phosphor-icons/react";
 import { GymItem } from "./types";
+import { useGymCustomers } from "@/lib/hooks/customers/useGymCustomers";
+import { getGymLogoUrl } from "@/lib/helpers/gym/gymHelper";
 
 interface GymListRowProps {
   gym: GymItem;
@@ -11,13 +16,33 @@ interface GymListRowProps {
 
 export default function GymListRow({ gym, onSelect, onEdit, onDelete }: GymListRowProps) {
   const isActive = gym.status === "active";
+  const { data: customers = [] } = useGymCustomers(gym.id);
+
+  const activeCount = useMemo(() => {
+    if (!customers || customers.length === 0) return gym.activeMembers;
+    return customers.filter((c: any) => !c.is_deleted && (c.isActive ?? c.is_Active ?? false)).length;
+  }, [customers, gym.activeMembers]);
+
+  const inactiveCount = useMemo(() => {
+    if (!customers || customers.length === 0) return gym.inactiveMembers;
+    return customers.filter((c: any) => !c.is_deleted && !(c.isActive ?? c.is_Active ?? false)).length;
+  }, [customers, gym.inactiveMembers]);
+
+  const totalCount = useMemo(() => {
+    if (!customers || customers.length === 0) return gym.totalMembers;
+    return customers.filter((c: any) => !c.is_deleted).length;
+  }, [customers, gym.totalMembers]);
+
+  const logoUrl = useMemo(() => {
+    return getGymLogoUrl(gym.imageUrl);
+  }, [gym.imageUrl]);
 
   return (
     <div className="w-full bg-[#13151D] border border-[#222634] hover:border-[#343B4E] rounded-xl p-3.5 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-200 group hover:shadow-lg min-w-0 overflow-hidden">
       <div className="flex items-center gap-4 min-w-0">
         <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-[#252A38] bg-[#1B1E28]">
           <Image
-            src={gym.imageUrl}
+            src={logoUrl}
             alt={gym.name}
             fill
             sizes="48px"
@@ -63,12 +88,12 @@ export default function GymListRow({ gym, onSelect, onEdit, onDelete }: GymListR
           <Users size={18} weight="fill" className="text-[#94A3B8] shrink-0" />
           <div className="flex flex-col min-w-0">
             <span className="text-sm font-bold text-white leading-none">
-              {gym.totalMembers.toLocaleString()} Members
+              {totalCount.toLocaleString()} Members
             </span>
             <div className="flex items-center gap-1.5 text-[11px] mt-1 min-w-0">
-              <span className="text-[#D4FF32] font-semibold truncate">{gym.activeMembers} Active</span>
+              <span className="text-[#D4FF32] font-semibold truncate">{activeCount} Active</span>
               <span className="text-[#64748B] shrink-0">•</span>
-              <span className="text-[#EF4444] font-medium truncate">{gym.inactiveMembers} Inactive</span>
+              <span className="text-[#EF4444] font-medium truncate">{inactiveCount} Inactive</span>
             </div>
           </div>
         </div>
