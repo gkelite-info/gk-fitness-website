@@ -11,6 +11,7 @@ export interface GymItem {
   inactiveMembers: number;
   phone?: string;
   email?: string;
+  registeredMonth?: string;
 }
 
 export type GymFilterTab = "all" | "active" | "inactive";
@@ -23,7 +24,8 @@ export const INITIAL_GYMS: GymItem[] = [
     name: "Gold Fitness",
     city: "Hyderabad, India",
     area: "Jubilee Hills",
-    since: "Since Jan 2024",
+    since: "Since Oct 2026",
+    registeredMonth: "2026-10",
     status: "active",
     imageUrl: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=300&q=80",
     totalMembers: 324,
@@ -37,7 +39,8 @@ export const INITIAL_GYMS: GymItem[] = [
     name: "Gold Fitness",
     city: "Hyderabad, India",
     area: "Banjara Hills",
-    since: "Since Jan 2024",
+    since: "Since Oct 2026",
+    registeredMonth: "2026-10",
     status: "active",
     imageUrl: "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=300&q=80",
     totalMembers: 324,
@@ -51,7 +54,8 @@ export const INITIAL_GYMS: GymItem[] = [
     name: "Gold Fitness",
     city: "Hyderabad, India",
     area: "Hitec City",
-    since: "Since Jan 2024",
+    since: "Since Oct 2026",
+    registeredMonth: "2026-10",
     status: "active",
     imageUrl: "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=300&q=80",
     totalMembers: 324,
@@ -65,7 +69,8 @@ export const INITIAL_GYMS: GymItem[] = [
     name: "Gold Fitness",
     city: "Hyderabad, India",
     area: "Gachibowli",
-    since: "Since Jan 2024",
+    since: "Since Oct 2026",
+    registeredMonth: "2026-10",
     status: "active",
     imageUrl: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=300&q=80",
     totalMembers: 324,
@@ -79,7 +84,8 @@ export const INITIAL_GYMS: GymItem[] = [
     name: "Gold Fitness",
     city: "Hyderabad, India",
     area: "Madhapur",
-    since: "Since Jan 2024",
+    since: "Since Oct 2026",
+    registeredMonth: "2026-10",
     status: "active",
     imageUrl: "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=300&q=80",
     totalMembers: 324,
@@ -93,7 +99,8 @@ export const INITIAL_GYMS: GymItem[] = [
     name: "Gold Fitness",
     city: "Hyderabad, India",
     area: "Kondapur",
-    since: "Since Jan 2024",
+    since: "Since Oct 2026",
+    registeredMonth: "2026-10",
     status: "active",
     imageUrl: "https://images.unsplash.com/photo-1576678927484-cc907957088c?w=300&q=80",
     totalMembers: 324,
@@ -109,12 +116,20 @@ export function getInitialGyms(): GymItem[] {
   const areas = ["Kukatpally", "Secunderabad", "Begumpet", "Manikonda", "Tolichowki", "Dilsukhnagar", "Somajiguda", "Madhapur Phase 2"];
   for (let i = INITIAL_GYMS.length; i < 120; i++) {
     const isAct = i < 98;
+    const isOct2026 = i < 14;
+    const isSep2026 = i >= 14 && i < 34;
+    const isAug2026 = i >= 34 && i < 54;
+    
+    const regMonth = isOct2026 ? "2026-10" : isSep2026 ? "2026-09" : isAug2026 ? "2026-08" : "2024-01";
+    const sinceText = isOct2026 ? "Since Oct 2026" : isSep2026 ? "Since Sep 2026" : isAug2026 ? "Since Aug 2026" : "Since Jan 2024";
+
     list.push({
       id: `gym-${i + 1}`,
       name: "Gold Fitness",
       city: "Hyderabad, India",
       area: `${areas[i % areas.length]} #${Math.floor(i / areas.length) + 1}`,
-      since: "Since Jan 2024",
+      since: sinceText,
+      registeredMonth: regMonth,
       status: isAct ? "active" : "inactive",
       imageUrl: INITIAL_GYMS[i % INITIAL_GYMS.length].imageUrl,
       totalMembers: 324,

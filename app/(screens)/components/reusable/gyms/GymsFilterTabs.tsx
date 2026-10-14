@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { CaretDown, SquaresFour, ListBullets } from "@phosphor-icons/react";
 import { GymFilterTab, GymSortOption, ViewMode } from "./types";
+import GymsMonthFilter from "./GymsMonthFilter";
 
 interface GymsFilterTabsProps {
   currentTab: GymFilterTab;
@@ -12,6 +13,8 @@ interface GymsFilterTabsProps {
   onSortChange: (sort: GymSortOption) => void;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
+  selectedMonth: string;
+  onMonthChange: (month: string) => void;
 }
 
 export default function GymsFilterTabs({
@@ -22,6 +25,8 @@ export default function GymsFilterTabs({
   onSortChange,
   viewMode,
   onViewModeChange,
+  selectedMonth,
+  onMonthChange,
 }: GymsFilterTabsProps) {
   const [isSortOpen, setIsSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
@@ -49,8 +54,8 @@ export default function GymsFilterTabs({
   ];
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 w-full">
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 w-full sm:w-auto shrink-0">
+    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3.5 w-full min-w-0">
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 w-full xl:w-auto xl:flex-1 min-w-0">
         {tabs.map((tab) => {
           const isActive = currentTab === tab.key;
           const isInactiveTab = tab.key === "inactive";
@@ -60,7 +65,7 @@ export default function GymsFilterTabs({
               key={tab.key}
               type="button"
               onClick={() => onTabChange(tab.key)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                 isActive
                   ? isInactiveTab
                     ? "bg-[#2A1215] border border-red-500 text-red-400 shadow-[0_0_12px_rgba(239,68,68,0.25)]"
@@ -89,22 +94,30 @@ export default function GymsFilterTabs({
         })}
       </div>
 
-      <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
-        <div ref={sortRef} className="relative flex-1 sm:flex-initial">
+      <div className="flex items-center gap-2 sm:gap-2.5 w-full xl:w-auto shrink-0 justify-between sm:justify-end">
+        <div className="flex-1 sm:w-[145px] sm:flex-initial min-w-0">
+          <GymsMonthFilter
+            selectedMonth={selectedMonth}
+            onChange={onMonthChange}
+            className="w-full"
+          />
+        </div>
+
+        <div ref={sortRef} className="relative flex-1 sm:w-[165px] sm:flex-initial min-w-0">
           <button
             type="button"
             onClick={() => setIsSortOpen(!isSortOpen)}
-            className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 h-10 px-3.5 rounded-xl bg-[#13151D] border border-[#222634] text-xs font-medium text-[#94A3B8] hover:text-white hover:border-[#323847] transition-all cursor-pointer"
+            className="w-full flex items-center justify-between gap-1.5 h-10 px-3 sm:px-3.5 rounded-xl bg-[#13151D] border border-[#222634] text-xs font-medium text-[#94A3B8] hover:text-white hover:border-[#323847] transition-all cursor-pointer"
           >
             <div className="flex items-center gap-1.5 truncate">
-              <span>Sort:</span>
-              <span className="text-white font-semibold">{sortLabels[sortOption]}</span>
+              <span className="hidden sm:inline">Sort:</span>
+              <span className="text-white font-semibold truncate">{sortLabels[sortOption]}</span>
             </div>
             <CaretDown size={14} className="text-[#64748B] shrink-0" />
           </button>
 
           {isSortOpen && (
-            <div className="absolute left-0 sm:left-auto right-0 top-full mt-1.5 w-full sm:w-48 rounded-xl bg-[#161922] border border-[#262C3D] py-1 shadow-2xl z-20 backdrop-blur-md">
+            <div className="absolute left-0 sm:left-auto right-0 top-full mt-1.5 w-full sm:w-48 rounded-xl bg-[#161922] border border-[#262C3D] py-1 shadow-2xl z-30 backdrop-blur-md">
               {(Object.keys(sortLabels) as GymSortOption[]).map((key) => (
                 <button
                   key={key}
@@ -126,7 +139,7 @@ export default function GymsFilterTabs({
           )}
         </div>
 
-        <div className="flex items-center rounded-xl bg-[#13151D] border border-[#222634] p-1 shrink-0">
+        <div className="flex items-center rounded-xl bg-[#13151D] border border-[#222634] p-1 shrink-0 h-10">
           <button
             type="button"
             onClick={() => onViewModeChange("grid")}

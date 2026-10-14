@@ -35,10 +35,41 @@ input:-webkit-autofill:active {
     transition: background-color 5000s ease-in-out 0s;
 }
 
+/* Custom Glow Scrollbar for HTML, Body and Themed Elements */
+html, body {
+  scrollbar-width: thin;
+  scrollbar-color: #D4FF32 #0C0D10;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background: #0C0D10;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: #D4FF32 !important;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 255, 50, 0.8) !important;
+  box-shadow: 0 0 10px #D4FF32, 0 0 20px rgba(212, 255, 50, 0.7) !important;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  background: #E2FF66 !important;
+  box-shadow: 0 0 14px #D4FF32, 0 0 25px rgba(212, 255, 50, 0.9) !important;
+}
+
 * {
   font-family: var(--font-sora), sans-serif;
   scrollbar-width: thin;
-  scrollbar-color: #262936 transparent;
+  scrollbar-color: #D4FF32 #14151A;
 }
 
 *::-webkit-scrollbar {
@@ -51,12 +82,14 @@ input:-webkit-autofill:active {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #262936;
+  background: #D4FF32;
   border-radius: 999px;
+  box-shadow: 0 0 8px rgba(212, 255, 50, 0.5);
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: #3a3e4f;
+  background: #E2FF66;
+  box-shadow: 0 0 12px rgba(212, 255, 50, 0.75);
 }
 
 .scrollbar-themed {
@@ -65,8 +98,8 @@ input:-webkit-autofill:active {
 }
 
 .scrollbar-themed::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 .scrollbar-themed::-webkit-scrollbar-track {
@@ -77,12 +110,13 @@ input:-webkit-autofill:active {
 .scrollbar-themed::-webkit-scrollbar-thumb {
   background: #D4FF32 !important;
   border-radius: 999px;
-  box-shadow: 0 0 8px rgba(212, 255, 50, 0.45);
+  border: 1px solid rgba(212, 255, 50, 0.8) !important;
+  box-shadow: 0 0 10px #D4FF32, 0 0 20px rgba(212, 255, 50, 0.7) !important;
 }
 
 .scrollbar-themed::-webkit-scrollbar-thumb:hover {
   background: #E2FF66 !important;
-  box-shadow: 0 0 12px rgba(212, 255, 50, 0.65);
+  box-shadow: 0 0 14px #D4FF32, 0 0 25px rgba(212, 255, 50, 0.9) !important;
 }
 
 .scrollbar-themed::-webkit-scrollbar-button:single-button:vertical:decrement {
@@ -129,8 +163,24 @@ input:-webkit-autofill:active {
   box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
 }
 
+@utility sidebar-glow {
+  box-shadow: 0 0 16px rgba(212, 255, 50, 0.35), inset 0 0 12px 1px rgba(212, 255, 50, 0.2) !important;
+}
+
 .sidebar-glow {
-  box-shadow: 0 0 16px rgba(212, 255, 50, 0.25), inset 0 0 12px 1px rgba(212, 255, 50, 0.2);
+  box-shadow: 0 0 16px rgba(212, 255, 50, 0.35), inset 0 0 12px 1px rgba(212, 255, 50, 0.2) !important;
+}
+
+/* Hide spin arrows on number inputs globally */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
 }
 
 @keyframes heart-bounce {

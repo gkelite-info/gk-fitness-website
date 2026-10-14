@@ -21,6 +21,8 @@ export default function GymsView() {
     ? tabParam
     : "all";
 
+  const monthParam = searchParams.get("month") || "";
+
   const [gymsList, setGymsList] = useState<GymItem[]>(getInitialGyms);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,6 +42,18 @@ export default function GymsView() {
     setCurrentPage(1);
   };
 
+  const handleMonthChange = (newMonth: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (newMonth) {
+      params.set("month", newMonth);
+    } else {
+      params.delete("month");
+    }
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`);
+    setCurrentPage(1);
+  };
+
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
     const params = new URLSearchParams(searchParams.toString());
@@ -48,15 +62,23 @@ export default function GymsView() {
   };
 
   const counts = useMemo(() => {
-    const active = gymsList.filter((g) => g.status === "active").length;
-    const inactive = gymsList.filter((g) => g.status === "inactive").length;
-    return { all: gymsList.length, active, inactive };
-  }, [gymsList]);
+    let baseList = gymsList;
+    if (monthParam) {
+      baseList = baseList.filter((g) => g.registeredMonth === monthParam);
+    }
+    const active = baseList.filter((g) => g.status === "active").length;
+    const inactive = baseList.filter((g) => g.status === "inactive").length;
+    return { all: baseList.length, active, inactive };
+  }, [gymsList, monthParam]);
 
   const filteredGyms = useMemo(() => {
     let list = gymsList;
     if (currentTab === "active") list = list.filter((g) => g.status === "active");
     if (currentTab === "inactive") list = list.filter((g) => g.status === "inactive");
+
+    if (monthParam) {
+      list = list.filter((g) => g.registeredMonth === monthParam);
+    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -78,7 +100,7 @@ export default function GymsView() {
     }
 
     return list;
-  }, [gymsList, currentTab, searchQuery, sortOption]);
+  }, [gymsList, currentTab, monthParam, searchQuery, sortOption]);
 
   const totalPages = Math.ceil(filteredGyms.length / itemsPerPage) || 1;
   const paginatedGyms = useMemo(() => {
@@ -121,12 +143,14 @@ export default function GymsView() {
         onSortChange={setSortOption}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
+        selectedMonth={monthParam}
+        onMonthChange={handleMonthChange}
       />
 
       {paginatedGyms.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 rounded-2xl bg-[#13151D] border border-[#222634] text-center">
-          <p className="text-base font-bold text-white mb-1">No gyms found</p>
-          <p className="text-xs text-[#94A3B8]">Try adjusting your search query or filter</p>
+        <div className="flex flex-col items-center justify-center min-h-[380px] sm:min-h-[460px] p-8 sm:p-14 rounded-2xl bg-[#13151D] border border-[#222634] text-center w-full">
+          <p className="text-base sm:text-lg font-bold text-white mb-1.5">No gyms found</p>
+          <p className="text-xs sm:text-sm text-[#94A3B8]">Try adjusting your search query, tab, or month filter</p>
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 min-w-0 w-full">

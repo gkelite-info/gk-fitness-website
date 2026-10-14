@@ -5,14 +5,33 @@ interface AvatarProps {
   gender?: "male" | "female" | "other" | null;
   className?: string;
   alt?: string;
+  shape?: "circle" | "rounded" | "square";
 }
 
-export default function Avatar({ src, gender, className = "", alt = "User Avatar" }: AvatarProps) {
+export default function Avatar({
+  src,
+  gender,
+  className = "",
+  alt = "User Avatar",
+  shape = "circle",
+}: AvatarProps) {
+  const roundedClass =
+    shape === "square"
+      ? ""
+      : shape === "rounded"
+      ? "rounded-2xl"
+      : "rounded-full";
+
   if (src) {
-    return <img src={src} alt={alt} className={`object-cover rounded-full flex-shrink-0 ${className}`} />;
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className={`object-cover ${roundedClass} flex-shrink-0 ${className}`}
+      />
+    );
   }
 
-  // Default Facebook/Instagram style silhouettes
   const maleSilhouette = (
     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-[#94A3B8] bg-[#1A1C23]">
       <circle cx="50" cy="35" r="20" fill="currentColor" />
@@ -35,7 +54,7 @@ export default function Avatar({ src, gender, className = "", alt = "User Avatar
   );
 
   return (
-    <div className={`overflow-hidden rounded-full flex-shrink-0 ${className}`}>
+    <div className={`overflow-hidden ${roundedClass} flex-shrink-0 ${className}`}>
       {gender === "male" 
         ? maleSilhouette 
         : gender === "female" 
