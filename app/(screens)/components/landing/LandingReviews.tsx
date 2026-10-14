@@ -65,14 +65,14 @@ export default function LandingReviews() {
                 r.role === "owner"
                   ? "Gym Owner"
                   : r.role === "trainer"
-                  ? "Trainer / Coach"
-                  : r.role === "globaltrainer"
-                  ? "Global Trainer"
-                  : r.role === "globalcustomer"
-                  ? "Global Customer"
-                  : r.role === "superadmin"
-                  ? "Super Admin"
-                  : "Gym Member",
+                    ? "Trainer / Coach"
+                    : r.role === "globaltrainer"
+                      ? "Global Trainer"
+                      : r.role === "individual"
+                        ? "Global Customer"
+                        : r.role === "superadmin"
+                          ? "Super Admin"
+                          : "Gym Member",
               rating: Math.round(r.ratings),
               text: r.review || "",
               videos: isVideo && r.attachmentUrl ? [r.attachmentUrl] : [],

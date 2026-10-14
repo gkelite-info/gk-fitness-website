@@ -25,7 +25,7 @@ const ROLE_OPTIONS = [
   { value: "trainer", label: "Trainer" },
   { value: "customer", label: "Customer" },
   { value: "globaltrainer", label: "Global Trainer" },
-  { value: "globalcustomer", label: "Global Customer" },
+  { value: "individual", label: "Global Customer" },
   { value: "superadmin", label: "Super Admin" },
 ];
 

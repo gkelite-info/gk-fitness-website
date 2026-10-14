@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { supabase as anonSupabase } from "@/lib/supabase";
 
-export type ReviewRole = "owner" | "trainer" | "customer" | "globaltrainer" | "globalcustomer" | "superadmin";
+export type ReviewRole = "owner" | "trainer" | "customer" | "globaltrainer" | "individual" | "superadmin";
 
 export interface ReviewRecord {
   reviewId: string;
