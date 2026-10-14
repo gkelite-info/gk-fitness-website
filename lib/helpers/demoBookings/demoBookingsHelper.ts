@@ -6,7 +6,7 @@ export type GymRole =
   | "trainer"
   | "customer"
   | "globaltrainer"
-  | "globalcustomer"
+  | "individual"
   | "superadmin";
 
 export interface CreateDemoBookingParams {
