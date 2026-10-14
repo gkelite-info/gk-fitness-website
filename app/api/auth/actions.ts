@@ -33,7 +33,7 @@ export async function loginUser(email: string, password: string) {
 export async function logoutUser() {
   try {
     const supabase = await createClient();
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
   } catch (err) {
     console.error("Error signing out on server:", err);
   }

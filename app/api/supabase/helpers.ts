@@ -96,7 +96,7 @@ export function subscribeToAuthChanges(
 
 export async function logoutUser() {
   const supabase = createClient();
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) {
     throw error;
   }

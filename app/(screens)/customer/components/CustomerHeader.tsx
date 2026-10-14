@@ -38,7 +38,7 @@ export default function CustomerHeader() {
       setIsLoggingOut(true);
       await logoutUser();
       const supabase = createClient();
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: 'local' });
       toast.success("Logged out successfully");
       window.location.href = "/login";
     } catch (error) {
