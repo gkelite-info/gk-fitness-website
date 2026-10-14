@@ -27,30 +27,12 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // Support direct mobile navigation with access_token: forward to /api/auth/sso for isolated web session generation
   const accessToken = request.nextUrl.searchParams.get('access_token');
-  const refreshToken = request.nextUrl.searchParams.get('refresh_token');
-
-  if (accessToken && refreshToken) {
-    try {
-      const { data, error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
-
-      if (!error && data?.user) {
-        const cleanUrl = request.nextUrl.clone();
-        cleanUrl.searchParams.delete('access_token');
-        cleanUrl.searchParams.delete('refresh_token');
-
-        const redirectResponse = NextResponse.redirect(cleanUrl);
-        supabaseResponse.cookies.getAll().forEach((cookie) => {
-          redirectResponse.cookies.set(cookie);
-        });
-        return redirectResponse;
-      }
-    } catch (err) {
-      console.error('SSO error in middleware:', err);
-    }
+  if (accessToken && !request.nextUrl.pathname.startsWith('/api/auth/sso')) {
+    const ssoUrl = request.nextUrl.clone();
+    ssoUrl.pathname = '/api/auth/sso';
+    return NextResponse.redirect(ssoUrl);
   }
 
   const {

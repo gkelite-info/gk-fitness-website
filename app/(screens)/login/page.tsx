@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { EnvelopeSimple, LockKey, CircleNotch, ArrowRight, Eye, EyeSlash, CaretLeft, Barbell } from "@phosphor-icons/react";
 import { loginUser } from "@/app/api/auth/actions";
-import { createClient } from "@/app/api/supabase/client";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Image from "next/image";
@@ -33,32 +32,17 @@ export default function LoginPage() {
         refreshToken = hashParams.get("refresh_token");
       }
 
-      if (accessToken && refreshToken) {
+      if (accessToken) {
         setLoading(true);
-        try {
-          const supabase = createClient();
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (!error) {
-            toast.success("Authenticated successfully!", { id: "sso-success" });
-            const returnTo = searchParams.get("returnTo") || "/customer";
-            const target = new URL(returnTo, window.location.origin);
-            searchParams.forEach((val, key) => {
-              if (!["access_token", "refresh_token", "returnTo"].includes(key)) {
-                target.searchParams.set(key, val);
-              }
-            });
-            window.location.href = target.pathname + target.search;
-            return;
-          }
-        } catch (err) {
-          console.error("SSO Login Error:", err);
-        } finally {
-          setLoading(false);
+        const finalParams = new URLSearchParams(window.location.search);
+        if (!finalParams.has("access_token") && accessToken) {
+          finalParams.set("access_token", accessToken);
         }
+        if (!finalParams.has("refresh_token") && refreshToken) {
+          finalParams.set("refresh_token", refreshToken);
+        }
+        window.location.href = `/api/auth/sso?${finalParams.toString()}`;
+        return;
       }
     }
 
