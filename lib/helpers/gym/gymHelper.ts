@@ -1,16 +1,10 @@
-// @ts-nocheck
 import { supabase } from '@/lib/supabase';
-// import * as ImageManipulator from 'expo-image-manipulator';
-// import * as FileSystem from 'expo-file-system/legacy';
-export function base64ToArrayBuffer(base64: string): ArrayBuffer {
-  const binaryString = typeof window !== 'undefined' ? window.atob(base64) : Buffer.from(base64, 'base64').toString('binary');
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
+export {
+  base64ToArrayBuffer,
+  getGymLogoUrl,
+  uploadGymLogo,
+  uploadGymQR,
+} from './gymStorageHelper';
 
 export type GymLabelType = 'basic' | 'silver' | 'white' | 'premiumwhite';
 
@@ -254,76 +248,6 @@ export async function toggleGymActiveStatus(gymId: string, currentStatus: boolea
   }
 
   return data ? data[0] : null;
-}
-
-export async function uploadGymLogo(uri: string): Promise<string | null> {
-  try {
-    const manipResult = await ImageManipulator.manipulateAsync(
-      uri,
-      [{ resize: { width: 500 } }],
-      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
-    );
-
-    const base64 = await FileSystem.readAsStringAsync(manipResult.uri, {
-      encoding: 'base64',
-    });
-
-    const arrayBuffer = base64ToArrayBuffer(base64);
-
-    const fileName = `${Date.now()}_logo.jpg`;
-
-    const { data, error } = await supabase.storage
-      .from('gym-logos')
-      .upload(fileName, arrayBuffer, {
-        contentType: 'image/jpeg',
-        upsert: true,
-      });
-
-    if (error) {
-      throw error;
-    }
-
-    if (data) {
-      const { data: publicUrlData } = supabase.storage
-        .from('gym-logos')
-        .getPublicUrl(fileName);
-      return publicUrlData.publicUrl;
-    }
-    return null;
-  } catch (error: any) {
-    throw error;
-  }
-}
-
-export async function uploadGymQR(base64Data: string, gymId: string): Promise<string | null> {
-  try {
-    const base64Str = base64Data.includes('base64,') ? base64Data.split('base64,')[1] : base64Data;
-
-    const arrayBuffer = base64ToArrayBuffer(base64Str);
-
-    const fileName = `${gymId}_qr.png`;
-
-    const { data, error } = await supabase.storage
-      .from('gymsQR')
-      .upload(fileName, arrayBuffer, {
-        contentType: 'image/png',
-        upsert: true,
-      });
-
-    if (error) {
-      throw error;
-    }
-
-    if (data) {
-      const { data: publicUrlData } = supabase.storage
-        .from('gymsQR')
-        .getPublicUrl(fileName);
-      return publicUrlData.publicUrl;
-    }
-    return null;
-  } catch (error: any) {
-    throw error;
-  }
 }
 
 
