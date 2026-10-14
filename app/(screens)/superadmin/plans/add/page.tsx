@@ -63,7 +63,6 @@ export default function AddPlanPage() {
   };
 
   const handleSubmit = async () => {
-    console.log("[AddPlanPage] Validate inputs:", { planName, labelName, planFor, price, selectedFeatures });
     if (!planName.trim()) {
       console.warn("[AddPlanPage] Validation failed: planName is empty");
       toast.error("Plan Name is required", { id: "plan-name-req" });
@@ -98,21 +97,15 @@ export default function AddPlanPage() {
         isActive: true,
       };
 
-      console.log("[AddPlanPage] Submitting subscription payload:", planPayload);
       const savedPlan = await saveSubscriptionMutation.mutateAsync(planPayload);
-      console.log("[AddPlanPage] Subscription saved response:", savedPlan);
 
       const subscriptionPlanId = savedPlan?.subscriptionPlanId;
       if (!subscriptionPlanId) throw new Error("Missing subscriptionPlanId from saved subscription response");
 
-      console.log(`[AddPlanPage] Inserting ${selectedFeatures.length} features for planId:`, subscriptionPlanId);
       for (const feature of selectedFeatures) {
-        console.log(`[AddPlanPage] Saving feature "${feature}" for subscription:`, subscriptionPlanId);
         const res = await saveFeatureMutation.mutateAsync({ subscriptionPlanId, featureName: feature });
-        console.log(`[AddPlanPage] Saved feature response:`, res);
       }
 
-      console.log("[AddPlanPage] All data successfully saved to database!");
       toast.success("Plan created successfully!", { id: "plan-success" });
       setTimeout(() => router.back(), 1200);
     } catch (error: any) {

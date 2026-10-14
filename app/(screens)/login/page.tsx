@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { EnvelopeSimple, LockKey, CircleNotch, ArrowRight, Eye, EyeSlash, CaretLeft, Barbell } from "@phosphor-icons/react";
 import { loginUser } from "@/app/api/auth/actions";
+import { createClient } from "@/app/api/supabase/client";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Image from "next/image";
@@ -17,6 +18,52 @@ export default function LoginPage() {
 
   const passwordRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    async function handleSsoRedirect() {
+      if (typeof window === "undefined") return;
+
+      const searchParams = new URLSearchParams(window.location.search);
+      let accessToken = searchParams.get("access_token");
+      let refreshToken = searchParams.get("refresh_token");
+
+      if (!accessToken && window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        accessToken = hashParams.get("access_token");
+        refreshToken = hashParams.get("refresh_token");
+      }
+
+      if (accessToken && refreshToken) {
+        setLoading(true);
+        try {
+          const supabase = createClient();
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (!error) {
+            toast.success("Authenticated successfully!", { id: "sso-success" });
+            const returnTo = searchParams.get("returnTo") || "/customer";
+            const target = new URL(returnTo, window.location.origin);
+            searchParams.forEach((val, key) => {
+              if (!["access_token", "refresh_token", "returnTo"].includes(key)) {
+                target.searchParams.set(key, val);
+              }
+            });
+            window.location.href = target.pathname + target.search;
+            return;
+          }
+        } catch (err) {
+          console.error("SSO Login Error:", err);
+        } finally {
+          setLoading(false);
+        }
+      }
+    }
+
+    handleSsoRedirect();
+  }, []);
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -48,6 +95,13 @@ export default function LoginPage() {
     }
 
     toast.success("Successfully logged in!", { id: "login-success" });
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const returnTo = searchParams.get("returnTo");
+    if (returnTo && returnTo.startsWith("/") && returnTo !== "/login") {
+      window.location.href = returnTo;
+      return;
+    }
 
     if (role === "superadmin") {
       window.location.href = "/superadmin";

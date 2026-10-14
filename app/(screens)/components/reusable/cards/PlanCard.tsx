@@ -69,7 +69,6 @@ export default function PlanCard({
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      console.log("[PlanCard] Deleting subscription plan:", id);
       await deleteMutation.mutateAsync(id);
       toast.success("Plan deleted successfully", { id: `delete-plan-${id}` });
     } catch (err) {
@@ -133,7 +132,7 @@ export default function PlanCard({
         <Link href={`/superadmin/plans/edit/${id}`} className="flex justify-center items-center flex-1 h-9 rounded-lg border border-transparent hover:border-[#2B3648] hover:bg-[#1A222D] transition-colors cursor-pointer group">
           <PencilSimple size={18} className="text-[#64748B] group-hover:text-[#BBF246] transition-colors" />
         </Link>
-        <button 
+        <button
           onClick={() => setIsDeleteModalOpen(true)}
           className="flex justify-center items-center flex-1 h-9 rounded-lg border border-transparent hover:border-[#EF4444]/30 hover:bg-[#EF4444]/10 transition-colors cursor-pointer group"
         >

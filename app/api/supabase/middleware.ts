@@ -2,7 +2,9 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next();
+  let supabaseResponse = NextResponse.next({
+    request,
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,8 +15,10 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next();
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          supabaseResponse = NextResponse.next({
+            request,
+          });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           );
@@ -22,6 +26,33 @@ export async function updateSession(request: NextRequest) {
       },
     }
   );
+
+  const accessToken = request.nextUrl.searchParams.get('access_token');
+  const refreshToken = request.nextUrl.searchParams.get('refresh_token');
+
+  if (accessToken && refreshToken) {
+    try {
+      const { data, error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (!error && data?.user) {
+        const cleanUrl = request.nextUrl.clone();
+        cleanUrl.searchParams.delete('access_token');
+        cleanUrl.searchParams.delete('refresh_token');
+
+        const redirectResponse = NextResponse.redirect(cleanUrl);
+        supabaseResponse.cookies.getAll().forEach((cookie) => {
+          redirectResponse.cookies.set(cookie);
+        });
+        return redirectResponse;
+      }
+    } catch (err) {
+      console.error('SSO error in middleware:', err);
+    }
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -31,15 +62,16 @@ export async function updateSession(request: NextRequest) {
   const createRedirectResponse = (pathname: string) => {
     const url = request.nextUrl.clone();
     url.pathname = pathname;
-    const redirectResponse = NextResponse.redirect(url);
-    
-    // Important: Keep any cookies (like refreshed auth tokens) set by Supabase
-    supabaseResponse.headers.forEach((value, key) => {
-      if (key.toLowerCase() === 'set-cookie') {
-        redirectResponse.headers.append('set-cookie', value);
+    if (pathname === '/login') {
+      const fullPath = request.nextUrl.pathname + request.nextUrl.search;
+      if (fullPath !== '/' && fullPath !== '/login') {
+        url.searchParams.set('returnTo', fullPath);
       }
+    }
+    const redirectResponse = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie);
     });
-    
     return redirectResponse;
   };
 
@@ -48,6 +80,10 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && isAuthPage && !request.nextUrl.searchParams.has('role')) {
+    const returnTo = request.nextUrl.searchParams.get('returnTo');
+    if (returnTo && returnTo.startsWith('/') && returnTo !== '/login') {
+      return createRedirectResponse(returnTo);
+    }
     const { data: userData } = await supabase
       .from('users')
       .select('role')

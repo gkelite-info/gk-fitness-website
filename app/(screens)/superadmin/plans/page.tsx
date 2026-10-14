@@ -22,7 +22,6 @@ function PlansSubscriptionsContent() {
   }, [currentTab]);
 
   useEffect(() => {
-    console.log(`[PlansPage] Loaded ${plansData.length} plans for tab "${currentTab}":`, plansData);
     if (error) {
       console.error(`[PlansPage] Error loading plans for tab "${currentTab}":`, error);
     }
@@ -81,21 +80,19 @@ function PlansSubscriptionsContent() {
         <div className="flex flex-row items-center bg-[#101620] border border-[#1D2634] p-1 rounded-[6.5px] shrink-0">
           <button
             onClick={() => handleTabChange("gyms")}
-            className={`cursor-pointer px-4 py-1.5 rounded-[5px] text-[10px] font-semibold transition-all ${
-              currentTab === "gyms"
+            className={`cursor-pointer px-4 py-1.5 rounded-[5px] text-[10px] font-semibold transition-all ${currentTab === "gyms"
                 ? "bg-[#172216] border border-[#364923] text-[#BBF246] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
                 : "text-[#9CA3AF] hover:text-white border border-transparent"
-            }`}
+              }`}
           >
             Gyms
           </button>
           <button
             onClick={() => handleTabChange("customers")}
-            className={`cursor-pointer px-4 py-1.5 rounded-[5px] text-[10px] font-semibold transition-all ${
-              currentTab === "customers"
+            className={`cursor-pointer px-4 py-1.5 rounded-[5px] text-[10px] font-semibold transition-all ${currentTab === "customers"
                 ? "bg-[#172216] border border-[#364923] text-[#BBF246] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
                 : "text-[#9CA3AF] hover:text-white border border-transparent"
-            }`}
+              }`}
           >
             Customers
           </button>
