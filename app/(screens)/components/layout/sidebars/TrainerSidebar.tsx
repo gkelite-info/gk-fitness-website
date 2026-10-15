@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, CalendarCheck, Users, Compass, User, Barbell } from "@phosphor-icons/react";
+import { House, CalendarCheck, Users, Ticket, Barbell } from "@phosphor-icons/react";
 import LogoutButton from "../../reusable/LogoutButton";
 
 const navLinks = [
   { name: "Dashboard", href: "/trainer", icon: House },
+  { name: "Gym Pass", href: "/trainer/gym-pass", icon: Ticket },
   { name: "Clients", href: "/trainer/clients", icon: Users },
   { name: "Schedule", href: "/trainer/schedule", icon: CalendarCheck },
 ];
@@ -39,7 +40,7 @@ export default function TrainerSidebar() {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`flex flex-row items-center px-4 py-3 gap-3.5 w-full h-[46px] rounded-2xl transition-all ${
+                className={`flex flex-row items-center px-4 py-3 gap-3.5 w-full h-[46px] rounded-2xl transition-all cursor-pointer ${
                   isActive
                     ? "bg-gradient-to-r from-[rgba(212,255,50,0.18)] to-[rgba(212,255,50,0.05)] border border-[#D4FF32] sidebar-glow text-[#D4FF32]"
                     : "text-[#94A3B8] hover:text-white"
@@ -48,9 +49,9 @@ export default function TrainerSidebar() {
                 <Icon
                   size={20}
                   weight={isActive ? "fill" : "regular"}
-                  className={isActive ? "text-[#D4FF32]" : "text-[#94A3B8] group-hover:text-white"}
+                  className={isActive ? "text-[#D4FF32] shrink-0" : "text-[#94A3B8] group-hover:text-white shrink-0"}
                 />
-                <span className={`font-['Nimbus_Sans'] text-sm leading-5 tracking-[0.35px] ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                <span className={`font-['Nimbus_Sans'] text-sm leading-5 tracking-[0.35px] whitespace-nowrap ${isActive ? 'font-semibold' : 'font-medium'}`}>
                   {link.name}
                 </span>
               </Link>

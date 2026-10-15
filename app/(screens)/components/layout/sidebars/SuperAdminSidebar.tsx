@@ -9,7 +9,8 @@ import {
   MagnifyingGlass,
   Star,
   ShieldCheck,
-  EnvelopeSimple
+  EnvelopeSimple,
+  Ticket
 } from "@phosphor-icons/react";
 import LogoutButton from "../../reusable/LogoutButton";
 
@@ -22,6 +23,7 @@ interface NavItem {
 
 const navLinks: NavItem[] = [
   { name: "Dashboard", href: "/superadmin", icon: SquaresFour },
+  { name: "Gym Pass", href: "/superadmin/gym-pass", icon: Ticket },
   { name: "Gyms", href: "/superadmin/gyms", icon: Barbell, badge: 120 },
   { name: "Demo Requests", href: "/superadmin/demo-requests", icon: EnvelopeSimple },
   { name: "Trainers", href: "/superadmin/trainers", icon: Users, badge: 48 },
