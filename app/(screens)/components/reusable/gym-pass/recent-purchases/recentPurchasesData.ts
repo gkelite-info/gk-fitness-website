@@ -1,0 +1,186 @@
+import { DropdownOption } from "@/app/(screens)/components/reusable/CustomDropdown";
+
+export interface RecentPurchaseRow {
+  id: string;
+  initials: string;
+  name: string;
+  customerId: string;
+  phone: string;
+  email: string;
+  passType: "Monthly Pass" | "Day Pass";
+  timeAgo: string;
+  exactTime: string;
+  dateText: string;
+  amount: number;
+}
+
+export const mockPurchasesList: RecentPurchaseRow[] = [
+  {
+    id: "1",
+    initials: "RS",
+    name: "Rohit Sharma",
+    customerId: "ID: #CUS-94021",
+    phone: "+91 98765 43210",
+    email: "rohit.sharma@gmail.com",
+    passType: "Monthly Pass",
+    timeAgo: "2h ago",
+    exactTime: "10:24 AM",
+    dateText: "Today, 16 Oct 2026",
+    amount: 4999,
+  },
+  {
+    id: "2",
+    initials: "NP",
+    name: "Neha Patel",
+    customerId: "ID: #CUS-88412",
+    phone: "+91 91234 56789",
+    email: "neha.patel@gmail.com",
+    passType: "Day Pass",
+    timeAgo: "5h ago",
+    exactTime: "07:15 AM",
+    dateText: "Today, 16 Oct 2026",
+    amount: 799,
+  },
+  {
+    id: "3",
+    initials: "VS",
+    name: "Vikram Singh",
+    customerId: "ID: #CUS-71930",
+    phone: "+91 99887 66554",
+    email: "vikram.singh@gmail.com",
+    passType: "Monthly Pass",
+    timeAgo: "1d ago",
+    exactTime: "05:30 PM",
+    dateText: "15 Oct 2026",
+    amount: 4999,
+  },
+  {
+    id: "4",
+    initials: "AK",
+    name: "Ananya Kumar",
+    customerId: "ID: #CUS-65231",
+    phone: "+91 98451 23456",
+    email: "ananya.kumar@gmail.com",
+    passType: "Day Pass",
+    timeAgo: "2d ago",
+    exactTime: "09:45 AM",
+    dateText: "14 Oct 2026",
+    amount: 799,
+  },
+  {
+    id: "5",
+    initials: "SM",
+    name: "Suresh Menon",
+    customerId: "ID: #CUS-54129",
+    phone: "+91 97123 45678",
+    email: "suresh.menon@gmail.com",
+    passType: "Monthly Pass",
+    timeAgo: "4d ago",
+    exactTime: "11:10 AM",
+    dateText: "12 Oct 2026",
+    amount: 4999,
+  },
+  {
+    id: "6",
+    initials: "RD",
+    name: "Riya Deshmukh",
+    customerId: "ID: #CUS-43098",
+    phone: "+91 96543 21098",
+    email: "riya.deshmukh@gmail.com",
+    passType: "Day Pass",
+    timeAgo: "6d ago",
+    exactTime: "06:20 PM",
+    dateText: "10 Oct 2026",
+    amount: 799,
+  },
+  {
+    id: "7",
+    initials: "PK",
+    name: "Pooja Kulkarni",
+    customerId: "ID: #CUS-32987",
+    phone: "+91 95432 10987",
+    email: "pooja.kulkarni@gmail.com",
+    passType: "Monthly Pass",
+    timeAgo: "1w ago",
+    exactTime: "04:15 PM",
+    dateText: "08 Oct 2026",
+    amount: 4999,
+  },
+  {
+    id: "8",
+    initials: "AR",
+    name: "Amit Rawat",
+    customerId: "ID: #CUS-21876",
+    phone: "+91 94321 09876",
+    email: "amit.rawat@gmail.com",
+    passType: "Day Pass",
+    timeAgo: "2w ago",
+    exactTime: "08:00 AM",
+    dateText: "02 Oct 2026",
+    amount: 799,
+  },
+  {
+    id: "9",
+    initials: "RS",
+    name: "Rohit Sharma",
+    customerId: "ID: #CUS-94021",
+    phone: "+91 98765 43210",
+    email: "rohit.sharma@gmail.com",
+    passType: "Monthly Pass",
+    timeAgo: "3w ago",
+    exactTime: "10:20 AM",
+    dateText: "28 Sep 2026",
+    amount: 4999,
+  },
+  {
+    id: "10",
+    initials: "NP",
+    name: "Neha Patel",
+    customerId: "ID: #CUS-88412",
+    phone: "+91 91234 56789",
+    email: "neha.patel@gmail.com",
+    passType: "Day Pass",
+    timeAgo: "4w ago",
+    exactTime: "07:10 AM",
+    dateText: "18 Sep 2026",
+    amount: 799,
+  },
+  {
+    id: "11",
+    initials: "VS",
+    name: "Vikram Singh",
+    customerId: "ID: #CUS-71930",
+    phone: "+91 99887 66554",
+    email: "vikram.singh@gmail.com",
+    passType: "Monthly Pass",
+    timeAgo: "1y ago",
+    exactTime: "05:30 AM",
+    dateText: "18 May 2025",
+    amount: 4999,
+  },
+  {
+    id: "12",
+    initials: "NP",
+    name: "Neha Patel",
+    customerId: "ID: #CUS-88412",
+    phone: "+91 91234 56789",
+    email: "neha.patel@gmail.com",
+    passType: "Day Pass",
+    timeAgo: "1y ago",
+    exactTime: "07:05 AM",
+    dateText: "18 May 2025",
+    amount: 799,
+  },
+];
+
+export const passTypeFilterOptions: DropdownOption[] = [
+  { label: "All Passes", value: "All Passes" },
+  { label: "Day Pass", value: "Day Pass" },
+  { label: "Monthly Pass", value: "Monthly Pass" },
+];
+
+export const timeframeFilterOptions: DropdownOption[] = [
+  { label: "Today (Recent 24h)", value: "24h" },
+  { label: "This Week", value: "7d" },
+  { label: "This Month", value: "30d" },
+];
