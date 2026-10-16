@@ -1,18 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 import { supabase as anonSupabase } from "@/lib/supabase";
 
-<<<<<<< Updated upstream
-export type GymRole =
-  | "owner"
-  | "trainer"
-  | "customer"
-  | "globaltrainer"
-  | "individual"
-  | "superadmin";
-=======
-export type GymRole = "owner" | "trainer" | "customer" | "globaltrainer" | "globalcustomer" | "superadmin";
+export type GymRole = "owner" | "trainer" | "customer" | "globaltrainer" | "globalcustomer" | "individual" | "superadmin";
+
 export type DemoBookingStatus = "pending" | "contacted" | "demoscheduled" | "converted" | "notinterested";
->>>>>>> Stashed changes
 
 export interface CreateDemoBookingParams {
   name: string;
