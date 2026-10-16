@@ -1,12 +1,9 @@
-"use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   PencilSimple,
   CaretDown,
   CaretUp,
   CheckCircle,
-  Buildings,
 } from "@phosphor-icons/react";
 import { DemoRequestItem } from "@/app/actions/demoRequests";
 
@@ -16,11 +13,11 @@ interface DemoRequestStatusCardProps {
   statusSaved: boolean;
   savedTimestamp: string;
   onSaveStatus: (status: DemoRequestItem["status"]) => void;
-  onConvertToGym: () => void;
+  onConvertToGym?: () => void;
 }
 
 const STATUS_OPTIONS: { label: DemoRequestItem["status"]; color: string }[] = [
-  { label: "New", color: "bg-[#10B981]" },
+  { label: "Pending", color: "bg-[#10B981]" },
   { label: "Contacted", color: "bg-[#A855F7]" },
   { label: "Demo Scheduled", color: "bg-[#3B82F6]" },
   { label: "Converted", color: "bg-[#D4FF32]" },
@@ -33,11 +30,14 @@ export function DemoRequestStatusCard({
   statusSaved,
   savedTimestamp,
   onSaveStatus,
-  onConvertToGym,
 }: DemoRequestStatusCardProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [selectedStatus, setSelectedStatus] =
     useState<DemoRequestItem["status"]>(currentStatus);
+
+  useEffect(() => {
+    setSelectedStatus(currentStatus);
+  }, [currentStatus]);
 
   const handleStatusChange = (status: DemoRequestItem["status"]) => {
     setSelectedStatus(status);
@@ -134,28 +134,6 @@ export function DemoRequestStatusCard({
               </button>
             )}
           </div>
-        )}
-      </div>
-
-      <div>
-        {isScheduled ? (
-          <button
-            type="button"
-            onClick={onConvertToGym}
-            className="w-full h-12 rounded-xl bg-[#D4FF32] hover:bg-[#C0EA29] text-black flex items-center justify-center gap-2.5 text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-lg shadow-[#D4FF32]/10"
-          >
-            <Buildings size={18} weight="bold" />
-            <span>Convert to Gym</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onConvertToGym}
-            className="w-full h-12 rounded-xl bg-transparent border border-[#D4FF32] text-[#D4FF32] hover:bg-[#D4FF32]/10 flex items-center justify-center gap-2.5 text-xs sm:text-sm font-bold transition-all cursor-pointer"
-          >
-            <Buildings size={18} />
-            <span>Convert to Gym</span>
-          </button>
         )}
       </div>
     </div>

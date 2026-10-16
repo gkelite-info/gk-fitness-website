@@ -70,6 +70,7 @@ export function DemoRequestsFilters({
               className="h-11 w-full sm:w-[135px] appearance-none bg-[#0E121A] border border-[#222938] hover:border-[#333E54] rounded-xl px-3.5 pr-8 text-xs sm:text-sm font-semibold text-white focus:outline-none focus:border-[#D4FF32] cursor-pointer"
             >
               <option value="all" className="bg-[#0E121A] text-white">All Plans</option>
+              <option value="Platinum" className="bg-[#0E121A] text-white">Platinum</option>
               <option value="Gold" className="bg-[#0E121A] text-white">Gold</option>
               <option value="Silver" className="bg-[#0E121A] text-white">Silver</option>
               <option value="Basic" className="bg-[#0E121A] text-white">Basic</option>
@@ -92,7 +93,7 @@ export function DemoRequestsFilters({
               className="h-11 w-full sm:w-[145px] appearance-none bg-[#0E121A] border border-[#222938] hover:border-[#333E54] rounded-xl px-3.5 pr-8 text-xs sm:text-sm font-semibold text-white focus:outline-none focus:border-[#D4FF32] cursor-pointer"
             >
               <option value="all" className="bg-[#0E121A] text-white">All Status</option>
-              <option value="New" className="bg-[#0E121A] text-white">New</option>
+              <option value="Pending" className="bg-[#0E121A] text-white">Pending</option>
               <option value="Contacted" className="bg-[#0E121A] text-white">Contacted</option>
               <option value="Demo Scheduled" className="bg-[#0E121A] text-white">Demo Scheduled</option>
               <option value="Converted" className="bg-[#0E121A] text-white">Converted</option>

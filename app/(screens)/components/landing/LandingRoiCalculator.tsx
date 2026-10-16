@@ -4,8 +4,6 @@ import { useState } from "react";
 import { 
   Calculator, 
   CurrencyInr, 
-  ArrowRight, 
-  Sparkle, 
   Users, 
   TrendUp, 
   Receipt,
@@ -13,7 +11,7 @@ import {
 } from "@phosphor-icons/react";
 
 interface LandingRoiCalculatorProps {
-  onOpenConsultation: () => void;
+  onOpenConsultation?: () => void;
 }
 
 export default function LandingRoiCalculator({ onOpenConsultation }: LandingRoiCalculatorProps) {
@@ -254,16 +252,6 @@ export default function LandingRoiCalculator({ onOpenConsultation }: LandingRoiC
                 Annual Revenue ({formatCurrency(yearlyRevenue)}) − Annual Expenses ({formatCurrency(yearlyExpenses)}) for {totalMembers} members.
               </p>
             </div>
-
-            <button
-              type="button"
-              onClick={onOpenConsultation}
-              className="h-12 px-7 rounded-xl bg-[#D4FF32] hover:bg-[#C2EF2B] text-black font-extrabold text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-[0_0_25px_rgba(212,255,50,0.35)] shrink-0 cursor-pointer"
-            >
-              <Sparkle size={18} weight="fill" />
-              Request For Demo
-              <ArrowRight size={16} weight="bold" />
-            </button>
           </div>
         </div>
       </div>

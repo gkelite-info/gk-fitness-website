@@ -120,6 +120,65 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
       return { success: false, error: `Account registration failed: ${dbError.message}` };
     }
 
+    let finalPlanId: string | null = data.subscriptionPlanId?.trim() || (data as any).planId?.trim() || null;
+    const isUuid = !!finalPlanId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(finalPlanId);
+
+    if (!isUuid) {
+      if (finalPlanId) {
+        const { data: matchedPlan } = await checkClient
+          .from("subscriptions")
+          .select("subscriptionPlanId")
+          .ilike("planName", `%${finalPlanId}%`)
+          .eq("isActive", true)
+          .eq("is_deleted", false)
+          .is("deletedAt", null)
+          .limit(1)
+          .maybeSingle();
+        if (matchedPlan?.subscriptionPlanId) {
+          finalPlanId = matchedPlan.subscriptionPlanId;
+        } else {
+          finalPlanId = null;
+        }
+      }
+
+      if (!finalPlanId) {
+        const { data: defaultPlan } = await checkClient
+          .from("subscriptions")
+          .select("subscriptionPlanId")
+          .eq("isActive", true)
+          .eq("is_deleted", false)
+          .is("deletedAt", null)
+          .eq("planFor", "customer")
+          .order("price", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (defaultPlan?.subscriptionPlanId) {
+          finalPlanId = defaultPlan.subscriptionPlanId;
+        }
+      }
+    }
+
+    const demoBookingId = crypto.randomUUID();
+    const demoPayload = {
+      demoBookingId,
+      name: cleanName,
+      gymName: data.gymName?.trim() || (data.city ? `${data.city.trim()} Fitness` : "Individual Customer"),
+      gymCity: data.city?.trim() || "Hyderabad",
+      mobile: cleanPhone,
+      memberCount: data.memberCount?.trim() || "1",
+      requirement: `Direct Signup - ${cleanEmail}`,
+      subscriptionPlanId: finalPlanId,
+      status: "pending" as const,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const { error: demoError } = await checkClient.from("demo_bookings").insert(demoPayload);
+    if (demoError) {
+      console.warn("[signupCustomerAction] demo_bookings table sync warning:", demoError.message);
+    }
+
     const emailRes = await sendSignupConfirmationEmail({
       email: cleanEmail,
       name: cleanName,

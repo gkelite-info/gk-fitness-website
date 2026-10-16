@@ -5,13 +5,17 @@ import Link from "next/link";
 import { ArrowLeft, CalendarBlank } from "@phosphor-icons/react";
 import {
   DemoRequestItem,
+  DemoBookingHistoryItem,
   scheduleDemoAction,
+  cancelDemoScheduleAction,
   updateDemoRequestStatusAction,
 } from "@/app/actions/demoRequests";
 import { DemoRequestInfoCard } from "./DemoRequestInfoCard";
 import { DemoRequestScheduleCard } from "./DemoRequestScheduleCard";
 import { DemoRequestStatusCard } from "./DemoRequestStatusCard";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { useUser } from "@/app/context/UserContext";
 
 interface DemoRequestDetailsClientProps {
   request: DemoRequestItem;
@@ -21,28 +25,27 @@ export function DemoRequestDetailsClient({
   request,
 }: DemoRequestDetailsClientProps) {
   const router = useRouter();
-  const initiallyScheduled = request.status === "Demo Scheduled";
+  const { profile } = useUser();
+  const initiallyScheduled = Boolean(request.scheduledDate) || request.status === "Demo Scheduled";
 
   const [isScheduled, setIsScheduled] = useState(initiallyScheduled);
-  const [scheduledDate, setScheduledDate] = useState(
-    initiallyScheduled ? "16 Oct 2026" : "16 Oct 2026"
-  );
-  const [scheduledTime, setScheduledTime] = useState(
-    initiallyScheduled ? "11:00 AM" : "11:00 AM"
-  );
+  const [scheduledDate, setScheduledDate] = useState(request.scheduledDate || "");
+  const [scheduledTime, setScheduledTime] = useState(request.scheduledTime || "11:00 AM");
+  const [historyList, setHistoryList] = useState(request.history || []);
   const [status, setStatus] = useState<DemoRequestItem["status"]>(request.status);
   const [statusSaved, setStatusSaved] = useState(initiallyScheduled);
   const [savedTimestamp, setSavedTimestamp] = useState(
-    initiallyScheduled ? "16 Oct 2026, 10:25 AM" : ""
+    initiallyScheduled ? request.requestedOn : ""
   );
 
   const getStatusBadge = (s: DemoRequestItem["status"]) => {
     switch (s) {
+      case "Pending":
       case "New":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#0B2518] text-[#10B981] border border-[#10B981]/30">
             <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-            New
+            Pending
           </span>
         );
       case "Demo Scheduled":
@@ -77,11 +80,31 @@ export function DemoRequestDetailsClient({
   };
 
   const handleSaveSchedule = async (date: string, time: string) => {
+    const res = await scheduleDemoAction(request.id, date, time, profile?.userId);
+    if (!res.success) {
+      toast.error(res.error || "Failed to schedule demo.");
+      return;
+    }
+
+    const prevItem = historyList.find((h) => Boolean(h.rescheduleDate));
+    const isFirst = !prevItem;
+
+    const newHistoryItem: DemoBookingHistoryItem = {
+      id: prevItem?.id || crypto.randomUUID(),
+      rescheduleDate: date,
+      rescheduleTime: time,
+      previousDate: isFirst ? null : prevItem?.rescheduleDate || null,
+      previousTime: isFirst ? null : prevItem?.rescheduleTime || null,
+      status: null,
+      notes: null,
+      reason: null,
+      createdAt: prevItem?.createdAt || new Date().toISOString(),
+    };
+
+    setHistoryList([newHistoryItem]);
     setScheduledDate(date);
     setScheduledTime(time);
     setIsScheduled(true);
-    setStatus("Demo Scheduled");
-    setStatusSaved(true);
 
     const now = new Date();
     const formattedNow =
@@ -98,19 +121,31 @@ export function DemoRequestDetailsClient({
       });
 
     setSavedTimestamp(formattedNow);
-    await scheduleDemoAction(request.id, date, time);
-    await updateDemoRequestStatusAction(request.id, "Demo Scheduled");
+    toast.success(isFirst ? "Demo scheduled (pending)!" : "Demo rescheduled successfully!");
+    router.refresh();
   };
 
   const handleRemoveSchedule = async () => {
+    const res = await cancelDemoScheduleAction(request.id);
+    if (!res.success) {
+      toast.error(res.error || "Failed to remove schedule.");
+      return;
+    }
     setIsScheduled(false);
-    setStatus("New");
+    setScheduledDate("");
+    setStatus("Pending");
     setStatusSaved(false);
     setSavedTimestamp("");
-    await updateDemoRequestStatusAction(request.id, "New");
+    toast.success("Demo schedule removed.");
+    router.refresh();
   };
 
   const handleSaveStatus = async (newStatus: DemoRequestItem["status"]) => {
+    const res = await updateDemoRequestStatusAction(request.id, newStatus);
+    if (!res.success) {
+      toast.error(res.error || "Failed to update status.");
+      return;
+    }
     setStatus(newStatus);
     setStatusSaved(true);
 
@@ -129,11 +164,8 @@ export function DemoRequestDetailsClient({
       });
 
     setSavedTimestamp(formattedNow);
-    await updateDemoRequestStatusAction(request.id, newStatus);
-  };
-
-  const handleConvertToGym = () => {
-    router.push("/superadmin/companies");
+    toast.success(`Status updated to "${newStatus}"`);
+    router.refresh();
   };
 
   return (
@@ -193,6 +225,7 @@ export function DemoRequestDetailsClient({
             isScheduled={isScheduled}
             scheduledDate={scheduledDate}
             scheduledTime={scheduledTime}
+            history={historyList}
             onSaveSchedule={handleSaveSchedule}
             onRemoveSchedule={handleRemoveSchedule}
           />
@@ -203,7 +236,6 @@ export function DemoRequestDetailsClient({
             statusSaved={statusSaved}
             savedTimestamp={savedTimestamp}
             onSaveStatus={handleSaveStatus}
-            onConvertToGym={handleConvertToGym}
           />
         </div>
       </div>

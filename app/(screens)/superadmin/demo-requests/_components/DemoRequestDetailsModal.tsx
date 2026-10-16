@@ -72,7 +72,7 @@ export function DemoRequestDetailsModal({
                 disabled={updating}
                 className="w-full h-9 bg-[#121724] border border-[#222C42] rounded-lg px-2.5 text-xs font-bold text-[#D4FF32] focus:outline-none cursor-pointer"
               >
-                <option value="New">New</option>
+                <option value="Pending">Pending</option>
                 <option value="Contacted">Contacted</option>
                 <option value="Demo Scheduled">Demo Scheduled</option>
                 <option value="Converted">Converted</option>
@@ -84,8 +84,16 @@ export function DemoRequestDetailsModal({
               <span className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wide">
                 Plan Interested
               </span>
-              <div className="h-9 flex items-center px-3 rounded-lg bg-[#121724] border border-[#222C42] text-xs font-bold text-white">
-                <Sparkle size={14} className="text-[#FBBF24] mr-1.5" weight="fill" />
+              <div className={`h-9 flex items-center px-3 rounded-lg border text-xs font-bold ${
+                request.plan?.toLowerCase().includes("platinum")
+                  ? "bg-[#A855F7]/20 border-[#A855F7]/45 text-[#C084FC]"
+                  : request.plan?.toLowerCase().includes("gold")
+                  ? "bg-[#F59E0B]/20 border-[#F59E0B]/45 text-[#FBBF24]"
+                  : request.plan?.toLowerCase().includes("silver")
+                  ? "bg-[#3B82F6]/20 border-[#3B82F6]/45 text-[#60A5FA]"
+                  : "bg-[#10B981]/20 border-[#10B981]/45 text-[#34D399]"
+              }`}>
+                <Sparkle size={14} className="mr-1.5" weight="fill" />
                 {request.plan} Plan
               </div>
             </div>

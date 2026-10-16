@@ -1,16 +1,23 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+<<<<<<< Updated upstream
   SquaresFour,
+=======
+>>>>>>> Stashed changes
   Barbell,
   Users,
   MagnifyingGlass,
   Star,
   ShieldCheck,
   EnvelopeSimple,
+<<<<<<< Updated upstream
   Ticket
+=======
+  PlayCircle,
+>>>>>>> Stashed changes
 } from "@phosphor-icons/react";
 import LogoutButton from "../../reusable/LogoutButton";
 
@@ -26,6 +33,7 @@ const navLinks: NavItem[] = [
   { name: "Gym Pass", href: "/superadmin/gym-pass", icon: Ticket },
   { name: "Gyms", href: "/superadmin/gyms", icon: Barbell, badge: 120 },
   { name: "Demo Requests", href: "/superadmin/demo-requests", icon: EnvelopeSimple },
+  { name: "Website Videos", href: "/superadmin/website-videos", icon: PlayCircle },
   { name: "Trainers", href: "/superadmin/trainers", icon: Users, badge: 48 },
   { name: "Explore", href: "/superadmin/explore", icon: MagnifyingGlass },
   { name: "Plans & Subscriptions", href: "/superadmin/plans", icon: Star },

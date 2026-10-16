@@ -8,26 +8,33 @@ interface DemoRequestInfoCardProps {
 
 export function DemoRequestInfoCard({ request }: DemoRequestInfoCardProps) {
   const getPlanBadge = (plan: DemoRequestItem["plan"]) => {
-    switch (plan) {
-      case "Gold":
-        return (
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#714D08] text-[#FBBF24] border border-[#B45309]/50">
-            Gold
-          </span>
-        );
-      case "Silver":
-        return (
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#1E293B] text-[#93C5FD] border border-[#3B82F6]/30">
-            Silver
-          </span>
-        );
-      default:
-        return (
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#1A2233] text-[#94A3B8] border border-[#334155]/40">
-            Basic
-          </span>
-        );
+    const p = (plan || "Basic").toLowerCase();
+    if (p.includes("platinum")) {
+      return (
+        <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-[#A855F7]/20 text-[#C084FC] border border-[#A855F7]/45 shadow-[0_0_12px_rgba(168,85,247,0.2)]">
+          Platinum
+        </span>
+      );
     }
+    if (p.includes("gold")) {
+      return (
+        <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-[#F59E0B]/20 text-[#FBBF24] border border-[#F59E0B]/45 shadow-[0_0_12px_rgba(245,158,11,0.2)]">
+          Gold
+        </span>
+      );
+    }
+    if (p.includes("silver")) {
+      return (
+        <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-[#3B82F6]/20 text-[#60A5FA] border border-[#3B82F6]/45 shadow-[0_0_12px_rgba(59,130,246,0.2)]">
+          Silver
+        </span>
+      );
+    }
+    return (
+      <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-[#10B981]/20 text-[#34D399] border border-[#10B981]/45 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+        {plan || "Basic"}
+      </span>
+    );
   };
 
   return (

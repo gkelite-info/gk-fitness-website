@@ -6,6 +6,7 @@ import LandingConsultationModal from "./LandingConsultationModal";
 import LandingSignupModal from "./LandingSignupModal";
 import { getAllPlansGroupedAction } from "@/app/actions/subscriptions";
 import { DynamicSubscriptionPlan } from "@/lib/helpers/subscriptions/subscriptionsHelper";
+import LandingPlansShimmer from "./LandingPlansShimmer";
 import {
   DEFAULT_GYM_PLANS,
   DEFAULT_CUSTOMER_PLANS,
@@ -120,9 +121,13 @@ export default function LandingRolePlans() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {gymPlans.map((plan, idx) => renderPlanCard(plan, "Gym", idx))}
-        </div>
+        {isLoading ? (
+          <LandingPlansShimmer count={4} />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {gymPlans.map((plan, idx) => renderPlanCard(plan, "Gym", idx))}
+          </div>
+        )}
       </div>
 
       <div>
@@ -139,9 +144,13 @@ export default function LandingRolePlans() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {customerPlans.map((plan, idx) => renderPlanCard(plan, "Customer", idx))}
-        </div>
+        {isLoading ? (
+          <LandingPlansShimmer count={4} />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {customerPlans.map((plan, idx) => renderPlanCard(plan, "Customer", idx))}
+          </div>
+        )}
       </div>
 
       <LandingConsultationModal

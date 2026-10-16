@@ -10,6 +10,9 @@ export interface SignupFormValues {
   country?: string;
   pincode?: string;
   address?: string;
+  gymName?: string;
+  memberCount?: string;
+  subscriptionPlanId?: string;
 }
 
 export type SignupFormErrors = Partial<Record<keyof SignupFormValues, string>>;
