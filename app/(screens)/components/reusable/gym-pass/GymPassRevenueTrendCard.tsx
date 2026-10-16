@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Dropdown, { DropdownOption } from "@/app/(screens)/components/reusable/Dropdown";
+import CustomDropdown, { DropdownOption } from "@/app/(screens)/components/reusable/CustomDropdown";
 import { ChartPoint } from "./GymPassTypes";
 
 const timeframeOptions: DropdownOption[] = [
@@ -135,7 +135,7 @@ export default function GymPassRevenueTrendCard() {
         </div>
 
         <div className="w-36 shrink-0">
-          <Dropdown
+          <CustomDropdown
             options={timeframeOptions}
             value={selectedTimeframe}
             onChange={(val) => setSelectedTimeframe(val)}

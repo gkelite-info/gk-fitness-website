@@ -8,7 +8,7 @@ import {
   User,
   Lightning,
 } from "@phosphor-icons/react";
-import Dropdown, { DropdownOption } from "@/app/(screens)/components/reusable/Dropdown";
+import CustomDropdown, { DropdownOption } from "@/app/(screens)/components/reusable/CustomDropdown";
 
 export interface GymPassFormData {
   name: string;
@@ -136,7 +136,7 @@ export default function CreateGymPassFormSection({
                     className="w-full bg-[#11131A] border border-[#242A38] focus:border-[#D4FF32] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-[#64748B] focus:outline-none transition-colors h-[42px]"
                   />
                 ) : (
-                  <Dropdown
+                  <CustomDropdown
                     options={field.options || []}
                     value={formData[field.id]}
                     onChange={(val) => onChange(field.id, val)}

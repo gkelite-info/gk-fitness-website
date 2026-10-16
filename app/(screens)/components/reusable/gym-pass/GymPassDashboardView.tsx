@@ -81,16 +81,17 @@ export default function GymPassDashboardView() {
     setPasses(getStoredGymPasses());
   }, []);
 
+  const getSubRoute = (sub: string) => {
+    const base = pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+    return `${base}/${sub}`;
+  };
+
   const handleCreate = () => {
-    const targetRoute = pathname.endsWith("/") ? `${pathname}create` : `${pathname}/create`;
-    router.push(targetRoute);
+    router.push(getSubRoute("create"));
   };
 
   const handleEdit = (pass: GymPassItem) => {
-    const targetRoute = pathname.endsWith("/")
-      ? `${pathname}create?id=${pass.id}&edit=true`
-      : `${pathname}/create?id=${pass.id}&edit=true`;
-    router.push(targetRoute);
+    router.push(`${getSubRoute("create")}?id=${pass.id}&edit=true`);
   };
 
   const handleDeleteClick = (pass: GymPassItem) => {
@@ -111,7 +112,10 @@ export default function GymPassDashboardView() {
     <div className="w-full min-h-screen bg-[#0C0D10] text-white p-4 sm:p-6 lg:p-8 flex flex-col gap-6 sm:gap-7 max-w-[1600px] mx-auto overflow-x-hidden min-w-0">
       <GymPassDashboardHeader onCreatePass={handleCreate} />
 
-      <GymPassKpiCards />
+      <GymPassKpiCards
+        onTotalPurchasesClick={() => router.push(getSubRoute("purchases"))}
+        onGymPayoutsClick={() => router.push(getSubRoute("payouts"))}
+      />
 
       <GymPassOverviewCards
         passes={passes}
@@ -124,7 +128,10 @@ export default function GymPassDashboardView() {
           <GymPassRevenueTrendCard />
         </div>
         <div className="lg:col-span-5 flex flex-col min-w-0 h-full">
-          <GymPassRecentPurchasesCard purchases={purchases} />
+          <GymPassRecentPurchasesCard
+            purchases={purchases}
+            onViewAll={() => router.push(getSubRoute("recent-purchases"))}
+          />
         </div>
       </div>
 

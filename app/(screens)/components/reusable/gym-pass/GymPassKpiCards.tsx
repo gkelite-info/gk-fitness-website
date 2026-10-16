@@ -11,6 +11,8 @@ interface KpiData {
 
 interface GymPassKpiCardsProps {
   data?: KpiData;
+  onTotalPurchasesClick?: () => void;
+  onGymPayoutsClick?: () => void;
 }
 
 const defaultData: KpiData = {
@@ -20,7 +22,11 @@ const defaultData: KpiData = {
   revenue: "₹80.1L",
 };
 
-export default function GymPassKpiCards({ data = defaultData }: GymPassKpiCardsProps) {
+export default function GymPassKpiCards({
+  data = defaultData,
+  onTotalPurchasesClick,
+  onGymPayoutsClick,
+}: GymPassKpiCardsProps) {
   const cards = [
     {
       label: "ACTIVE PASSES",
@@ -29,6 +35,7 @@ export default function GymPassKpiCards({ data = defaultData }: GymPassKpiCardsP
       iconWeight: "fill" as const,
       iconColor: "text-[#22C55E]",
       bgCircle: "bg-[#14291F] border border-[#165330]",
+      onClick: undefined,
     },
     {
       label: "TOTAL PURCHASES",
@@ -37,6 +44,7 @@ export default function GymPassKpiCards({ data = defaultData }: GymPassKpiCardsP
       iconWeight: "fill" as const,
       iconColor: "text-[#A855F7]",
       bgCircle: "bg-[#251833] border border-[#58207E]",
+      onClick: onTotalPurchasesClick,
     },
     {
       label: "GYM PAYOUTS",
@@ -45,6 +53,7 @@ export default function GymPassKpiCards({ data = defaultData }: GymPassKpiCardsP
       iconWeight: "fill" as const,
       iconColor: "text-[#A855F7]",
       bgCircle: "bg-[#251833] border border-[#58207E]",
+      onClick: onGymPayoutsClick,
     },
     {
       label: "REVENUE",
@@ -53,6 +62,7 @@ export default function GymPassKpiCards({ data = defaultData }: GymPassKpiCardsP
       iconWeight: "bold" as const,
       iconColor: "text-[#22C55E]",
       bgCircle: "bg-[#14291F] border border-[#165330]",
+      onClick: undefined,
     },
   ];
 
@@ -60,10 +70,17 @@ export default function GymPassKpiCards({ data = defaultData }: GymPassKpiCardsP
     <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
       {cards.map((card) => {
         const Icon = card.icon;
+        const isClickable = !!card.onClick;
+
         return (
           <div
             key={card.label}
-            className="w-full bg-[#13151B] border border-[#232631] rounded-2xl p-4 sm:p-5 flex items-center gap-4 shadow-sm select-none"
+            onClick={card.onClick}
+            className={`w-full bg-[#13151B] border border-[#232631] rounded-2xl p-4 sm:p-5 flex items-center gap-4 shadow-sm select-none transition-all ${
+              isClickable
+                ? "cursor-pointer hover:border-[#4B5267] hover:bg-[#161822] active:scale-[0.99]"
+                : ""
+            }`}
           >
             <div
               className={`w-12 h-12 rounded-full ${card.bgCircle} flex items-center justify-center shrink-0 shadow-inner`}
