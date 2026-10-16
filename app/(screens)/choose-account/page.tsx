@@ -21,7 +21,7 @@ interface AccountTypeItem {
   icon: typeof User;
 }
 
-const ACCOUNT_TYPES: AccountTypeItem[] = [
+const ALL_ACCOUNT_TYPES: AccountTypeItem[] = [
   {
     id: "individual",
     title: "Individual",
@@ -34,30 +34,20 @@ const ACCOUNT_TYPES: AccountTypeItem[] = [
     typeId: "owner",
     icon: Buildings,
   },
-  {
-    id: "customer",
-    title: "Gym Customer",
-    typeId: "customer",
-    icon: User,
-  },
-  {
-    id: "gym_trainer",
-    title: "Gym Trainer",
-    typeId: "gym_trainer",
-    icon: Barbell,
-  },
-  {
-    id: "global_trainer",
-    title: "Global Trainer",
-    typeId: "global_trainer",
-    icon: Globe,
-  },
 ];
 
 function ChooseAccountContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [navigatingId, setNavigatingId] = useState<string | null>(null);
+
+  const planId = searchParams.get("planId");
+  const fromParam = searchParams.get("from");
+  const isPlanFlow = Boolean(planId || fromParam === "plan");
+
+  const accountTypes = isPlanFlow
+    ? ALL_ACCOUNT_TYPES.filter((item) => item.id !== "owner")
+    : ALL_ACCOUNT_TYPES;
 
   useEffect(() => {
     const verified = searchParams.get("verified");
@@ -94,7 +84,11 @@ function ChooseAccountContent() {
 
   const handleSelectAccount = (item: AccountTypeItem) => {
     setNavigatingId(item.id);
-    router.push(`/login?type=${item.typeId}&title=${encodeURIComponent(item.title)}`);
+    const planName = searchParams.get("planName");
+    const planParams = planId
+      ? `&planId=${encodeURIComponent(planId)}&planName=${encodeURIComponent(planName || "")}`
+      : "";
+    router.push(`/login?type=${item.typeId}&title=${encodeURIComponent(item.title)}${planParams}`);
   };
 
   return (
@@ -128,7 +122,7 @@ function ChooseAccountContent() {
         </div>
 
         <div className="w-full space-y-3.5">
-          {ACCOUNT_TYPES.map((type) => {
+          {accountTypes.map((type) => {
             const Icon = type.icon;
             const isNavigating = navigatingId === type.id;
 

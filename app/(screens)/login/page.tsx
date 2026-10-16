@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { EnvelopeSimple, LockKey, CircleNotch, ArrowRight, Eye, EyeSlash, CaretLeft, Barbell } from "@phosphor-icons/react";
 import { loginUser } from "@/app/api/auth/actions";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -17,6 +18,12 @@ export default function LoginPage() {
 
   const passwordRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const typeParam = searchParams.get("type");
+  const isOwner = typeParam === "owner";
+  const planId = searchParams.get("planId");
+  const planName = searchParams.get("planName");
+  const signupUrl = `/signup?type=individual${planId ? `&planId=${encodeURIComponent(planId)}&planName=${encodeURIComponent(planName || "")}` : ""}`;
 
   useEffect(() => {
     async function handleSsoRedirect() {
@@ -258,10 +265,36 @@ export default function LoginPage() {
                   </>
                 )}
               </button>
+
+              {!isOwner && (
+                <div className="flex flex-col items-center text-center gap-1.5 mt-2 sm:mt-3">
+                  <p className="text-xs sm:text-sm text-[#94A3B8]">
+                    Don&apos;t have an account?{" "}
+                    <Link
+                      href={signupUrl}
+                      className="cursor-pointer text-[#D4FF32] font-bold hover:underline transition-colors ml-1"
+                    >
+                      Sign Up
+                    </Link>
+                  </p>
+
+                  <p className="text-[11px] text-[#64748B] leading-relaxed max-w-xs sm:max-w-sm">
+                    Note: If you have just created an account, please confirm your email address before signing in.
+                  </p>
+                </div>
+              )}
             </form>
           </div>
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="w-full h-screen bg-[#0C0D10]" />}>
+      <LoginContent />
+    </Suspense>
   );
 }

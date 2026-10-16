@@ -6,6 +6,7 @@ import { Camera, Plus } from "@phosphor-icons/react";
 import UploadReviewModal from "./UploadReviewModal";
 import ReviewDetailModal, { ReviewItem } from "./ReviewDetailModal";
 import LandingReviewCard from "./LandingReviewCard";
+import LandingReviewsShimmer from "./LandingReviewsShimmer";
 import { getReviewsAction } from "@/app/actions/reviews";
 
 export default function LandingReviews() {
@@ -150,21 +151,15 @@ export default function LandingReviews() {
             >
               <Camera size={16} weight="bold" />
               Upload Review &amp; Photos
-              {/* Video uploading in comment: &amp; Videos */}
             </button>
           </div>
           <p className="mt-2 text-xs sm:text-sm text-[#94A3B8]">
             Real stories. Real results. Real member photos and transformations across GK- Gym Life.
-            {/* Video uploading in comment: Real gym workout videos and transformations */}
           </p>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="h-64 rounded-2xl bg-[#121319] border border-white/5" />
-            ))}
-          </div>
+          <LandingReviewsShimmer count={3} />
         ) : reviews.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {reviews.map((rev) => (
@@ -192,7 +187,6 @@ export default function LandingReviews() {
             >
               <Plus size={16} weight="bold" />
               Upload First Review &amp; Photo
-              {/* Video uploading in comment: &amp; Video */}
             </button>
           </div>
         )}

@@ -25,13 +25,13 @@ export function DemoRequestsKPIs({
       statusFilter: "all",
     },
     {
-      id: "new",
-      label: "New Requests",
-      count: stats.newRequests,
+      id: "pending",
+      label: "Pending Requests",
+      count: stats.pendingRequests ?? stats.newRequests,
       iconBg: "bg-[#0E2820]",
       icon: <div className="w-3.5 h-3.5 rounded-full bg-[#10B981] shadow-[0_0_10px_#10B981]" />,
       activeBorder: "border-[#10B981]",
-      statusFilter: "New",
+      statusFilter: "Pending",
     },
     {
       id: "demo_scheduled",

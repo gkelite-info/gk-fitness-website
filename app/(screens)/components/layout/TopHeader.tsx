@@ -8,6 +8,8 @@ import { useState } from "react";
 import AnnouncementsModal from "@/app/(screens)/owner/(dashboard)/_components/AnnouncementsModal";
 import ConfirmationModal from "../reusable/ConfirmationModal";
 import toast from "react-hot-toast";
+import { logoutUser as logoutUserServer } from "@/app/api/auth/actions";
+import { logoutUser as logoutUserClient } from "@/app/api/supabase/helpers";
 
 interface TopHeaderProps {
   onOpenSidebar?: () => void;
@@ -20,6 +22,22 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
   const [isAnnouncementsModalOpen, setIsAnnouncementsModalOpen] = useState(false);
   const [hasUnreadAnnouncements, setHasUnreadAnnouncements] = useState(true);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await logoutUserServer();
+      await logoutUserClient();
+      toast.success("Logged out successfully");
+      setIsLogoutModalOpen(false);
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to log out");
+      setIsLoggingOut(false);
+    }
+  };
 
   const rolePrefix = profile?.role === "superadmin" ? "/superadmin" : "/owner";
   const communityRoute = `${rolePrefix}/community`;
@@ -111,7 +129,10 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
             )}
           </button>
           <button 
+            type="button"
             onClick={() => setIsLogoutModalOpen(true)}
+            title="Log Out"
+            aria-label="Log Out"
             className="cursor-pointer w-10 h-10 flex items-center justify-center bg-[#15161C] border border-[#232631] rounded-xl hover:bg-red-500/10 hover:border-red-500/30 transition-colors group"
           >
             <SignOut size={16} className="text-[#EF4444] group-hover:text-red-400 transition-colors" weight="bold" />
@@ -125,16 +146,13 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
 
       <ConfirmationModal
         isOpen={isLogoutModalOpen}
-        onClose={() => setIsLogoutModalOpen(false)}
-        onConfirm={() => {
-          setIsLogoutModalOpen(false);
-          toast.success("Logged out successfully");
-          router.push("/login");
-        }}
+        onClose={() => !isLoggingOut && setIsLogoutModalOpen(false)}
+        onConfirm={handleLogout}
         title="Confirm Logout"
         message="Are you sure you want to log out of your account?"
         confirmText="Logout"
         cancelText="Cancel"
+        isConfirming={isLoggingOut}
         isDestructive={true}
       />
     </header>

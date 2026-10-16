@@ -54,6 +54,7 @@ function FindOrganizationContent() {
     params.set("type", typeId);
     params.set("gymId", gym.gymId);
     params.set("gymName", gym.gymName);
+    if (gym.logo) params.set("gymLogo", gym.logo);
     router.push(`/login?${params.toString()}`);
   };
 

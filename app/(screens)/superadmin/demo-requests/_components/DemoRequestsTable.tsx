@@ -1,6 +1,7 @@
 import { useRouter } from "next/navigation";
-import { CaretLeft, CaretRight, DotsThreeVertical } from "@phosphor-icons/react";
+import { DotsThreeVertical } from "@phosphor-icons/react";
 import { DemoRequestItem } from "@/app/actions/demoRequests";
+import Pagination from "@/app/(screens)/components/reusable/Pagination";
 
 interface DemoRequestsTableProps {
   items: DemoRequestItem[];
@@ -9,6 +10,7 @@ interface DemoRequestsTableProps {
   totalCount: number;
   onPageChange: (page: number) => void;
   onSelectRequest?: (item: DemoRequestItem) => void;
+  loading?: boolean;
 }
 
 export function DemoRequestsTable({
@@ -18,6 +20,7 @@ export function DemoRequestsTable({
   totalCount,
   onPageChange,
   onSelectRequest,
+  loading = false,
 }: DemoRequestsTableProps) {
   const router = useRouter();
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -25,36 +28,43 @@ export function DemoRequestsTable({
   const currentItems = items.slice(startIndex, startIndex + pageSize);
 
   const getPlanBadge = (plan: DemoRequestItem["plan"]) => {
-    switch (plan) {
-      case "Gold":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#F59E0B]/15 border border-[#F59E0B]/35 text-[#FBBF24]">
-            Gold
-          </span>
-        );
-      case "Silver":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#64748B]/20 border border-[#64748B]/40 text-[#E2E8F0]">
-            Silver
-          </span>
-        );
-      case "Basic":
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#10B981]/15 border border-[#10B981]/35 text-[#34D399]">
-            Basic
-          </span>
-        );
+    const p = (plan || "Basic").toLowerCase();
+    if (p.includes("platinum")) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#A855F7]/20 border border-[#A855F7]/45 text-[#C084FC]">
+          Platinum
+        </span>
+      );
     }
+    if (p.includes("gold")) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#F59E0B]/20 border border-[#F59E0B]/45 text-[#FBBF24]">
+          Gold
+        </span>
+      );
+    }
+    if (p.includes("silver")) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#3B82F6]/20 border border-[#3B82F6]/45 text-[#60A5FA]">
+          Silver
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#10B981]/20 border border-[#10B981]/45 text-[#34D399]">
+        {plan || "Basic"}
+      </span>
+    );
   };
 
   const getStatusBadge = (status: DemoRequestItem["status"]) => {
     switch (status) {
+      case "Pending":
       case "New":
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#10B981]/15 text-[#34D399] border border-[#10B981]/30">
             <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-            New
+            Pending
           </span>
         );
       case "Contacted":
@@ -110,8 +120,38 @@ export function DemoRequestsTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#171E2C] text-xs">
-              {currentItems.map((item, index) => {
-                const rowNum = startIndex + index + 1;
+              {loading ? (
+                [1, 2, 3, 4, 5, 6].map((i) => (
+                  <tr key={i} className="animate-pulse hover:bg-[#121826]/75 transition-colors">
+                    <td className="py-4 px-4 text-center">
+                      <div className="h-4 w-4 bg-[#141B28] rounded mx-auto" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#18233A] shrink-0" />
+                        <div className="h-4 w-28 bg-[#141B28] rounded-md" />
+                      </div>
+                    </td>
+                    <td className="py-4 px-4"><div className="h-4 w-24 bg-[#141B28] rounded-md" /></td>
+                    <td className="py-4 px-4"><div className="h-4 w-20 bg-[#141B28] rounded-md" /></td>
+                    <td className="py-4 px-4"><div className="h-4 w-24 bg-[#141B28] rounded-md" /></td>
+                    <td className="py-4 px-4"><div className="h-4 w-32 bg-[#141B28] rounded-md" /></td>
+                    <td className="py-4 px-3"><div className="h-5 w-16 bg-[#141B28] rounded-full mx-auto" /></td>
+                    <td className="py-4 px-3"><div className="h-4 w-8 bg-[#141B28] rounded mx-auto" /></td>
+                    <td className="py-4 px-4"><div className="h-4 w-28 bg-[#141B28] rounded-md" /></td>
+                    <td className="py-4 px-4"><div className="h-6 w-24 bg-[#141B28] rounded-full mx-auto" /></td>
+                    <td className="py-4 px-4"><div className="h-7 w-16 bg-[#141B28] rounded-xl mx-auto" /></td>
+                  </tr>
+                ))
+              ) : currentItems.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className="py-16 text-center text-xs text-[#64748B]">
+                    No demo requests found matching your filters.
+                  </td>
+                </tr>
+              ) : (
+                currentItems.map((item, index) => {
+                  const rowNum = startIndex + index + 1;
                 return (
                   <tr
                     key={item.id}
@@ -184,55 +224,30 @@ export function DemoRequestsTable({
                     </td>
                   </tr>
                 );
-              })}
+              })
+            )}
             </tbody>
           </table>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1 text-xs text-[#94A3B8]">
-        <div>
-          Showing {Math.min(startIndex + 1, totalCount)} - {Math.min(startIndex + pageSize, totalCount)} of {totalCount} requests
+      {loading ? (
+        <div className="p-4 border-t border-[#1C2333] flex items-center justify-between animate-pulse">
+          <div className="h-4 w-36 bg-[#141B28] rounded" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-20 bg-[#141B28] rounded-lg" />
+            <div className="h-8 w-20 bg-[#141B28] rounded-lg" />
+          </div>
         </div>
-
-        <div className="inline-flex items-center gap-1.5">
-          <button
-            type="button"
-            disabled={currentPage <= 1}
-            onClick={() => onPageChange(currentPage - 1)}
-            className="w-8 h-8 rounded-lg bg-[#0E121A] border border-[#1E2536] flex items-center justify-center text-[#94A3B8] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
-          >
-            <CaretLeft size={14} weight="bold" />
-          </button>
-
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-            const isActive = page === currentPage;
-            return (
-              <button
-                key={page}
-                type="button"
-                onClick={() => onPageChange(page)}
-                className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
-                  isActive
-                    ? "bg-[#142018] border border-[#D4FF32] text-[#D4FF32] shadow-[0_0_8px_rgba(212,255,50,0.25)]"
-                    : "bg-[#0E121A] border border-[#1E2536] text-[#94A3B8] hover:text-white"
-                }`}
-              >
-                {page}
-              </button>
-            );
-          })}
-
-          <button
-            type="button"
-            disabled={currentPage >= totalPages}
-            onClick={() => onPageChange(currentPage + 1)}
-            className="w-8 h-8 rounded-lg bg-[#0E121A] border border-[#1E2536] flex items-center justify-center text-[#94A3B8] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
-          >
-            <CaretRight size={14} weight="bold" />
-          </button>
-        </div>
-      </div>
+      ) : (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalCount}
+          itemsPerPage={pageSize}
+          onPageChange={onPageChange}
+        />
+      )}
     </div>
   );
 }

@@ -55,7 +55,7 @@ export default function LandingHeader() {
           </a>
 
           <Link
-            href="/login"
+            href="/choose-account"
             className="h-9 sm:h-10 px-4 rounded-xl border border-white/10 bg-[#15161C] hover:bg-[#1E2028] text-white text-xs sm:text-sm font-semibold flex items-center justify-center transition-all"
           >
             Login

@@ -1,24 +1,30 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { getDemoRequestsAction, DemoRequestItem, DemoRequestsStats } from "@/app/actions/demoRequests";
+import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  getDemoRequestsAction,
+  DemoRequestItem,
+  DemoRequestsStats,
+} from "@/app/actions/demoRequests";
 import { DemoRequestsKPIs } from "./_components/DemoRequestsKPIs";
 import { DemoRequestsFilters } from "./_components/DemoRequestsFilters";
 import { DemoRequestsTable } from "./_components/DemoRequestsTable";
 import { DemoRequestDetailsModal } from "./_components/DemoRequestDetailsModal";
-import { CircleNotch } from "@phosphor-icons/react";
+import { DemoRequestsListShimmer } from "./_components/DemoRequestsListShimmer";
 
 export default function DemoRequestsPage() {
   const [items, setItems] = useState<DemoRequestItem[]>([]);
   const [stats, setStats] = useState<DemoRequestsStats>({
-    total: 24,
-    newRequests: 12,
-    demoScheduled: 6,
-    contacted: 4,
-    converted: 1,
-    notInterested: 1,
+    total: 0,
+    pendingRequests: 0,
+    newRequests: 0,
+    demoScheduled: 0,
+    contacted: 0,
+    converted: 0,
+    notInterested: 0,
   });
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlan, setSelectedPlan] = useState("all");
@@ -28,47 +34,64 @@ export default function DemoRequestsPage() {
   const pageSize = 10;
 
   const [selectedRequest, setSelectedRequest] = useState<DemoRequestItem | null>(null);
+  const isInitialMount = useRef(true);
 
-  useEffect(() => {
-    const fetchRequests = async () => {
-      setLoading(true);
-      const res = await getDemoRequestsAction();
+  const fetchFilteredData = useCallback(
+    async (
+      search: string,
+      plan: string,
+      status: string,
+      dateRange: string,
+      isInitial = false
+    ) => {
+      if (isInitial) {
+        setInitialLoading(true);
+      } else {
+        setTableLoading(true);
+      }
+
+      const res = await getDemoRequestsAction({
+        search,
+        plan,
+        status,
+        dateRange,
+      });
+
       if (res.success && res.data) {
         setItems(res.data);
         if (res.stats) {
           setStats(res.stats);
         }
       }
-      setLoading(false);
-    };
 
-    fetchRequests();
+      if (isInitial) {
+        setInitialLoading(false);
+      } else {
+        setTableLoading(false);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    fetchFilteredData(searchQuery, selectedPlan, selectedStatus, selectedDateRange, true);
   }, []);
 
-  const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const match =
-          item.ownerName.toLowerCase().includes(q) ||
-          item.gymName.toLowerCase().includes(q) ||
-          item.city.toLowerCase().includes(q) ||
-          item.email.toLowerCase().includes(q) ||
-          item.mobile.includes(q);
-        if (!match) return false;
-      }
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
 
-      if (selectedPlan !== "all" && item.plan !== selectedPlan) {
-        return false;
-      }
+    setTableLoading(true);
+    setCurrentPage(1);
 
-      if (selectedStatus !== "all" && item.status !== selectedStatus) {
-        return false;
-      }
+    const timer = setTimeout(() => {
+      fetchFilteredData(searchQuery, selectedPlan, selectedStatus, selectedDateRange, false);
+    }, 300);
 
-      return true;
-    });
-  }, [items, searchQuery, selectedPlan, selectedStatus]);
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedPlan, selectedStatus, selectedDateRange, fetchFilteredData]);
 
   const handleClearFilters = () => {
     setSearchQuery("");
@@ -86,6 +109,10 @@ export default function DemoRequestsPage() {
       setSelectedRequest({ ...selectedRequest, status: newStatus });
     }
   };
+
+  if (initialLoading) {
+    return <DemoRequestsListShimmer />;
+  }
 
   return (
     <div className="w-full flex flex-col gap-6 p-4 sm:p-6 lg:p-8 text-white min-h-[calc(100vh-101px)]">
@@ -111,38 +138,29 @@ export default function DemoRequestsPage() {
         searchQuery={searchQuery}
         onSearchChange={(q) => {
           setSearchQuery(q);
-          setCurrentPage(1);
         }}
         selectedPlan={selectedPlan}
         onPlanChange={(plan) => {
           setSelectedPlan(plan);
-          setCurrentPage(1);
         }}
         selectedStatus={selectedStatus}
         onStatusChange={(status) => {
           setSelectedStatus(status);
-          setCurrentPage(1);
         }}
         selectedDateRange={selectedDateRange}
         onDateRangeChange={setSelectedDateRange}
         onClearFilters={handleClearFilters}
       />
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <CircleNotch size={32} className="animate-spin text-[#D4FF32]" />
-          <span className="text-xs text-[#94A3B8]">Loading demo requests...</span>
-        </div>
-      ) : (
-        <DemoRequestsTable
-          items={filteredItems}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          totalCount={filteredItems.length}
-          onPageChange={setCurrentPage}
-          onSelectRequest={setSelectedRequest}
-        />
-      )}
+      <DemoRequestsTable
+        items={items}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        totalCount={items.length}
+        onPageChange={setCurrentPage}
+        onSelectRequest={setSelectedRequest}
+        loading={tableLoading}
+      />
 
       <DemoRequestDetailsModal
         request={selectedRequest}
