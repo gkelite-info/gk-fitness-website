@@ -123,17 +123,7 @@ export function DemoRequestScheduleCard({
         <div className="px-4 sm:px-5 pb-5 pt-1 space-y-4">
           {isScheduled && !isEditing ? (
             <div className="space-y-3">
-              <div className="bg-[#091F18] border border-[#144A39] rounded-xl p-4 flex items-start gap-3">
-                <CheckCircle size={22} weight="fill" className="text-[#10B981] shrink-0 mt-0.5" />
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs font-bold text-[#10B981]">Demo Scheduled</span>
-                  <span className="text-xs sm:text-sm font-semibold text-white">
-                    {scheduledDate || dateInput} • {scheduledTime || `${timeValue} ${meridiem}`}
-                  </span>
-                  <span className="text-xs text-[#8E99AB]">Google Meet</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 pt-1">
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
@@ -151,6 +141,16 @@ export function DemoRequestScheduleCard({
                   {removing ? <CircleNotch size={15} className="animate-spin" /> : <Trash size={15} />}
                   <span>{removing ? "Removing..." : "Remove"}</span>
                 </button>
+              </div>
+
+              <div className="bg-[#091F18] border border-[#144A39] rounded-xl p-4 flex items-start gap-3">
+                <CheckCircle size={22} weight="fill" className="text-[#10B981] shrink-0 mt-0.5" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs font-bold text-[#10B981]">Demo Scheduled</span>
+                  <span className="text-xs sm:text-sm font-semibold text-white">
+                    {scheduledDate || dateInput} • {scheduledTime || `${timeValue} ${meridiem}`}
+                  </span>
+                </div>
               </div>
             </div>
           ) : (

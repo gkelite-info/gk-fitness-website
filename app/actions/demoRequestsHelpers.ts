@@ -60,8 +60,8 @@ export function getInitials(name: string): string {
 
 export function parseEmailFromRequirement(req?: string | null): string {
   if (!req) return "";
-  const match = req.match(/Email:\s*([^\s|]+)/i);
-  return match ? match[1] : "";
+  const match = req.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+  return match ? match[1].trim() : "";
 }
 
 export function parsePlanFromRequirement(req?: string | null): string {

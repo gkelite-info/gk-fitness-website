@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Check, ArrowRight } from "@phosphor-icons/react";
 import LandingConsultationModal from "./LandingConsultationModal";
-import LandingSignupModal from "./LandingSignupModal";
 import { getAllPlansGroupedAction } from "@/app/actions/subscriptions";
 import { DynamicSubscriptionPlan } from "@/lib/helpers/subscriptions/subscriptionsHelper";
 import LandingPlansShimmer from "./LandingPlansShimmer";
@@ -15,7 +15,6 @@ import {
 
 export default function LandingRolePlans() {
   const [selectedPlanForModal, setSelectedPlanForModal] = useState<{ id: string | null; name: string } | null>(null);
-  const [selectedPlanForSignup, setSelectedPlanForSignup] = useState<{ id: string | null; name: string } | null>(null);
   const [gymPlans, setGymPlans] = useState<DynamicSubscriptionPlan[]>(DEFAULT_GYM_PLANS);
   const [customerPlans, setCustomerPlans] = useState<DynamicSubscriptionPlan[]>(DEFAULT_CUSTOMER_PLANS);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,19 +71,13 @@ export default function LandingRolePlans() {
 
         <div className="pt-4 border-t border-white/[0.08] shrink-0">
           {category === "Customer" ? (
-            <button
-              type="button"
-              onClick={() =>
-                setSelectedPlanForSignup({
-                  id: plan.id && plan.id.startsWith("default-") ? null : plan.id,
-                  name: `${plan.name} Plan`,
-                })
-              }
+            <Link
+              href={`/choose-account?from=plan${plan.id && !plan.id.startsWith("default-") ? `&planId=${encodeURIComponent(plan.id)}` : ""}&planName=${encodeURIComponent(plan.name)}`}
               className="w-full h-11 rounded-xl bg-[#D4FF32] hover:bg-[#C2EF2B] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(212,255,50,0.18)] active:scale-[0.98] cursor-pointer"
             >
               Sign Up
               <ArrowRight size={15} weight="bold" />
-            </button>
+            </Link>
           ) : (
             <button
               type="button"
@@ -158,13 +151,6 @@ export default function LandingRolePlans() {
         onClose={() => setSelectedPlanForModal(null)}
         selectedRole={selectedPlanForModal?.name || "Gym Owner"}
         subscriptionPlanId={selectedPlanForModal?.id || null}
-      />
-
-      <LandingSignupModal
-        isOpen={!!selectedPlanForSignup}
-        onClose={() => setSelectedPlanForSignup(null)}
-        planName={selectedPlanForSignup?.name || "Customer Plan"}
-        planId={selectedPlanForSignup?.id || null}
       />
     </div>
   );

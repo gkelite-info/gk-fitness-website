@@ -4,6 +4,7 @@ import {
   CaretDown,
   CaretUp,
   CheckCircle,
+  CircleNotch,
 } from "@phosphor-icons/react";
 import { DemoRequestItem } from "@/app/actions/demoRequests";
 
@@ -12,15 +13,15 @@ interface DemoRequestStatusCardProps {
   isScheduled: boolean;
   statusSaved: boolean;
   savedTimestamp: string;
-  onSaveStatus: (status: DemoRequestItem["status"]) => void;
+  onSaveStatus: (status: DemoRequestItem["status"]) => Promise<void> | void;
   onConvertToGym?: () => void;
 }
 
 const STATUS_OPTIONS: { label: DemoRequestItem["status"]; color: string }[] = [
-  { label: "Pending", color: "bg-[#10B981]" },
+  { label: "Pending", color: "bg-[#06B6D4]" },
   { label: "Contacted", color: "bg-[#A855F7]" },
-  { label: "Demo Scheduled", color: "bg-[#3B82F6]" },
-  { label: "Converted", color: "bg-[#D4FF32]" },
+  { label: "Demo Scheduled", color: "bg-[#D4FF32]" },
+  { label: "Converted", color: "bg-[#10B981]" },
   { label: "Not Interested", color: "bg-[#EF4444]" },
 ];
 
@@ -34,6 +35,7 @@ export function DemoRequestStatusCard({
   const [isOpen, setIsOpen] = useState(true);
   const [selectedStatus, setSelectedStatus] =
     useState<DemoRequestItem["status"]>(currentStatus);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setSelectedStatus(currentStatus);
@@ -43,8 +45,13 @@ export function DemoRequestStatusCard({
     setSelectedStatus(status);
   };
 
-  const handleSave = () => {
-    onSaveStatus(selectedStatus);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSaveStatus(selectedStatus);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const activeColor =
@@ -108,10 +115,10 @@ export function DemoRequestStatusCard({
               </div>
             </div>
 
-            {statusSaved ? (
-              <div className="bg-[#091F18] border border-[#144A39] rounded-xl p-3.5 flex items-center gap-3">
+            {statusSaved && (
+              <div className="bg-[#091F18] border border-[#144A39] rounded-xl p-3 flex items-center gap-3">
                 <CheckCircle
-                  size={20}
+                  size={18}
                   weight="fill"
                   className="text-[#10B981] shrink-0"
                 />
@@ -119,20 +126,24 @@ export function DemoRequestStatusCard({
                   <p className="text-xs font-semibold text-[#10B981]">
                     Status updated successfully
                   </p>
-                  <p className="text-[11px] text-[#8E99AB]">
-                    {savedTimestamp || "16 Oct 2026, 10:25 AM"}
-                  </p>
+                  {savedTimestamp && (
+                    <p className="text-[11px] text-[#8E99AB]">
+                      {savedTimestamp}
+                    </p>
+                  )}
                 </div>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={handleSave}
-                className="w-full h-10 rounded-xl bg-[#D4FF32] hover:bg-[#C0EA29] text-black text-xs font-bold transition-all cursor-pointer shadow-sm"
-              >
-                Save Status
-              </button>
             )}
+
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full h-10 rounded-xl bg-[#D4FF32] hover:bg-[#C0EA29] text-black text-xs font-bold transition-all cursor-pointer shadow-sm disabled:opacity-50 flex items-center justify-center gap-1.5"
+            >
+              {saving && <CircleNotch size={14} className="animate-spin" />}
+              <span>{saving ? "Updating Status..." : "Save Status"}</span>
+            </button>
           </div>
         )}
       </div>

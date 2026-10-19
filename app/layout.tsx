@@ -4,6 +4,8 @@ import "./globals.css";
 import { UserProvider } from "@/app/context/UserContext";
 import { Toaster } from "react-hot-toast";
 import { Providers } from "./providers";
+import { Suspense } from "react";
+import AuthRecoveryRedirect from "@/app/(screens)/components/auth/AuthRecoveryRedirect";
 
 const sora = Sora({
   variable: "--font-sora",
@@ -110,6 +112,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <Providers>
           <UserProvider>
+            <Suspense fallback={null}>
+              <AuthRecoveryRedirect />
+            </Suspense>
             <Toaster
               position="top-right"
               toastOptions={{

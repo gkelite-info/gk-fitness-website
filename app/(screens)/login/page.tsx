@@ -21,8 +21,7 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type");
   const isOwner = typeParam === "owner";
-  const planId = searchParams.get("planId");
-  const planName = searchParams.get("planName");
+  const planId = searchParams.get("planId"), planName = searchParams.get("planName");
   const signupUrl = `/signup?type=individual${planId ? `&planId=${encodeURIComponent(planId)}&planName=${encodeURIComponent(planName || "")}` : ""}`;
 
   useEffect(() => {
@@ -221,9 +220,9 @@ function LoginContent() {
                   <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wide">
                     Password
                   </label>
-                  <a href="#" tabIndex={-1} className="cursor-pointer text-xs font-semibold text-[#D4FF32] hover:underline">
+                  <Link href="/forgot-password" className="cursor-pointer text-xs font-semibold text-[#D4FF32] hover:underline">
                     Forgot password?
-                  </a>
+                  </Link>
                 </div>
                 <div className="relative group">
                   <LockKey
