@@ -42,7 +42,7 @@ export default function CurrentPlanSection({
   }
 
   const isExpired = currentPlan.endDate ? new Date(currentPlan.endDate).getTime() < Date.now() : false;
-  const isActive = Boolean(currentPlan.is_Active ?? currentPlan.isActive);
+  const isActive = Boolean(currentPlan.is_Active ?? currentPlan.isActive) && !isExpired;
   const statusLabel = isExpired ? "Expired" : (isActive ? "Active" : "Inactive");
   const statusColor = isExpired ? "#EF4444" : (isActive ? "#D7FF00" : "#8E8E93");
   const planName = currentPlan.plan?.planName || "Membership Plan";
@@ -99,22 +99,24 @@ export default function CurrentPlanSection({
           </div>
         </div>
 
-        <button
-          onClick={() => onRenew(targetPlanId, planName)}
-          disabled={isRenewingThis || !targetPlanId}
-          className="w-full bg-[#D7FF00] hover:bg-[#cbf200] py-3.5 px-5 rounded-2xl flex items-center justify-center mt-4 transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
-        >
-          {isRenewingThis ? (
-            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <>
-              <span className="text-black text-xs font-bold tracking-wider mr-1 uppercase">
-                RENEW PLAN
-              </span>
-              <CaretRight size={15} color="#000000" weight="bold" />
-            </>
-          )}
-        </button>
+        {(!isActive || isExpired) && (
+          <button
+            onClick={() => onRenew(targetPlanId, planName)}
+            disabled={isRenewingThis || !targetPlanId}
+            className="w-full bg-[#D7FF00] hover:bg-[#cbf200] py-3.5 px-5 rounded-2xl flex items-center justify-center mt-4 transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+          >
+            {isRenewingThis ? (
+              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <span className="text-black text-xs font-bold tracking-wider mr-1 uppercase">
+                  RENEW PLAN
+                </span>
+                <CaretRight size={15} color="#000000" weight="bold" />
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

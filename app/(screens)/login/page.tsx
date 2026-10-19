@@ -89,7 +89,10 @@ function LoginContent() {
     const searchParams = new URLSearchParams(window.location.search);
     const returnTo = searchParams.get("returnTo");
     if (returnTo && returnTo.startsWith("/") && returnTo !== "/login") {
-      window.location.href = returnTo;
+      const targetReturn = returnTo.startsWith("/individual")
+        ? returnTo.replace(/^\/individual/, "/customer")
+        : returnTo;
+      window.location.href = targetReturn;
       return;
     }
 
@@ -101,7 +104,7 @@ function LoginContent() {
       window.location.href = "/trainer";
     } else if (role === "globaltrainer") {
       window.location.href = "/globaltrainer";
-    } else if (role === "customer") {
+    } else if (role === "customer" || role === "individual") {
       window.location.href = "/customer";
     } else {
       window.location.href = "/";

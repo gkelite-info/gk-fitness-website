@@ -43,17 +43,90 @@ export async function verifyPaymentAndRenewPlan({
   let resolvedCustomerId = customerId;
   let resolvedGymId = gymId;
 
-  if (!resolvedCustomerId || !resolvedGymId) {
-    const { data: customer } = await supabase
-      .from("gym_customers")
-      .select("customerId, gymId")
-      .or(`userId.eq.${user.id},email.eq.${user.email}`)
+  const { data: userRec } = await supabase
+    .from("users")
+    .select("userId, role")
+    .eq("userId", user.id)
+    .maybeSingle();
+
+  const { data: subPlan } = await supabase
+    .from("subscriptions")
+    .select("subscriptionPlanId, planName, price")
+    .eq("subscriptionPlanId", planId)
+    .maybeSingle();
+
+  const isIndividual = userRec?.role === "individual" || Boolean(subPlan) || !resolvedGymId;
+
+  if (isIndividual) {
+    if (!subPlan) {
+      return { success: false, error: "Subscription plan not found" };
+    }
+
+    const { data: existingIndivPlans } = await supabase
+      .from("individual_customer_plans")
+      .select("*")
+      .eq("userId", user.id)
+      .is("deletedAt", null)
+      .order("createdAt", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
-    if (customer) {
-      resolvedCustomerId = resolvedCustomerId || customer.customerId;
-      resolvedGymId = resolvedGymId || customer.gymId;
+    const now = new Date();
+    let startDate = now;
+    if (existingIndivPlans?.endDate) {
+      const existingEndDate = new Date(existingIndivPlans.endDate);
+      if (existingEndDate > now && existingIndivPlans.isActive) {
+        startDate = existingEndDate;
+      }
     }
+
+    const calculatedEnd = new Date(startDate);
+    calculatedEnd.setMonth(calculatedEnd.getMonth() + 1);
+    const finalStartDate = startDate.toISOString();
+    const finalEndDate = calculatedEnd.toISOString();
+    const nowIso = now.toISOString();
+
+    if (existingIndivPlans?.individualCustomerPlanId) {
+      await supabase
+        .from("individual_customer_plans")
+        .update({
+          subscriptionPlanId: subPlan.subscriptionPlanId,
+          customAmount: subPlan.price || 0,
+          startDate: finalStartDate,
+          endDate: finalEndDate,
+          isActive: true,
+          updatedAt: nowIso,
+        })
+        .eq("individualCustomerPlanId", existingIndivPlans.individualCustomerPlanId);
+    } else {
+      await supabase
+        .from("individual_customer_plans")
+        .insert([{
+          individualCustomerPlanId: crypto.randomUUID(),
+          subscriptionPlanId: subPlan.subscriptionPlanId,
+          userId: user.id,
+          customAmount: subPlan.price || 0,
+          startDate: finalStartDate,
+          endDate: finalEndDate,
+          isActive: true,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        }]);
+    }
+
+    revalidatePath("/customer");
+    return { success: true, planName: subPlan.planName, paymentId };
+  }
+
+  const { data: customer } = await supabase
+    .from("gym_customers")
+    .select("customerId, gymId")
+    .or(`userId.eq.${user.id},email.eq.${user.email}`)
+    .maybeSingle();
+
+  if (customer) {
+    resolvedCustomerId = resolvedCustomerId || customer.customerId;
+    resolvedGymId = resolvedGymId || customer.gymId;
   }
 
   if (!resolvedCustomerId || !resolvedGymId) {
