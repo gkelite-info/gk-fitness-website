@@ -1,10 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Phone, WhatsappLogo } from "@phosphor-icons/react";
+import LandingCallModal from "./LandingCallModal";
 
 export default function LandingHeader() {
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
+
   const scrollToAudit = () => {
     const el = document.getElementById("audit-form");
     if (el) {
@@ -13,36 +17,38 @@ export default function LandingHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-[#090A0E]/95 backdrop-blur-md border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-3">
-        <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-          <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-xl overflow-hidden bg-[#15161C] border border-white/10 flex items-center justify-center shadow-md">
-            <Image
-              src="/512x512 2.png"
-              alt="GK- Gym Life Logo"
-              width={36}
-              height={36}
-              className="object-contain"
-            />
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5 whitespace-nowrap">
-              <span className="font-black text-white text-base sm:text-lg tracking-tight">GK-Gym Life</span>
+    <>
+      <header className="sticky top-0 z-40 w-full bg-[#090A0E]/95 backdrop-blur-md border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-3">
+          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+            <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-xl overflow-hidden bg-[#15161C] border border-white/10 flex items-center justify-center shadow-md">
+              <Image
+                src="/512x512 2.png"
+                alt="GK- Gym Life Logo"
+                width={36}
+                height={36}
+                className="object-contain"
+              />
             </div>
-            <span className="text-[10px] text-[#94A3B8] font-medium tracking-wide hidden sm:inline whitespace-nowrap">
-              Gym Operations Management
-            </span>
-          </div>
-        </Link>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5 whitespace-nowrap">
+                <span className="font-black text-white text-base sm:text-lg tracking-tight">GK-Gym Life</span>
+              </div>
+              <span className="text-[10px] text-[#94A3B8] font-medium tracking-wide hidden sm:inline whitespace-nowrap">
+                Gym Operations Management
+              </span>
+            </div>
+          </Link>
 
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <a
-            href="tel:+919090639005"
-            aria-label="Call GK- Gym Life"
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/10 flex items-center justify-center text-white transition-colors"
-          >
-            <Phone size={18} weight="bold" />
-          </a>
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsCallModalOpen(true)}
+              aria-label="Call GK- Gym Life"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/10 flex items-center justify-center text-white transition-colors cursor-pointer"
+            >
+              <Phone size={18} weight="bold" />
+            </button>
 
           <a
             href="https://wa.me/919090639005?text=Hi,%20I%20want%20to%20know%20more%20about%20GK-%20Gym%20Life%20Powered%20Gyms"
@@ -71,5 +77,12 @@ export default function LandingHeader() {
         </div>
       </div>
     </header>
+
+    <LandingCallModal
+      isOpen={isCallModalOpen}
+      onClose={() => setIsCallModalOpen(false)}
+      phoneNumber="9000266832"
+    />
+  </>
   );
 }

@@ -4,6 +4,7 @@ import {
   getDemoBookingsClient,
   cancelDemoBookingSchedule,
 } from "@/lib/helpers/demoBookings/demoBookingsHelper";
+import { sendDemoBookingStatusNotification } from "@/lib/helpers/demoEmailService";
 import {
   DemoBookingHistoryItem,
   DemoRequestItem,
@@ -145,7 +146,7 @@ export async function getDemoRequestsAction(filters?: GetDemoRequestsFilters): P
 export async function updateDemoRequestStatusAction(
   id: string,
   newStatus: DemoRequestItem["status"]
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; emailSent?: boolean; emailError?: string; recipientEmail?: string; error?: string }> {
   try {
     const client = getDemoBookingsClient();
     const dbStatus = mapUiStatusToDb(newStatus);
@@ -156,7 +157,14 @@ export async function updateDemoRequestStatusAction(
       .eq("demoBookingId", id);
 
     if (error) return { success: false, error: error.message };
-    return { success: true };
+
+    const emailRes = await sendDemoBookingStatusNotification(id, newStatus);
+    return {
+      success: true,
+      emailSent: emailRes?.emailSent,
+      emailError: emailRes?.error,
+      recipientEmail: emailRes?.recipientEmail,
+    };
   } catch (err: any) {
     return { success: false, error: err?.message || "Failed to update status." };
   }
@@ -268,8 +276,12 @@ export async function scheduleDemoAction(
 
     await client
       .from("demo_bookings")
-      .update({ updatedAt: now })
+      .update({ status: "demoscheduled", updatedAt: now })
       .eq("demoBookingId", id);
+
+    sendDemoBookingStatusNotification(id, "Demo Scheduled").catch((err) =>
+      console.warn("Schedule notification error:", err)
+    );
 
     return { success: true };
   } catch (err: any) {
@@ -277,9 +289,7 @@ export async function scheduleDemoAction(
   }
 }
 
-export async function cancelDemoScheduleAction(
-  id: string
-): Promise<{ success: boolean; error?: string }> {
+export async function cancelDemoScheduleAction(id: string): Promise<{ success: boolean; error?: string }> {
   try {
     return await cancelDemoBookingSchedule(id);
   } catch (err: any) {

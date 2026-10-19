@@ -33,10 +33,8 @@ export function DemoRequestDetailsClient({
   const [scheduledTime, setScheduledTime] = useState(request.scheduledTime || "11:00 AM");
   const [historyList, setHistoryList] = useState(request.history || []);
   const [status, setStatus] = useState<DemoRequestItem["status"]>(request.status);
-  const [statusSaved, setStatusSaved] = useState(initiallyScheduled);
-  const [savedTimestamp, setSavedTimestamp] = useState(
-    initiallyScheduled ? request.requestedOn : ""
-  );
+  const [statusSaved, setStatusSaved] = useState(false);
+  const [savedTimestamp, setSavedTimestamp] = useState("");
 
   const getStatusBadge = (s: DemoRequestItem["status"]) => {
     switch (s) {
@@ -164,7 +162,15 @@ export function DemoRequestDetailsClient({
       });
 
     setSavedTimestamp(formattedNow);
-    toast.success(`Status updated to "${newStatus}"`);
+
+    if (res.emailSent) {
+      toast.success(`Status updated & email sent to ${res.recipientEmail}!`, { duration: 5000 });
+    } else if (res.emailError) {
+      toast.error(`Status updated, but email failed: ${res.emailError}`, { duration: 6000 });
+    } else {
+      toast.success(`Status updated to "${newStatus}"`);
+    }
+
     router.refresh();
   };
 
