@@ -23,6 +23,20 @@ function ForgotPasswordContent() {
     return () => clearInterval(timer);
   }, [cooldown]);
 
+  const sendResetRequest = async (targetEmail: string) => {
+    try {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: targetEmail }),
+      });
+      const data = await response.json();
+      return data;
+    } catch {
+      return await requestPasswordResetAction(targetEmail);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -39,7 +53,7 @@ function ForgotPasswordContent() {
     }
 
     setLoading(true);
-    const res = await requestPasswordResetAction(cleanEmail);
+    const res = await sendResetRequest(cleanEmail);
     setLoading(false);
 
     if (!res.success) {
@@ -58,7 +72,7 @@ function ForgotPasswordContent() {
   const handleResend = async () => {
     if (cooldown > 0 || resendLoading) return;
     setResendLoading(true);
-    const res = await requestPasswordResetAction(email.trim());
+    const res = await sendResetRequest(email.trim());
     setResendLoading(false);
 
     if (!res.success) {
