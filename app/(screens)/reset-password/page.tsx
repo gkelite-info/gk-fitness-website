@@ -15,6 +15,7 @@ import {
   updateUserPasswordClient,
   exchangeResetCodeClient,
   verifyRecoveryTokenHashClient,
+  checkClientSession,
 } from "@/app/api/auth/clientAuth";
 import ResetPasswordForm from "./_components/ResetPasswordForm";
 import ResetPasswordSuccess from "./_components/ResetPasswordSuccess";
@@ -60,10 +61,13 @@ function ResetPasswordContent() {
         if (!clientRes.success) {
           const verifyRes = await verifyRecoveryTokenHashAction(tokenHash);
           if (!verifyRes.success) {
-            setIsExplicitError(true);
-            setErrorMessage("This password reset link is invalid or has expired. Please request a new link.");
-            setInitializing(false);
-            return;
+            const sessionRes = await checkClientSession();
+            if (!sessionRes.success) {
+              setIsExplicitError(true);
+              setErrorMessage("This password reset link is invalid or has expired. Please request a new link.");
+              setInitializing(false);
+              return;
+            }
           }
         }
       }
@@ -73,10 +77,13 @@ function ResetPasswordContent() {
         if (!clientRes.success) {
           const exchangeRes = await exchangeResetCodeAction(code);
           if (!exchangeRes.success) {
-            setIsExplicitError(true);
-            setErrorMessage("This password reset link is invalid or has expired. Please request a new link.");
-            setInitializing(false);
-            return;
+            const sessionRes = await checkClientSession();
+            if (!sessionRes.success) {
+              setIsExplicitError(true);
+              setErrorMessage("This password reset link is invalid or has expired. Please request a new link.");
+              setInitializing(false);
+              return;
+            }
           }
         }
       }

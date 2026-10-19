@@ -1,6 +1,6 @@
 "use server";
 
-import { Resend } from "resend";
+import { sendMailViaTransport } from "./mailTransport";
 
 export type PaymentEmailOptions = {
   email: string;
@@ -114,32 +114,11 @@ export async function sendPaymentSuccessEmail({
     </div>
   `;
 
-  try {
-    const resendApiKey = process.env.RESEND_API_KEY || process.env.RESEND_API;
-
-    if (!resendApiKey) {
-      console.error("Resend API key is missing in environment variables (.env)");
-      return { success: false, error: "Email service is not configured (Missing API Key)." };
-    }
-
-    const resend = new Resend(resendApiKey);
-    const { data: resData, error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'GK Gym Life <noreply@gkgymlife.com>',
-      to: email,
-      subject: `Payment Successful - Receipt ${transactionId} | ${gymDisplay}`,
-      html: htmlContent,
-    });
-
-    if (error) {
-      console.error("Resend error sending payment success email: ", error);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, id: resData?.id };
-  } catch (error: any) {
-    console.error("Unexpected error sending payment success email: ", error);
-    return { success: false, error: error.message || "Unknown error" };
-  }
+  return await sendMailViaTransport({
+    to: email,
+    subject: `Payment Successful - Receipt ${transactionId} | ${gymDisplay}`,
+    html: htmlContent,
+  });
 }
 
 export type SignupEmailOptions = {
@@ -159,12 +138,6 @@ export async function sendSignupConfirmationEmail({
 }: SignupEmailOptions) {
   if (!email) {
     return { success: false, error: "No email provided." };
-  }
-
-  const resendApiKey = process.env.RESEND_API_KEY || process.env.RESEND_API;
-  if (!resendApiKey) {
-    console.error("Resend API key is missing in environment variables (.env)");
-    return { success: false, error: "Email service is not configured (Missing API Key)." };
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -210,27 +183,10 @@ export async function sendSignupConfirmationEmail({
     </div>
   `;
 
-  try {
-    const resend = new Resend(resendApiKey);
-    const fromAddress =
-      process.env.RESEND_FROM_EMAIL || "GK Gym Life <noreply@gkeliteinfo.com>";
-
-    const { data: resData, error } = await resend.emails.send({
-      from: fromAddress,
-      to: email,
-      subject: "Action Required: Accept Your Details - Welcome to GK- Gym Life",
-      html: htmlContent,
-    });
-
-    if (error) {
-      console.error("Resend error sending signup confirmation email:", error);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, id: resData?.id };
-  } catch (error: any) {
-    console.error("Unexpected error sending signup confirmation email:", error);
-    return { success: false, error: error.message || "Unknown error" };
-  }
+  return await sendMailViaTransport({
+    to: email,
+    subject: "Action Required: Accept Your Details - Welcome to GK- Gym Life",
+    html: htmlContent,
+  });
 }
 

@@ -16,15 +16,16 @@ export default function AuthRecoveryRedirect() {
     const hashParams = new URLSearchParams(hash.replace(/^#/, ""));
 
     const isRecovery =
-      Boolean(searchParams.get("code")) ||
       searchParams.get("type") === "recovery" ||
-      searchParams.has("error") ||
-      searchParams.has("error_code") ||
       hashParams.get("type") === "recovery" ||
-      hashParams.has("error") ||
-      hashParams.has("error_code") ||
       hash.includes("type=recovery") ||
-      hashParams.has("access_token");
+      (Boolean(hashParams.get("access_token")) && hash.includes("type=recovery")) ||
+      Boolean(searchParams.get("token_hash")) ||
+      ((searchParams.has("error") || hashParams.has("error")) &&
+        (hash.includes("type=recovery") ||
+          search.includes("type=recovery") ||
+          searchParams.get("error_code") === "otp_expired" ||
+          hashParams.get("error_code") === "otp_expired"));
 
     if (isRecovery) {
       window.location.replace(`/reset-password${search}${hash}`);

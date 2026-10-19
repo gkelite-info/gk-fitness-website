@@ -1,7 +1,6 @@
 "use server";
 
-import { Resend } from "resend";
-import nodemailer from "nodemailer";
+import { sendMailViaTransport } from "./mailTransport";
 import { getDemoBookingsClient } from "./demoBookings/demoBookingsHelper";
 import {
   parseEmailFromRequirement,
@@ -146,63 +145,6 @@ function buildHtmlTemplate(options: DemoStatusEmailOptions) {
   `;
 }
 
-async function sendEmailViaTransport({ to, subject, html }: { to: string; subject: string; html: string }) {
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
-  const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
-  const smtpSecure = process.env.SMTP_SECURE === "true" || smtpPort === 465;
-
-  if (smtpHost && smtpUser && smtpPass) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpSecure,
-        auth: { user: smtpUser, pass: smtpPass },
-      });
-
-      const fromAddress =
-        process.env.SMTP_FROM || process.env.RESEND_FROM_EMAIL || `"GK Gym Life" <${smtpUser}>`;
-
-      const info = await transporter.sendMail({ from: fromAddress, to, subject, html });
-      return { success: true, id: info.messageId };
-    } catch (smtpErr: any) {
-      console.error("[SMTP Error] Failed to send email via SMTP:", smtpErr);
-      return { success: false, error: `SMTP error: ${smtpErr?.message || "Failed to send via SMTP"}` };
-    }
-  }
-
-  const resendApiKey = process.env.RESEND_API_KEY || process.env.RESEND_API;
-  if (!resendApiKey) {
-    return {
-      success: false,
-      error: "SMTP credentials (SMTP_HOST, SMTP_USER, SMTP_PASS) not configured in .env.local",
-    };
-  }
-
-  try {
-    const resend = new Resend(resendApiKey);
-    const fromAddress =
-      process.env.RESEND_FROM_EMAIL || "GK Gym Life <noreply@gkeliteinfo.com>";
-
-    const { data: resData, error } = await resend.emails.send({
-      from: fromAddress,
-      to,
-      subject,
-      html,
-    });
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, id: resData?.id };
-  } catch (resendErr: any) {
-    return { success: false, error: resendErr?.message || "Resend error" };
-  }
-}
-
 export async function sendDemoStatusEmail(options: DemoStatusEmailOptions) {
   if (!options.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(options.email)) {
     return { success: false, error: "Invalid or missing recipient email address." };
@@ -213,7 +155,7 @@ export async function sendDemoStatusEmail(options: DemoStatusEmailOptions) {
   const details = getStatusDetails(options.status, gym, options.name, plan);
   const html = buildHtmlTemplate(options);
 
-  return await sendEmailViaTransport({
+  return await sendMailViaTransport({
     to: options.email,
     subject: details.subject,
     html,
@@ -251,10 +193,10 @@ export async function sendDemoBookingStatusNotification(demoBookingId: string, n
     }
 
     const historyItems = (booking.demo_bookings_history || [])
-      .filter((h: any) => !h.deletedAt)
-      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .filter((h: { deletedAt?: string | null }) => !h.deletedAt)
+      .sort((a: { createdAt: string }, b: { createdAt: string }) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    const latest = historyItems[0];
+    const latest = historyItems[0] as { rescheduleDate?: string | null; rescheduleTime?: string | null } | undefined;
     const planName =
       booking.subscriptions?.label ||
       booking.subscriptions?.planName ||
@@ -278,8 +220,9 @@ export async function sendDemoBookingStatusNotification(demoBookingId: string, n
       recipientEmail,
       error: result.error,
     };
-  } catch (err: any) {
-    console.error("sendDemoBookingStatusNotification error:", err);
-    return { success: false, error: err?.message || "Failed to send notification" };
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : "Failed to send notification";
+    console.error("sendDemoBookingStatusNotification error:", errMsg);
+    return { success: false, error: errMsg };
   }
 }
