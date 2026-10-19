@@ -27,34 +27,54 @@ export async function requestPasswordResetAction(email: string): Promise<Passwor
     const host = headersList.get("host") || "";
     const proto = headersList.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
     const siteUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_SITE_URL || "https://gkgymlife.com");
-    const adminKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl =
+      process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      "https://swzhxokkrolnxvhekrmj.supabase.co";
 
-    if (adminKey && process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      const { createClient: createAdminClient } = await import("@supabase/supabase-js");
-      const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL, adminKey, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      });
+    const adminKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.SUPABASE_SERVICE_KEY ||
+      process.env.SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
 
-      const redirectTo = `${siteUrl.replace(/\/$/, "")}/reset-password`;
-      const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
-        type: "recovery",
-        email: cleanEmail,
-        options: {
-          redirectTo,
-        },
-      });
+    if (!adminKey) {
+      return {
+        success: false,
+        error: "Server configuration error: SUPABASE_SERVICE_ROLE_KEY is missing in environment variables.",
+      };
+    }
 
-      if (linkError) {
-        if (linkError.message?.toLowerCase().includes("not found")) {
-          return { success: false, error: "No account found with this email address." };
-        }
-      } else if (linkData?.properties) {
-        const tokenHash = linkData.properties.hashed_token;
-        const resetLink = tokenHash
-          ? `${siteUrl.replace(/\/$/, "")}/reset-password?token_hash=${tokenHash}`
-          : linkData.properties.action_link;
+    const { createClient: createAdminClient } = await import("@supabase/supabase-js");
+    const admin = createAdminClient(supabaseUrl, adminKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
-        const emailHtml = `
+    const redirectTo = `${siteUrl.replace(/\/$/, "")}/reset-password`;
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+      type: "recovery",
+      email: cleanEmail,
+      options: {
+        redirectTo,
+      },
+    });
+
+    if (linkError) {
+      if (linkError.message?.toLowerCase().includes("not found")) {
+        return { success: false, error: "No account found with this email address." };
+      }
+      return { success: false, error: linkError.message || "Failed to generate reset link." };
+    }
+
+    if (!linkData?.properties) {
+      return { success: false, error: "Failed to create password recovery link." };
+    }
+
+    const tokenHash = linkData.properties.hashed_token;
+    const resetLink = tokenHash
+      ? `${siteUrl.replace(/\/$/, "")}/reset-password?token_hash=${tokenHash}`
+      : linkData.properties.action_link;
+
+    const emailHtml = `
 <!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Reset Your Password</title></head>
@@ -86,37 +106,17 @@ export async function requestPasswordResetAction(email: string): Promise<Passwor
 </body>
 </html>`.trim();
 
-        const sendRes = await sendMailViaTransport({
-          to: cleanEmail,
-          subject: "Reset Your Password | GK Gym Life",
-          html: emailHtml,
-        });
-
-        if (sendRes.success) {
-          return { success: true };
-        }
-      }
-    }
-
-    const supabase = await createClient();
-    const redirectTo = `${siteUrl.replace(/\/$/, "")}/reset-password`;
-
-    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-      redirectTo,
+    const sendRes = await sendMailViaTransport({
+      to: cleanEmail,
+      subject: "Reset Your Password | GK Gym Life",
+      html: emailHtml,
     });
 
-    if (error) {
-      const msg = error.message || "";
-      if (msg.toLowerCase().includes("security purposes") || msg.toLowerCase().includes("rate limit")) {
-        const match = msg.match(/(\d+)\s*seconds?/i);
-        const sec = match ? parseInt(match[1], 10) : 60;
-        return {
-          success: false,
-          error: `For security purposes, please wait ${sec} seconds before requesting another reset email.`,
-          retryAfter: sec,
-        };
-      }
-      return { success: false, error: msg };
+    if (!sendRes.success) {
+      return {
+        success: false,
+        error: sendRes.error || "Failed to deliver reset email. Please try again.",
+      };
     }
 
     return { success: true };
