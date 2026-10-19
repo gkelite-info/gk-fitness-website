@@ -14,6 +14,7 @@ import {
   Ticket,
   PlayCircle,
   MapPin,
+  CurrencyCircleDollar,
 } from "@phosphor-icons/react";
 
 interface NavItem {
@@ -27,6 +28,7 @@ const navLinks: NavItem[] = [
   { name: "Dashboard", href: "/superadmin", icon: SquaresFour },
   { name: "Gym Pass", href: "/superadmin/gym-pass", icon: Ticket },
   { name: "Gym Locations", href: "/superadmin/gym-locations", icon: MapPin },
+  { name: "Finance", href: "/superadmin/finance", icon: CurrencyCircleDollar },
   { name: "Gyms", href: "/superadmin/gyms", icon: Barbell, badge: 120 },
   { name: "Demo Requests", href: "/superadmin/demo-requests", icon: EnvelopeSimple },
   { name: "Website Videos", href: "/superadmin/website-videos", icon: PlayCircle },
