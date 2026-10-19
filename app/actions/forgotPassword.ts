@@ -2,8 +2,15 @@
 
 import { headers } from "next/headers";
 import { createClient } from "@/app/api/supabase/server";
+import { sendMailViaTransport } from "@/lib/helpers/mailTransport";
 
-export async function requestPasswordResetAction(email: string) {
+export type PasswordResetResult = {
+  success: boolean;
+  error?: string;
+  retryAfter?: number;
+};
+
+export async function requestPasswordResetAction(email: string): Promise<PasswordResetResult> {
   const cleanEmail = email.trim().toLowerCase();
 
   if (!cleanEmail) {
@@ -19,31 +26,33 @@ export async function requestPasswordResetAction(email: string) {
     const headersList = await headers();
     const host = headersList.get("host") || "";
     const proto = headersList.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
-    const siteUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000");
+    const siteUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_SITE_URL || "https://gkgymlife.com");
     const adminKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const resendApiKey = process.env.RESEND_API_KEY || process.env.RESEND_API;
 
-    if (adminKey && resendApiKey) {
+    if (adminKey && process.env.NEXT_PUBLIC_SUPABASE_URL) {
       const { createClient: createAdminClient } = await import("@supabase/supabase-js");
-      const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, adminKey, {
+      const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL, adminKey, {
         auth: { autoRefreshToken: false, persistSession: false },
       });
 
+      const redirectTo = `${siteUrl.replace(/\/$/, "")}/reset-password`;
       const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
         type: "recovery",
         email: cleanEmail,
+        options: {
+          redirectTo,
+        },
       });
 
       if (linkError) {
         if (linkError.message?.toLowerCase().includes("not found")) {
           return { success: false, error: "No account found with this email address." };
         }
-      } else if (linkData?.properties?.hashed_token) {
+      } else if (linkData?.properties) {
         const tokenHash = linkData.properties.hashed_token;
-        const resetLink = `${siteUrl.replace(/\/$/, "")}/reset-password?token_hash=${tokenHash}`;
-
-        const { Resend } = await import("resend");
-        const resend = new Resend(resendApiKey);
+        const resetLink = tokenHash
+          ? `${siteUrl.replace(/\/$/, "")}/reset-password?token_hash=${tokenHash}`
+          : linkData.properties.action_link;
 
         const emailHtml = `
 <!DOCTYPE html>
@@ -77,14 +86,13 @@ export async function requestPasswordResetAction(email: string) {
 </body>
 </html>`.trim();
 
-        const { error: sendError } = await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL || "GK Gym Life <noreply@gkeliteinfo.com>",
+        const sendRes = await sendMailViaTransport({
           to: cleanEmail,
           subject: "Reset Your Password | GK Gym Life",
           html: emailHtml,
         });
 
-        if (!sendError) {
+        if (sendRes.success) {
           return { success: true };
         }
       }
@@ -98,14 +106,25 @@ export async function requestPasswordResetAction(email: string) {
     });
 
     if (error) {
-      return { success: false, error: error.message };
+      const msg = error.message || "";
+      if (msg.toLowerCase().includes("security purposes") || msg.toLowerCase().includes("rate limit")) {
+        const match = msg.match(/(\d+)\s*seconds?/i);
+        const sec = match ? parseInt(match[1], 10) : 60;
+        return {
+          success: false,
+          error: `For security purposes, please wait ${sec} seconds before requesting another reset email.`,
+          retryAfter: sec,
+        };
+      }
+      return { success: false, error: msg };
     }
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : "Failed to send reset email. Please try again.";
     return {
       success: false,
-      error: err?.message || "Failed to send reset email. Please try again.",
+      error: errMsg,
     };
   }
 }
@@ -124,10 +143,11 @@ export async function exchangeResetCodeAction(code: string) {
     }
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : "Failed to exchange reset code.";
     return {
       success: false,
-      error: err?.message || "Failed to exchange reset code.",
+      error: errMsg,
     };
   }
 }
@@ -145,10 +165,11 @@ export async function validateRecoverySessionAction() {
     }
 
     return { success: true, email: user.email || "" };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : "Failed to validate session.";
     return {
       success: false,
-      error: err?.message || "Failed to validate session.",
+      error: errMsg,
     };
   }
 }
@@ -169,10 +190,11 @@ export async function updatePasswordAction(password: string) {
     }
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : "Failed to update password. Please try again.";
     return {
       success: false,
-      error: err?.message || "Failed to update password. Please try again.",
+      error: errMsg,
     };
   }
 }
@@ -190,10 +212,11 @@ export async function verifyRecoveryTokenHashAction(tokenHash: string) {
     }
 
     return { success: true, user: data.user };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : "Failed to verify recovery token";
     return {
       success: false,
-      error: err?.message || "Failed to verify recovery token",
+      error: errMsg,
     };
   }
 }

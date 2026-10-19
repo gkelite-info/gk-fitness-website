@@ -43,6 +43,9 @@ function ForgotPasswordContent() {
     setLoading(false);
 
     if (!res.success) {
+      if (res.retryAfter) {
+        setCooldown(res.retryAfter);
+      }
       toast.error(res.error || "Failed to send reset link");
       return;
     }
@@ -59,6 +62,9 @@ function ForgotPasswordContent() {
     setResendLoading(false);
 
     if (!res.success) {
+      if (res.retryAfter) {
+        setCooldown(res.retryAfter);
+      }
       toast.error(res.error || "Failed to resend reset link");
       return;
     }
@@ -105,6 +111,7 @@ function ForgotPasswordContent() {
                 email={email}
                 setEmail={setEmail}
                 loading={loading}
+                cooldown={cooldown}
                 onSubmit={handleSubmit}
               />
             </div>
