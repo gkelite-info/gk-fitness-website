@@ -56,7 +56,7 @@ export async function sendMailViaTransport({
     }
   }
 
-  const resendApiKey = process.env.RESEND_API_KEY || process.env.RESEND_API;
+  const resendApiKey = process.env.RESEND_API;
   if (resendApiKey) {
     try {
       const resend = new Resend(resendApiKey);
