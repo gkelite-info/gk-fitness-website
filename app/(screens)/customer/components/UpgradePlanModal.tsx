@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useUser } from "@/app/context/UserContext";
 import { useGymCustomerMembershipPlans } from "@/lib/hooks/gymCustomerMembershipPlans/useGymCustomerMembershipPlans";
+import { useSubscriptions } from "@/lib/hooks/superadmin/subscriptions/subscriptions";
 import { getAvailablePlans } from "@/app/actions/customer/getAvailablePlans";
 import { createRazorpayOrder } from "@/app/actions/customer/createRazorpayOrder";
 import { verifyPaymentAndRenewPlan } from "@/app/actions/customer/verifyPaymentAndRenewPlan";
@@ -30,19 +31,25 @@ interface Plan {
 
 export default function UpgradePlanModal({ gymId, customerId, onClose }: UpgradePlanModalProps) {
   const router = useRouter();
-  const { user, profile, roleData } = useUser();
+  const { user, profile, roleData, role } = useUser();
+  const isIndividual = role === "individual" || profile?.role === "individual";
   const [availablePlans, setAvailablePlans] = useState<Plan[]>([]);
   const [isLoadingGymPlans, setIsLoadingGymPlans] = useState(true);
   const [renewingPlanId, setRenewingPlanId] = useState<string | null>(null);
 
-  const resolvedCustomerId = customerId || roleData?.[0]?.customerId || user?.id;
-  const resolvedGymId = gymId || roleData?.[0]?.gymId;
+  const resolvedCustomerId = isIndividual ? user?.id : (customerId || roleData?.[0]?.customerId || user?.id);
+  const resolvedGymId = isIndividual ? undefined : (gymId || roleData?.[0]?.gymId);
 
   const {
     data: customerPlans,
     isLoading: isLoadingCustomerPlans,
     refetch: refetchCustomerPlans,
   } = useGymCustomerMembershipPlans(resolvedGymId, resolvedCustomerId);
+
+  const {
+    data: individualSubscriptions,
+    isLoading: isLoadingIndividualSubs,
+  } = useSubscriptions(undefined, "customer", { enabled: isIndividual });
 
   const handleRenewSuccess = useCallback(async () => {
     await refetchCustomerPlans();
@@ -59,12 +66,50 @@ export default function UpgradePlanModal({ gymId, customerId, onClose }: Upgrade
   } = usePaymentSession(handleRenewSuccess);
 
   const currentPlan = useMemo(() => {
+    if (isIndividual) {
+      if (!roleData || roleData.length === 0) return null;
+      const activeIndiv =
+        roleData.find((p: any) => p.isActive && p.endDate && new Date(p.endDate).getTime() > Date.now()) ||
+        roleData[0];
+      if (!activeIndiv) return null;
+      const subMatch = individualSubscriptions?.find((s: any) => s.subscriptionPlanId === activeIndiv.subscriptionPlanId);
+      const isIndivActive = Boolean(activeIndiv.isActive) && Boolean(activeIndiv.endDate && new Date(activeIndiv.endDate).getTime() > Date.now());
+      return {
+        planId: activeIndiv.subscriptionPlanId,
+        customAmount: activeIndiv.customAmount ?? subMatch?.price,
+        startDate: activeIndiv.startDate,
+        endDate: activeIndiv.endDate,
+        isActive: isIndivActive,
+        is_Active: isIndivActive,
+        plan: {
+          planId: activeIndiv.subscriptionPlanId,
+          planName: subMatch?.planName || "Individual Subscription",
+          price: subMatch?.price,
+        },
+      };
+    }
     if (!customerPlans || customerPlans.length === 0) return null;
     return customerPlans[0];
-  }, [customerPlans]);
+  }, [isIndividual, roleData, individualSubscriptions, customerPlans]);
+
+  const mappedIndividualPlans: Plan[] = useMemo(() => {
+    if (!isIndividual || !individualSubscriptions) return [];
+    return individualSubscriptions
+      .filter((sub: any) => !sub.is_deleted && sub.isActive !== false && (sub.planFor === "customer" || sub.planFor === "customers" || sub.planFor === "individual_customer"))
+      .map((sub: any) => ({
+        planId: sub.subscriptionPlanId,
+        planName: sub.planName,
+        durationMonths: 1,
+        price: Number(sub.price) || 0,
+      }));
+  }, [isIndividual, individualSubscriptions]);
 
   useEffect(() => {
     async function loadGymPlans() {
+      if (isIndividual) {
+        setIsLoadingGymPlans(false);
+        return;
+      }
       if (resolvedGymId) {
         try {
           const plans = await getAvailablePlans(resolvedGymId);
@@ -72,57 +117,53 @@ export default function UpgradePlanModal({ gymId, customerId, onClose }: Upgrade
         } catch (error) {
           console.error("Failed to fetch available plans:", error);
         }
+      } else {
+        setAvailablePlans([]);
       }
       setIsLoadingGymPlans(false);
     }
     loadGymPlans();
-  }, [resolvedGymId]);
+  }, [resolvedGymId, isIndividual]);
+
+  const effectivePlans = isIndividual ? mappedIndividualPlans : availablePlans;
+  const isPlansLoading = isIndividual ? isLoadingIndividualSubs : isLoadingGymPlans;
 
   const otherAvailablePlans = useMemo(() => {
-    if (!availablePlans) return [];
-    if (!currentPlan) return availablePlans;
-
-    return availablePlans.filter((plan) => {
+    if (!effectivePlans) return [];
+    if (!currentPlan) return effectivePlans;
+    return effectivePlans.filter((plan) => {
       const isSameId = currentPlan.planId && plan.planId === currentPlan.planId;
-      const isSameName =
-        currentPlan.plan?.planName &&
-        plan.planName &&
-        currentPlan.plan.planName.trim().toLowerCase() === plan.planName.trim().toLowerCase();
-
+      const isSameName = currentPlan.plan?.planName && plan.planName && currentPlan.plan.planName.trim().toLowerCase() === plan.planName.trim().toLowerCase();
       return !isSameId && !isSameName;
     });
-  }, [availablePlans, currentPlan]);
+  }, [effectivePlans, currentPlan]);
 
   const handleRenew = async (targetPlanId: string, targetPlanName: string) => {
     try {
       setRenewingPlanId(targetPlanId);
-
       const isScriptLoaded = await loadRazorpayScript();
       if (!isScriptLoaded) {
         toast.error("Failed to load Razorpay payment gateway SDK.");
         setRenewingPlanId(null);
         return;
       }
-
       const orderResult = await createRazorpayOrder({
         planId: targetPlanId,
         customerId: resolvedCustomerId,
         gymId: resolvedGymId,
       });
-
-      if (!orderResult.success || !orderResult.orderId) {
+      if (!orderResult.success) {
         toast.error(orderResult.error || "Failed to initiate payment gateway.");
         setRenewingPlanId(null);
         return;
       }
-
       saveSession({
-        orderId: orderResult.orderId,
+        orderId: orderResult.orderId || "",
         planId: targetPlanId,
         planName: targetPlanName,
         amount: Number(orderResult.amount) / 100,
-        currency: orderResult.currency,
-        keyId: orderResult.keyId,
+        currency: orderResult.currency || "INR",
+        keyId: orderResult.keyId || "",
         customerId: resolvedCustomerId,
         gymId: resolvedGymId,
         customerName: orderResult.customerName || profile?.name || "",
@@ -130,22 +171,18 @@ export default function UpgradePlanModal({ gymId, customerId, onClose }: Upgrade
         customerPhone: orderResult.customerPhone || "",
         timestamp: Date.now(),
       });
-
-      const options = {
+      const options: any = {
         key: orderResult.keyId,
         amount: orderResult.amount,
         currency: orderResult.currency,
         name: "GK-Gym Life",
         description: `Plan Renewal: ${targetPlanName}`,
-        order_id: orderResult.orderId,
         prefill: {
           name: orderResult.customerName || profile?.name || "",
           email: orderResult.customerEmail || user?.email || "",
           contact: orderResult.customerPhone || "",
         },
-        theme: {
-          color: "#D7FF00",
-        },
+        theme: { color: "#D7FF00" },
         handler: async function (response: any) {
           try {
             toast.loading("Verifying payment...", { id: "payment-verify" });
@@ -157,7 +194,6 @@ export default function UpgradePlanModal({ gymId, customerId, onClose }: Upgrade
               customerId: resolvedCustomerId,
               gymId: resolvedGymId,
             });
-
             if (verifyResult.success) {
               clearSession();
               toast.success(`Plan "${targetPlanName}" renewed successfully!`, { id: "payment-verify" });
@@ -167,30 +203,25 @@ export default function UpgradePlanModal({ gymId, customerId, onClose }: Upgrade
             } else {
               toast.error(verifyResult.error || "Payment verification failed.", { id: "payment-verify" });
             }
-          } catch (verifyErr) {
-            console.error("Verification error:", verifyErr);
+          } catch {
             toast.error("Payment verification failed on server.", { id: "payment-verify" });
           } finally {
             setRenewingPlanId(null);
           }
         },
-        modal: {
-          ondismiss: function () {
-            setRenewingPlanId(null);
-          },
-        },
+        modal: { ondismiss: () => setRenewingPlanId(null) },
       };
-
+      if (orderResult.orderId) {
+        options.order_id = orderResult.orderId;
+      }
       const razorpayInstance = new (window as any).Razorpay(options);
       razorpayInstance.on("payment.failed", function (response: any) {
         console.error("Payment failed:", response.error);
         toast.error(response.error?.description || "Payment failed or was cancelled.");
         setRenewingPlanId(null);
       });
-
       razorpayInstance.open();
-    } catch (error) {
-      console.error("Payment gateway error:", error);
+    } catch {
       toast.error("An error occurred while connecting to Razorpay.");
       setRenewingPlanId(null);
     }
@@ -204,14 +235,10 @@ export default function UpgradePlanModal({ gymId, customerId, onClose }: Upgrade
             <h2 className="text-white text-xl font-semibold">Gym Membership</h2>
             <p className="text-[#8E8E93] text-xs mt-0.5">Physical Gym Access & Companion Plan</p>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#1A1A1A] flex items-center justify-center text-[#8E8E93] hover:text-white transition-colors cursor-pointer"
-          >
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#1A1A1A] flex items-center justify-center text-[#8E8E93] hover:text-white transition-colors cursor-pointer">
             <X size={16} weight="bold" />
           </button>
         </div>
-
         <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
           {activeSession && (
             <PaymentRecoveryBanner
@@ -222,7 +249,6 @@ export default function UpgradePlanModal({ gymId, customerId, onClose }: Upgrade
               isChecking={isChecking}
             />
           )}
-
           <div className="bg-[#1C1C1E] border border-[#D7FF00]/25 rounded-2xl p-4 mb-6 flex gap-3 items-start">
             <Info size={22} className="text-[#D7FF00] shrink-0 mt-0.5" weight="fill" />
             <div className="flex-1">
@@ -232,27 +258,11 @@ export default function UpgradePlanModal({ gymId, customerId, onClose }: Upgrade
               </p>
             </div>
           </div>
-
-          <CurrentPlanSection
-            currentPlan={currentPlan}
-            isLoading={isLoadingCustomerPlans}
-            onRenew={handleRenew}
-            renewingPlanId={renewingPlanId}
-          />
-
-          <AvailablePlansSection
-            plans={otherAvailablePlans}
-            isLoading={isLoadingGymPlans}
-            onRenew={handleRenew}
-            renewingPlanId={renewingPlanId}
-          />
+          <CurrentPlanSection currentPlan={currentPlan} isLoading={isIndividual ? false : isLoadingCustomerPlans} onRenew={handleRenew} renewingPlanId={renewingPlanId} />
+          <AvailablePlansSection plans={otherAvailablePlans} isLoading={isPlansLoading} onRenew={handleRenew} renewingPlanId={renewingPlanId} />
         </div>
-
         <div className="p-5 border-t border-[#222222] bg-[#141414]">
-          <button
-            onClick={onClose}
-            className="w-full bg-[#2A2A2A] hover:bg-[#333333] text-white font-semibold py-3.5 rounded-xl transition-colors text-sm cursor-pointer"
-          >
+          <button onClick={onClose} className="w-full bg-[#2A2A2A] hover:bg-[#333333] text-white font-semibold py-3.5 rounded-xl transition-colors text-sm cursor-pointer">
             Close
           </button>
         </div>

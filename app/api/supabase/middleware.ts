@@ -6,6 +6,14 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
+  const pathname = request.nextUrl.pathname;
+
+  if (pathname.startsWith('/individual')) {
+    const customerUrl = request.nextUrl.clone();
+    customerUrl.pathname = customerUrl.pathname.replace(/^\/individual/, '/customer');
+    return NextResponse.redirect(customerUrl);
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -27,7 +35,6 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Support direct mobile navigation with access_token: forward to /api/auth/sso for isolated web session generation
   const accessToken = request.nextUrl.searchParams.get('access_token');
   if (accessToken && !request.nextUrl.pathname.startsWith('/api/auth/sso')) {
     const ssoUrl = request.nextUrl.clone();
@@ -41,10 +48,10 @@ export async function updateSession(request: NextRequest) {
 
   const isAuthPage = request.nextUrl.pathname.startsWith('/login');
 
-  const createRedirectResponse = (pathname: string) => {
+  const createRedirectResponse = (targetPath: string) => {
     const url = request.nextUrl.clone();
-    url.pathname = pathname;
-    if (pathname === '/login') {
+    url.pathname = targetPath;
+    if (targetPath === '/login') {
       const fullPath = request.nextUrl.pathname + request.nextUrl.search;
       if (fullPath !== '/' && fullPath !== '/login') {
         url.searchParams.set('returnTo', fullPath);
@@ -64,7 +71,10 @@ export async function updateSession(request: NextRequest) {
   if (user && isAuthPage && !request.nextUrl.searchParams.has('role')) {
     const returnTo = request.nextUrl.searchParams.get('returnTo');
     if (returnTo && returnTo.startsWith('/') && returnTo !== '/login') {
-      return createRedirectResponse(returnTo);
+      const targetReturn = returnTo.startsWith('/individual')
+        ? returnTo.replace(/^\/individual/, '/customer')
+        : returnTo;
+      return createRedirectResponse(targetReturn);
     }
     const { data: userData } = await supabase
       .from('users')
@@ -72,7 +82,8 @@ export async function updateSession(request: NextRequest) {
       .eq('userId', user.id)
       .single();
       
-    const role = userData?.role || 'customer';
+    const rawRole = userData?.role || 'customer';
+    const role = rawRole === 'individual' ? 'customer' : rawRole;
     
     if (role === 'superadmin') return createRedirectResponse('/superadmin');
     else if (role === 'owner') return createRedirectResponse('/owner');
@@ -82,7 +93,6 @@ export async function updateSession(request: NextRequest) {
     else return createRedirectResponse('/');
   }
 
-  const pathname = request.nextUrl.pathname;
   if (user && !isAuthPage) {
     const { data: userData } = await supabase
       .from('users')
@@ -90,7 +100,9 @@ export async function updateSession(request: NextRequest) {
       .eq('userId', user.id)
       .single();
       
-    const role = userData?.role || 'customer';
+    const rawRole = userData?.role || 'customer';
+    const role = rawRole === 'individual' ? 'customer' : rawRole;
+
     if (pathname.startsWith('/superadmin') && role !== 'superadmin') return createRedirectResponse('/' + role);
     if (pathname.startsWith('/owner') && role !== 'owner') return createRedirectResponse('/' + role);
     if (pathname.startsWith('/trainer') && role !== 'trainer') return createRedirectResponse('/' + role);

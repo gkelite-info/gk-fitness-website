@@ -27,11 +27,11 @@ export default function MembershipCard({
   const planIdParam = searchParams.get("planId");
 
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(
-    actionParam === "renew" || !!planIdParam
+    actionParam === "renew" || actionParam === "subscribe" || !!planIdParam
   );
 
   useEffect(() => {
-    if (actionParam === "renew" || planIdParam) {
+    if (actionParam === "renew" || actionParam === "subscribe" || planIdParam) {
       setIsUpgradeModalOpen(true);
     }
   }, [actionParam, planIdParam]);

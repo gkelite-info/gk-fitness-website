@@ -6,9 +6,11 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const accessToken = requestUrl.searchParams.get('access_token');
   const refreshToken = requestUrl.searchParams.get('refresh_token');
-  const returnTo = requestUrl.searchParams.get('returnTo') || '/customer';
+  const rawReturnTo = requestUrl.searchParams.get('returnTo') || '/customer';
+  const returnTo = rawReturnTo.startsWith('/individual')
+    ? rawReturnTo.replace(/^\/individual/, '/customer')
+    : rawReturnTo;
 
-  // Construct target redirect URL
   const redirectUrl = new URL(returnTo, request.url);
 
   requestUrl.searchParams.forEach((value, key) => {

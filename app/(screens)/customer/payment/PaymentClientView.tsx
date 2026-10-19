@@ -116,19 +116,19 @@ export default function PaymentClientView({
         gymId: resolvedGymId,
       });
 
-      if (!orderResult.success || !orderResult.orderId) {
+      if (!orderResult.success) {
         toast.error(orderResult.error || "Failed to initiate payment gateway.");
         setIsProcessing(false);
         return;
       }
 
       saveSession({
-        orderId: orderResult.orderId,
+        orderId: orderResult.orderId || "",
         planId: targetPlan.planId,
         planName: targetPlan.planName,
         amount: Number(orderResult.amount) / 100,
-        currency: orderResult.currency,
-        keyId: orderResult.keyId,
+        currency: orderResult.currency || "INR",
+        keyId: orderResult.keyId || "",
         customerId: resolvedCustomerId,
         gymId: resolvedGymId,
         customerName: orderResult.customerName || profile?.name || "",
@@ -137,21 +137,18 @@ export default function PaymentClientView({
         timestamp: Date.now(),
       });
 
-      const options = {
+      const options: any = {
         key: orderResult.keyId,
         amount: orderResult.amount,
         currency: orderResult.currency,
         name: "GK-Gym Life",
         description: `Plan Renewal: ${targetPlan.planName}`,
-        order_id: orderResult.orderId,
         prefill: {
           name: orderResult.customerName || profile?.name || "",
           email: orderResult.customerEmail || user?.email || "",
           contact: orderResult.customerPhone || "",
         },
-        theme: {
-          color: "#D7FF00",
-        },
+        theme: { color: "#D7FF00" },
         handler: async function (response: any) {
           try {
             toast.loading("Verifying payment...", { id: "payment-verify" });
@@ -163,7 +160,6 @@ export default function PaymentClientView({
               customerId: resolvedCustomerId,
               gymId: resolvedGymId,
             });
-
             if (verifyResult.success) {
               clearSession();
               toast.success(`Plan "${targetPlan.planName}" renewed successfully!`, { id: "payment-verify" });
@@ -172,19 +168,18 @@ export default function PaymentClientView({
             } else {
               toast.error(verifyResult.error || "Payment verification failed.", { id: "payment-verify" });
             }
-          } catch (verifyErr) {
-            console.error("Verification error:", verifyErr);
+          } catch {
             toast.error("Payment verification failed on server.", { id: "payment-verify" });
           } finally {
             setIsProcessing(false);
           }
         },
-        modal: {
-          ondismiss: function () {
-            setIsProcessing(false);
-          },
-        },
+        modal: { ondismiss: () => setIsProcessing(false) },
       };
+
+      if (orderResult.orderId) {
+        options.order_id = orderResult.orderId;
+      }
 
       const razorpayInstance = new (window as any).Razorpay(options);
       razorpayInstance.on("payment.failed", function (response: any) {
@@ -244,11 +239,10 @@ export default function PaymentClientView({
               {currentPlan.plan?.planName || "Member Plan"}
             </span>
           </div>
-          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
-            currentPlan.endDate && new Date(currentPlan.endDate) > new Date()
+          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${currentPlan.endDate && new Date(currentPlan.endDate) > new Date()
               ? "bg-[#D7FF00]/10 text-[#D7FF00]"
               : "bg-[#EF4444]/10 text-[#EF4444]"
-          }`}>
+            }`}>
             {currentPlan.endDate && new Date(currentPlan.endDate) > new Date()
               ? "Active Plan"
               : "Expired"}

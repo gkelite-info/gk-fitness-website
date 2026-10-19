@@ -130,7 +130,7 @@ export function usePaymentSession(onRenewSuccess: (planName: string) => void) {
         }
       },
       modal: {
-        ondismiss: function () {},
+        ondismiss: function () { },
       },
     };
 

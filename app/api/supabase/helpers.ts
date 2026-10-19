@@ -19,6 +19,10 @@ async function fetchRoleData(supabase: any, role: string, userId: string, email:
       const { data } = await supabase.from('gym_customers').select('*').eq('email', email);
       return data || [];
     }
+    case 'individual': {
+      const { data } = await supabase.from('individual_customer_plans').select('*').eq('userId', userId);
+      return data || [];
+    }
     default:
       return [];
   }

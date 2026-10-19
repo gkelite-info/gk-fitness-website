@@ -12,6 +12,10 @@ export const config = {
     '/trainer/:path*',
     '/globaltrainer/:path*',
     '/customer/:path*',
+    '/customer',
+    '/individual/:path*',
+    '/individual',
     '/login'
   ],
 };
+
