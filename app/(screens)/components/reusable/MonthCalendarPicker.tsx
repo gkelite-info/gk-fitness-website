@@ -2,12 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import {
-  CalendarBlank,
-  CaretDown,
-  CaretLeft,
-  CaretRight,
-} from "@phosphor-icons/react";
+import { CalendarBlank, CaretDown, CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { MONTH_NAMES } from "./monthCalendarUtils";
 import MonthCalendarDaysGrid from "./MonthCalendarDaysGrid";
 import MonthCalendarSelectGrid from "./MonthCalendarSelectGrid";
@@ -16,12 +11,14 @@ interface MonthCalendarPickerProps {
   value: Date;
   onChange: (date: Date) => void;
   className?: string;
+  label?: string;
 }
 
 export default function MonthCalendarPicker({
   value,
   onChange,
   className = "",
+  label,
 }: MonthCalendarPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -152,7 +149,7 @@ export default function MonthCalendarPicker({
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
   const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate();
-  const displayLabel = `${MONTH_NAMES[value.getMonth()]} ${value.getFullYear()}`;
+  const displayLabel = label || `${MONTH_NAMES[value.getMonth()]} ${value.getFullYear()}`;
 
   const renderCalendarContent = () => {
     const activeCoords = !isMobile && coords.top === 0 && coords.left === 0 ? calculateCoords() : coords;

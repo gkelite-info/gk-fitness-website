@@ -1,0 +1,162 @@
+import {
+  FinanceKpi,
+  BreakdownItem,
+  MonthlyChartPoint,
+  RecentTransaction,
+} from "./types";
+
+export const FINANCE_KPIS: FinanceKpi[] = [
+  {
+    id: "total-revenue",
+    title: "Total Revenue",
+    amount: "₹12,31,900",
+    changePercentage: 12,
+    comparisonText: "vs last month",
+    trend: "up",
+    variant: "revenue",
+  },
+  {
+    id: "total-payouts",
+    title: "Total Payouts",
+    amount: "₹5,99,650",
+    changePercentage: 8,
+    comparisonText: "vs last month",
+    trend: "up",
+    variant: "payouts",
+  },
+  {
+    id: "pending-payouts",
+    title: "Pending Payouts",
+    amount: "₹2,18,400",
+    changePercentage: 14,
+    comparisonText: "vs last month",
+    trend: "up",
+    variant: "pending",
+  },
+  {
+    id: "net-revenue",
+    title: "Net Revenue",
+    amount: "₹6,32,250",
+    changePercentage: 16,
+    comparisonText: "vs last month",
+    trend: "up",
+    variant: "net",
+  },
+];
+
+export const REVENUE_BREAKDOWN: BreakdownItem[] = [
+  {
+    id: "gym-plan-revenue",
+    title: "Gym's Plan Revenue",
+    amount: "₹4,85,000",
+    percentage: 39,
+    barColor: "#00E599",
+    iconType: "gym",
+  },
+  {
+    id: "customer-plans",
+    title: "Individual Customer Plans",
+    amount: "₹3,42,000",
+    percentage: 28,
+    barColor: "#38BDF8",
+    iconType: "user",
+  },
+  {
+    id: "global-sessions",
+    title: "Global Sessions Plan",
+    amount: "₹2,18,500",
+    percentage: 18,
+    barColor: "#A855F7",
+    iconType: "global",
+  },
+  {
+    id: "gym-pass",
+    title: "Gym Pass",
+    amount: "₹1,86,400",
+    percentage: 15,
+    barColor: "#F97316",
+    iconType: "pass",
+  },
+];
+
+export const PAYOUT_BREAKDOWN: BreakdownItem[] = [
+  {
+    id: "gym-owner-payouts",
+    title: "Gym Owner Payouts",
+    amount: "₹2,84,650",
+    percentage: 47,
+    barColor: "#00E599",
+    iconType: "gym",
+  },
+  {
+    id: "global-trainer-payouts",
+    title: "Global Trainer Payouts",
+    amount: "₹3,15,000",
+    percentage: 53,
+    barColor: "#A855F7",
+    iconType: "global",
+  },
+];
+
+export const MONTHLY_FINANCE_DATA: MonthlyChartPoint[] = [
+  { month: "Jan", revenue: 780000, payouts: 420000 },
+  { month: "Feb", revenue: 860000, payouts: 490000 },
+  { month: "Mar", revenue: 920000, payouts: 510000 },
+  { month: "Apr", revenue: 890000, payouts: 530000 },
+  { month: "May", revenue: 980000, payouts: 540000 },
+  { month: "Jun", revenue: 1100000, payouts: 560000 },
+  { month: "Jul", revenue: 1240000, payouts: 590000 },
+  { month: "Aug", revenue: 1190000, payouts: 580000 },
+  { month: "Sep", revenue: 1220000, payouts: 600000 },
+  { month: "Oct", revenue: 1480000, payouts: 640000 },
+  { month: "Nov", revenue: 1250000, payouts: 610000 },
+  { month: "Dec", revenue: 1231900, payouts: 599650 },
+];
+
+export const RECENT_TRANSACTIONS: RecentTransaction[] = [
+  {
+    id: "tx-1",
+    date: "16 Oct 2026",
+    source: "Gym Pass",
+    sourceType: "pass",
+    type: "Payment Received",
+    amount: "₹2,499",
+    status: "Paid",
+  },
+  {
+    id: "tx-2",
+    date: "16 Oct 2026",
+    source: "Global Session",
+    sourceType: "global",
+    type: "Payment Received",
+    amount: "₹1,200",
+    status: "Paid",
+  },
+  {
+    id: "tx-3",
+    date: "15 Oct 2026",
+    source: "Customer Plan",
+    sourceType: "plan",
+    type: "Payment Received",
+    amount: "₹699",
+    status: "Paid",
+  },
+  {
+    id: "tx-4",
+    date: "15 Oct 2026",
+    source: "Gym Label",
+    sourceType: "gym",
+    type: "Payment Received",
+    amount: "₹3,499",
+    status: "Paid",
+  },
+  {
+    id: "tx-5",
+    date: "14 Oct 2026",
+    source: "Gym Owner Payout",
+    sourceType: "payout",
+    type: "Payout",
+    amount: "₹27,900",
+    status: "Pending",
+  },
+];
