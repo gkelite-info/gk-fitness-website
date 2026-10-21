@@ -17,6 +17,7 @@ export interface BreakdownItem {
   percentage: number;
   barColor: string;
   iconType: "gym" | "user" | "global" | "pass";
+  href?: string;
 }
 
 export interface MonthlyChartPoint {
