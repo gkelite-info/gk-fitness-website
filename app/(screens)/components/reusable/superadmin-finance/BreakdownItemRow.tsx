@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Buildings,
   User,
@@ -41,12 +42,12 @@ export default function BreakdownItemRow({ item }: BreakdownItemRowProps) {
     }
   };
 
-  return (
-    <div className="flex flex-col gap-2.5 p-3 sm:p-3.5 rounded-xl hover:bg-[#161822] transition-colors group">
+  const content = (
+    <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3">
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           {getIcon()}
-          <span className="text-xs sm:text-sm font-semibold text-white leading-snug">
+          <span className="text-xs sm:text-sm font-semibold text-white leading-snug group-hover:text-[#D4FF32] transition-colors">
             {item.title}
           </span>
         </div>
@@ -77,6 +78,19 @@ export default function BreakdownItemRow({ item }: BreakdownItemRowProps) {
           }}
         />
       </div>
-    </div>
+    </>
   );
+
+  const containerClasses =
+    "flex flex-col gap-2.5 p-3 sm:p-3.5 rounded-xl hover:bg-[#161822] transition-colors group cursor-pointer block";
+
+  if (item.href) {
+    return (
+      <Link href={item.href} className={containerClasses}>
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className={containerClasses}>{content}</div>;
 }

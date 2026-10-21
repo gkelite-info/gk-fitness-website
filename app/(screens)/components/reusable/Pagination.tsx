@@ -11,6 +11,8 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
   className?: string;
   hideBorder?: boolean;
+  itemLabel?: string;
+  format?: "to" | "dash";
 }
 
 export default function Pagination({
@@ -21,6 +23,8 @@ export default function Pagination({
   onPageChange,
   className = "",
   hideBorder = false,
+  itemLabel = "entries",
+  format = "to",
 }: PaginationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isWrapped, setIsWrapped] = useState(false);
@@ -79,7 +83,7 @@ export default function Pagination({
       className={className || defaultClasses}
     >
       <span className="font-sans font-medium text-[13px] text-[#64748B] whitespace-nowrap text-center shrink-0">
-        Showing <strong className="text-white font-semibold">{startItem}</strong> to <strong className="text-white font-semibold">{endItem}</strong> of <strong className="text-white font-semibold">{totalItems}</strong> entries
+        Showing <strong className="text-white font-semibold">{startItem}</strong> {format === "dash" ? "-" : "to"} <strong className="text-white font-semibold">{endItem}</strong> of <strong className="text-white font-semibold">{totalItems}</strong> {itemLabel}
       </span>
       
       {totalItems > 0 && totalPages > 0 && (
