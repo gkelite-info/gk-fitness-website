@@ -15,6 +15,7 @@ import {
   PlayCircle,
   MapPin,
   CurrencyCircleDollar,
+  CookingPot,
 } from "@phosphor-icons/react";
 
 interface NavItem {
@@ -26,6 +27,7 @@ interface NavItem {
 
 const navLinks: NavItem[] = [
   { name: "Dashboard", href: "/superadmin", icon: SquaresFour },
+  { name: "Recipes", href: "/superadmin/recipes", icon: CookingPot },
   { name: "Gym Pass", href: "/superadmin/gym-pass", icon: Ticket },
   { name: "Gym Locations", href: "/superadmin/gym-locations", icon: MapPin },
   { name: "Finance", href: "/superadmin/finance", icon: CurrencyCircleDollar },
@@ -80,11 +82,10 @@ export default function SuperAdminSidebar() {
               href={link.href}
               prefetch={true}
               ref={isActive ? activeItemRef : null}
-              className={`flex flex-row items-center px-4 py-3 gap-3 w-full h-[46px] rounded-2xl transition-all cursor-pointer shrink-0 ${
-                isActive
+              className={`flex flex-row items-center px-4 py-3 gap-3 w-full h-[46px] rounded-2xl transition-all cursor-pointer shrink-0 ${isActive
                   ? "bg-gradient-to-r from-[rgba(212,255,50,0.18)] to-[rgba(212,255,50,0.05)] border border-[#D4FF32] sidebar-glow text-[#D4FF32]"
                   : "text-[#94A3B8] hover:text-white"
-              }`}
+                }`}
             >
               <Icon
                 size={20}
@@ -92,20 +93,18 @@ export default function SuperAdminSidebar() {
                 className={isActive ? "text-[#D4FF32] shrink-0" : "text-[#94A3B8] group-hover:text-white shrink-0"}
               />
               <span
-                className={`font-['Nimbus_Sans'] text-sm leading-5 tracking-[0.35px] whitespace-nowrap ${
-                  isActive ? "font-semibold" : "font-medium"
-                }`}
+                className={`font-['Nimbus_Sans'] text-sm leading-5 tracking-[0.35px] whitespace-nowrap ${isActive ? "font-semibold" : "font-medium"
+                  }`}
               >
                 {link.name}
               </span>
 
               {link.badge !== undefined && (
                 <span
-                  className={`ml-auto px-2 py-0.5 rounded-full text-xs font-bold shrink-0 transition-colors ${
-                    isActive
+                  className={`ml-auto px-2 py-0.5 rounded-full text-xs font-bold shrink-0 transition-colors ${isActive
                       ? "bg-[#D4FF32] text-black shadow-[0_0_8px_rgba(212,255,50,0.35)]"
                       : "bg-[#181A20] text-[#64748B]"
-                  }`}
+                    }`}
                 >
                   {link.badge}
                 </span>
