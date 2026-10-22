@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchGlobalTrainers } from '@/lib/helpers/globalTrainer/globalTrainerHelper';
+import { getGlobalTrainersAction } from '@/app/actions/customer/getGlobalTrainersAction';
 
 export function useGlobalTrainers(enabled: boolean = true, searchQuery?: string) {
   return useQuery({
     queryKey: ['globalTrainers', searchQuery],
     queryFn: async () => {
-      const data = await fetchGlobalTrainers(searchQuery);
+      const data = await getGlobalTrainersAction(searchQuery);
       return data;
     },
     enabled,
