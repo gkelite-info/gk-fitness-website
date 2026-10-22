@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Ticket,
   User,
@@ -6,11 +9,13 @@ import {
   Buildings,
   ArrowUpRight,
   CaretRight,
-} from "@phosphor-icons/react/dist/ssr";
+} from "@phosphor-icons/react";
 import { RECENT_TRANSACTIONS } from "./mockData";
 import { RecentTransaction } from "./types";
 
 export default function FinanceRecentTransactions() {
+  const router = useRouter();
+
   const getSourceIcon = (type: RecentTransaction["sourceType"]) => {
     switch (type) {
       case "pass":
@@ -53,7 +58,7 @@ export default function FinanceRecentTransactions() {
           Recent Transactions
         </h2>
         <Link
-          href="/superadmin/finance?tab=revenue"
+          href="/superadmin/finance/recent-transactions"
           className="text-xs sm:text-sm font-semibold text-[#94A3B8] hover:text-[#D4FF32] flex items-center gap-1 transition-colors cursor-pointer"
         >
           <span>View All</span>
@@ -81,6 +86,7 @@ export default function FinanceRecentTransactions() {
               return (
                 <tr
                   key={tx.id}
+                  onClick={() => router.push("/superadmin/finance/recent-transactions")}
                   className="hover:bg-[#161822] transition-colors group cursor-pointer"
                 >
                   <td className="py-3 px-3 text-xs font-medium text-[#CBD5E1] whitespace-nowrap">

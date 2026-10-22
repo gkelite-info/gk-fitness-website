@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import SuperAdminOverviewView from "./SuperAdminOverviewView";
 import SuperAdminRevenueView from "./SuperAdminRevenueView";
@@ -25,7 +26,17 @@ export default function SuperAdminFinanceView() {
   const searchParams = useSearchParams();
 
   const tab = searchParams.get("tab") || "overview";
+  const subtab = searchParams.get("subtab");
   const detailId = searchParams.get("id");
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    const mainElement = document.querySelector("main");
+    if (mainElement) {
+      mainElement.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      mainElement.scrollTop = 0;
+    }
+  }, [tab, subtab, detailId]);
 
   const handleSelectTransaction = (tx: RevenueTransaction) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -44,6 +55,7 @@ export default function SuperAdminFinanceView() {
   const handleSelectGymOwnerPayout = (payout: GymOwnerPayout) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", "payouts");
+    params.set("subtab", "gym-owners");
     params.set("id", payout.id);
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
@@ -51,6 +63,7 @@ export default function SuperAdminFinanceView() {
   const handleSelectTrainerPayout = (payout: GlobalTrainerPayout) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", "payouts");
+    params.set("subtab", "global-trainers");
     params.set("id", payout.id);
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };

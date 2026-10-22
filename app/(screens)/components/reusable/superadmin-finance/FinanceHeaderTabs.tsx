@@ -26,8 +26,12 @@ export default function FinanceHeaderTabs() {
     params.delete("id");
     if (tabId === "overview") {
       params.delete("tab");
+      params.delete("subtab");
     } else {
       params.set("tab", tabId);
+      if (tabId !== "payouts") {
+        params.delete("subtab");
+      }
     }
     const query = params.toString();
     router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });

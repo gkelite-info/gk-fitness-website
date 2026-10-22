@@ -79,6 +79,7 @@ export const REVENUE_BREAKDOWN: BreakdownItem[] = [
     percentage: 15,
     barColor: "#F97316",
     iconType: "pass",
+    href: "/superadmin/finance/gym-pass-revenue",
   },
 ];
 
@@ -90,6 +91,7 @@ export const PAYOUT_BREAKDOWN: BreakdownItem[] = [
     percentage: 47,
     barColor: "#00E599",
     iconType: "gym",
+    href: "/superadmin/finance?tab=payouts&subtab=gym-owners",
   },
   {
     id: "global-trainer-payouts",
@@ -98,6 +100,7 @@ export const PAYOUT_BREAKDOWN: BreakdownItem[] = [
     percentage: 53,
     barColor: "#A855F7",
     iconType: "global",
+    href: "/superadmin/finance?tab=payouts&subtab=global-trainers",
   },
 ];
 

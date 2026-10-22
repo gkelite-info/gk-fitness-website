@@ -1,6 +1,6 @@
 "use client";
 
-import { MagnifyingGlass, X } from "@phosphor-icons/react";
+import { MagnifyingGlass, X, Funnel } from "@phosphor-icons/react";
 import Dropdown, { DropdownOption } from "@/app/(screens)/components/reusable/Dropdown";
 import MonthCalendarPicker from "@/app/(screens)/components/reusable/MonthCalendarPicker";
 
@@ -112,7 +112,7 @@ export default function GymPlanRevenueFilterBar({
           />
         </div>
 
-        <div className="flex flex-col gap-1 w-full sm:w-auto lg:w-[150px] shrink-0">
+        <div className="flex flex-col gap-1 w-full sm:w-auto lg:w-[145px] shrink-0">
           <span className="text-[11px] font-medium text-[#64748B] pl-0.5">
             Plan Type
           </span>
@@ -146,10 +146,10 @@ export default function GymPlanRevenueFilterBar({
           <button
             type="button"
             onClick={onClearAll}
-            className="h-[40px] min-h-[40px] px-3 rounded-xl bg-[#181A22] border border-[#242836] hover:border-[#383D50] text-xs font-semibold text-[#94A3B8] hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0 select-none"
+            className="h-[40px] min-h-[40px] px-3.5 rounded-xl bg-[#181A22] border border-[#242836] hover:border-[#383D50] text-xs font-semibold text-[#94A3B8] hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0 select-none"
           >
-            <X size={14} />
-            <span>Clear</span>
+            <Funnel size={14} className="text-[#94A3B8]" />
+            <span>Clear Filters</span>
           </button>
         )}
       </div>

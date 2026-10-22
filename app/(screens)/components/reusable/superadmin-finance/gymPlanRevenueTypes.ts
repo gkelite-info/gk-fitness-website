@@ -10,17 +10,24 @@ export type PaymentStatusType = "Paid" | "Pending";
 export interface GymPlanPayment {
   id: string;
   date: string;
+  dateTime: string;
   gymName: string;
-  gymLogo?: string | null;
+  avatarLetter: string;
+  avatarBg: string;
+  avatarColor: string;
   ownerName: string;
   plan: GymPlanType;
   amount: string;
   numericAmount: number;
   status: PaymentStatusType;
-  invoiceId?: string;
-  paymentMethod?: string;
-  transactionRef?: string;
-  billingCycle?: string;
+  invoiceId: string;
+  transactionId: string;
+  referenceId: string;
+  paymentMethod: string;
+  source: string;
+  startDate: string;
+  nextRenewal: string;
+  planAmountText: string;
 }
 
 export interface GymPlanRevenueKpis {
