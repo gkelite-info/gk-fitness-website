@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import GymPlanRevenueHeader from "./GymPlanRevenueHeader";
 import GymPlanRevenueKpiCards from "./GymPlanRevenueKpiCards";
@@ -28,6 +28,15 @@ export default function GymPlanRevenueView() {
   const [selectedPayment, setSelectedPayment] = useState<GymPlanPayment | null>(null);
 
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    const mainEl = document.querySelector("main");
+    if (mainEl) {
+      mainEl.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      mainEl.scrollTop = 0;
+    }
+  }, []);
 
   const handleMonthDateChange = (date: Date) => {
     setSelectedMonthDate(date);

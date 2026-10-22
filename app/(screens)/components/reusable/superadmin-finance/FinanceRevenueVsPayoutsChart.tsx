@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { CaretRight } from "@phosphor-icons/react";
 import { MONTHLY_FINANCE_DATA } from "./mockData";
 import { MonthlyChartPoint } from "./types";
 import FinanceYearCalendarPicker from "./FinanceYearCalendarPicker";
@@ -26,9 +28,17 @@ export default function FinanceRevenueVsPayoutsChart() {
     <div className="bg-[#12141A] border border-[#232631] rounded-2xl p-4 sm:p-5 flex flex-col gap-5 w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
-          <h2 className="text-sm sm:text-base font-bold text-white tracking-tight whitespace-nowrap">
-            Revenue vs Payouts
-          </h2>
+          <Link
+            href="/superadmin/finance/revenue-vs-payouts"
+            className="group/title flex items-center gap-2 hover:opacity-90 transition-opacity"
+          >
+            <h2 className="text-sm sm:text-base font-bold text-white tracking-tight whitespace-nowrap group-hover/title:text-[#D4FF32] transition-colors">
+              Revenue vs Payouts
+            </h2>
+            <div className="w-6 h-6 rounded-md bg-[#181D26] border border-[#262F3E] group-hover/title:border-[#D4FF32] group-hover/title:bg-[#D4FF32] flex items-center justify-center text-[#94A3B8] group-hover/title:text-black transition-colors shrink-0">
+              <CaretRight size={13} weight="bold" />
+            </div>
+          </Link>
           {hoveredPoint && (
             <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-[#181D26] border border-[#2A3448] text-xs">
               <span className="font-bold text-[#D4FF32]">{hoveredPoint.month}:</span>

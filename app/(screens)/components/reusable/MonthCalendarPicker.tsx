@@ -12,6 +12,7 @@ interface MonthCalendarPickerProps {
   onChange: (date: Date) => void;
   className?: string;
   label?: string;
+  noTruncate?: boolean;
 }
 
 export default function MonthCalendarPicker({
@@ -19,6 +20,7 @@ export default function MonthCalendarPicker({
   onChange,
   className = "",
   label,
+  noTruncate = false,
 }: MonthCalendarPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -263,7 +265,9 @@ export default function MonthCalendarPicker({
       >
         <div className="flex items-center gap-2 min-w-0">
           <CalendarBlank size={16} className="text-[#D4FF32] shrink-0" />
-          <span className="truncate font-medium">{displayLabel}</span>
+          <span className={`${noTruncate ? "whitespace-nowrap" : "truncate"} font-medium`}>
+            {displayLabel}
+          </span>
         </div>
         <CaretDown
           size={14}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import FinanceHeaderTabs from "./FinanceHeaderTabs";
 import PayoutCategoryPills from "./PayoutCategoryPills";
 import PayoutKpiCards from "./PayoutKpiCards";
@@ -23,7 +23,21 @@ export default function SuperAdminPayoutsView({
   onSelectGymOwnerPayout,
   onSelectTrainerPayout,
 }: SuperAdminPayoutsViewProps) {
-  const [selectedSubTab, setSelectedSubTab] = useState<"gym-owners" | "global-trainers">("gym-owners");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const subtabParam = searchParams.get("subtab");
+  const selectedSubTab: "gym-owners" | "global-trainers" =
+    subtabParam === "global-trainers" ? "global-trainers" : "gym-owners";
+
+  const handleSelectSubTab = (tab: "gym-owners" | "global-trainers") => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", "payouts");
+    params.set("subtab", tab);
+    params.delete("id");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   const isGymOwners = selectedSubTab === "gym-owners";
   const currentKpis = isGymOwners ? GYM_OWNER_KPI : GLOBAL_TRAINER_KPI;
@@ -43,7 +57,7 @@ export default function SuperAdminPayoutsView({
 
       <PayoutCategoryPills
         selectedSubTab={selectedSubTab}
-        onSelectSubTab={setSelectedSubTab}
+        onSelectSubTab={handleSelectSubTab}
       />
 
       <PayoutKpiCards
