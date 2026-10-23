@@ -5,9 +5,9 @@ import { revalidatePath } from "next/cache";
 import { verifyRazorpaySignature, getRazorpayClient } from "@/lib/helpers/razorpay/razorpayServer";
 
 export interface VerifyPaymentAndRenewParams {
-  orderId: string;
+  orderId?: string | null;
   paymentId: string;
-  signature: string;
+  signature?: string | null;
   planId: string;
   customerId?: string;
   gymId?: string;
@@ -22,22 +22,51 @@ export async function verifyPaymentAndRenewPlan({
   gymId,
 }: VerifyPaymentAndRenewParams) {
   let isVerified = false;
+  let verificationError = "Invalid payment signature verification";
+
+  // 1. Signature check
   if (orderId && signature) {
     isVerified = verifyRazorpaySignature({ orderId, paymentId, signature });
+    if (!isVerified) {
+      console.warn("[verifyPaymentAndRenewPlan] Signature mismatch, attempting direct API lookup for paymentId:", paymentId);
+    }
   }
 
+  // 2. Direct API verification & auto-capture fallback
   if (!isVerified && paymentId && !paymentId.startsWith("pay_web_")) {
     try {
       const rzpClient = getRazorpayClient();
-      const rzpPayment = await rzpClient.payments.fetch(paymentId);
-      if (rzpPayment?.status === "captured" || rzpPayment?.status === "authorized") {
-        isVerified = true;
+      let rzpPayment = await rzpClient.payments.fetch(paymentId);
+      if (rzpPayment) {
+        if (rzpPayment.status === "authorized") {
+          try {
+            rzpPayment = await rzpClient.payments.capture(
+              paymentId,
+              rzpPayment.amount,
+              rzpPayment.currency || "INR"
+            );
+          } catch (capErr) {
+            console.warn("[verifyPaymentAndRenewPlan] Auto-capture note:", capErr);
+          }
+        }
+
+        if (rzpPayment.status === "captured" || rzpPayment.status === "authorized") {
+          isVerified = true;
+        }
       }
-    } catch {}
+    } catch (fetchErr: any) {
+      console.warn("[verifyPaymentAndRenewPlan] Direct Razorpay verification note:", fetchErr);
+      const errMsg = fetchErr?.error?.description || fetchErr?.message || "";
+      if (fetchErr?.statusCode === 401 || errMsg.includes("Authentication failed")) {
+        verificationError = "Razorpay authentication failed on server. Please update RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Vercel environment variables.";
+      } else if (errMsg) {
+        verificationError = `Payment verification error: ${errMsg}`;
+      }
+    }
   }
 
   if (!isVerified) {
-    return { success: false, error: "Invalid payment signature verification" };
+    return { success: false, error: verificationError };
   }
 
   const supabase = await createClient();
@@ -286,4 +315,3 @@ export async function verifyPaymentAndRenewPlan({
   revalidatePath("/owner/finance");
   return { success: true, planName: planInfo.planName, paymentId };
 }
-

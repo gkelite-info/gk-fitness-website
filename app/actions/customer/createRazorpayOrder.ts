@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/app/api/supabase/server";
-import { createRazorpayOrderInstance } from "@/lib/helpers/razorpay/razorpayServer";
+import { createRazorpayOrderInstance, getRazorpayCredentials } from "@/lib/helpers/razorpay/razorpayServer";
 
 export interface CreateRazorpayOrderActionParams {
   planId: string;
@@ -99,7 +99,7 @@ export async function createRazorpayOrder({
   }
 
   try {
-    const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
+    const { key_id: keyId } = getRazorpayCredentials();
     if (!keyId) {
       return { success: false, error: "Razorpay Key ID is not configured" };
     }
@@ -117,8 +117,17 @@ export async function createRazorpayOrder({
           gymId: resolvedGymId || "",
         },
       });
-    } catch (orderErr) {
-      console.warn("Direct Razorpay gateway fallback:", orderErr);
+    } catch (orderErr: any) {
+      console.error("[createRazorpayOrder] Failed to create order instance:", orderErr);
+      const errMsg =
+        orderErr?.error?.description ||
+        orderErr?.description ||
+        orderErr?.message ||
+        "Failed to create order on gateway";
+      return {
+        success: false,
+        error: `Payment initialization error: ${errMsg}. Please verify Razorpay credentials in server environment variables.`,
+      };
     }
 
     return {

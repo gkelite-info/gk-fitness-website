@@ -61,8 +61,17 @@ export async function createTrainerRazorpayOrder({
           paymentType: "trainerfee",
         },
       });
-    } catch (orderErr) {
-      console.warn("[createTrainerRazorpayOrder] Gateway fallback:", orderErr);
+    } catch (orderErr: any) {
+      console.error("[createTrainerRazorpayOrder] Failed to create order instance:", orderErr);
+      const errMsg =
+        orderErr?.error?.description ||
+        orderErr?.description ||
+        orderErr?.message ||
+        "Failed to create payment order on gateway";
+      return {
+        success: false,
+        error: `Payment initialization error: ${errMsg}. Please check Razorpay keys in server configuration.`,
+      };
     }
 
     const customerName = userRec?.name || user.user_metadata?.fullName || user.email?.split("@")[0] || "Customer";
