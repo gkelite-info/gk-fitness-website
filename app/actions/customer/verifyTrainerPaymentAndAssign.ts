@@ -6,9 +6,9 @@ import { revalidatePath } from "next/cache";
 import { verifyRazorpaySignature, getRazorpayClient } from "@/lib/helpers/razorpay/razorpayServer";
 
 export interface VerifyTrainerPaymentParams {
-  orderId: string;
+  orderId?: string | null;
   paymentId: string;
-  signature: string;
+  signature?: string | null;
   trainerId: string;
   amount?: number;
 }
@@ -25,16 +25,53 @@ export async function verifyTrainerPaymentAndAssign({
     paymentId?.startsWith("pay_web_") ||
     orderId?.startsWith("order_test_");
 
-  if (!isTestTxn) {
+  let isVerified = Boolean(isTestTxn);
+  let detectedPaymentMode = "online";
+  let rzpPayment: any = null;
+
+  if (!isVerified && orderId && signature) {
     const isSignatureValid = verifyRazorpaySignature({
       orderId,
       paymentId,
       signature,
     });
-
-    if (!isSignatureValid) {
-      return { success: false, error: "Invalid payment signature verification" };
+    if (isSignatureValid) {
+      isVerified = true;
     }
+  }
+
+  if (paymentId && !paymentId.startsWith("pay_web_")) {
+    try {
+      const rzpClient = getRazorpayClient();
+      rzpPayment = await rzpClient.payments.fetch(paymentId);
+      if (rzpPayment) {
+        if (rzpPayment.method) {
+          detectedPaymentMode = String(rzpPayment.method).toLowerCase();
+        }
+
+        if (rzpPayment.status === "authorized") {
+          try {
+            rzpPayment = await rzpClient.payments.capture(
+              paymentId,
+              rzpPayment.amount,
+              rzpPayment.currency || "INR"
+            );
+          } catch (capErr) {
+            console.warn("[verifyTrainerPayment] Auto-capture note:", capErr);
+          }
+        }
+
+        if (rzpPayment.status === "captured" || rzpPayment.status === "authorized") {
+          isVerified = true;
+        }
+      }
+    } catch (fetchErr) {
+      console.warn("[verifyTrainerPayment] Direct Razorpay verification:", fetchErr);
+    }
+  }
+
+  if (!isVerified) {
+    return { success: false, error: "Invalid payment signature verification" };
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -65,17 +102,6 @@ export async function verifyTrainerPaymentAndAssign({
   const oneMonthLater = new Date(now);
   oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
   const expiryIso = oneMonthLater.toISOString();
-
-  let detectedPaymentMode = "online";
-  try {
-    const rzpClient = getRazorpayClient();
-    const rzpPayment = await rzpClient.payments.fetch(paymentId);
-    if (rzpPayment?.method) {
-      detectedPaymentMode = String(rzpPayment.method).toLowerCase();
-    }
-  } catch (fetchErr) {
-    console.warn("[verifyTrainerPayment] Could not fetch payment method from Razorpay:", fetchErr);
-  }
 
   try {
     await db

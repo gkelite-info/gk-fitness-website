@@ -1,9 +1,42 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
+
+function readEnvVarFromFile(key: string): string {
+  try {
+    const envPath = path.resolve(process.cwd(), ".env");
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, "utf-8");
+      const match = content.match(new RegExp(`^${key}=(.*)$`, "m"));
+      if (match && match[1]) {
+        return match[1].trim().replace(/^["']|["']$/g, "");
+      }
+    }
+  } catch {}
+  return "";
+}
+
+export function getRazorpayCredentials() {
+  const key_id = (
+    process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+    process.env.RAZORPAY_KEY_ID ||
+    readEnvVarFromFile("NEXT_PUBLIC_RAZORPAY_KEY_ID") ||
+    readEnvVarFromFile("RAZORPAY_KEY_ID") ||
+    ""
+  ).trim();
+
+  const key_secret = (
+    process.env.RAZORPAY_KEY_SECRET ||
+    readEnvVarFromFile("RAZORPAY_KEY_SECRET") ||
+    ""
+  ).trim();
+
+  return { key_id, key_secret };
+}
 
 export function getRazorpayClient() {
-  const key_id = (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || "").trim();
-  const key_secret = (process.env.RAZORPAY_KEY_SECRET || "").trim();
+  const { key_id, key_secret } = getRazorpayCredentials();
 
   if (!key_id || !key_secret) {
     throw new Error("Razorpay API Key or Secret is not configured in environment variables.");
@@ -40,9 +73,9 @@ export async function createRazorpayOrderInstance({
 }
 
 export interface VerifySignatureParams {
-  orderId: string;
+  orderId?: string | null;
   paymentId: string;
-  signature: string;
+  signature?: string | null;
 }
 
 export function verifyRazorpaySignature({
@@ -50,17 +83,25 @@ export function verifyRazorpaySignature({
   paymentId,
   signature,
 }: VerifySignatureParams): boolean {
-  const secret = (process.env.RAZORPAY_KEY_SECRET || "").trim();
-  if (!secret) {
+  if (!orderId || !signature || !paymentId) {
     return false;
   }
 
-  const generatedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(`${orderId}|${paymentId}`)
-    .digest("hex");
+  const { key_secret } = getRazorpayCredentials();
+  if (!key_secret) {
+    return false;
+  }
 
-  return generatedSignature === signature;
+  try {
+    const generatedSignature = crypto
+      .createHmac("sha256", key_secret)
+      .update(`${orderId}|${paymentId}`)
+      .digest("hex");
+
+    return generatedSignature === signature;
+  } catch {
+    return false;
+  }
 }
 
 export async function fetchRazorpayOrder(orderId: string) {
@@ -71,4 +112,14 @@ export async function fetchRazorpayOrder(orderId: string) {
 export async function fetchRazorpayOrderPayments(orderId: string) {
   const client = getRazorpayClient();
   return await client.orders.fetchPayments(orderId);
+}
+
+export async function fetchRazorpayPayment(paymentId: string) {
+  const client = getRazorpayClient();
+  return await client.payments.fetch(paymentId);
+}
+
+export async function captureRazorpayPayment(paymentId: string, amount: number, currency = "INR") {
+  const client = getRazorpayClient();
+  return await client.payments.capture(paymentId, amount, currency);
 }

@@ -2,7 +2,7 @@
 
 import { createClient } from "@/app/api/supabase/server";
 import { revalidatePath } from "next/cache";
-import { verifyRazorpaySignature } from "@/lib/helpers/razorpay/razorpayServer";
+import { verifyRazorpaySignature, getRazorpayClient } from "@/lib/helpers/razorpay/razorpayServer";
 
 export interface VerifyPaymentAndRenewParams {
   orderId: string;
@@ -21,13 +21,22 @@ export async function verifyPaymentAndRenewPlan({
   customerId,
   gymId,
 }: VerifyPaymentAndRenewParams) {
-  const isSignatureValid = verifyRazorpaySignature({
-    orderId,
-    paymentId,
-    signature,
-  });
+  let isVerified = false;
+  if (orderId && signature) {
+    isVerified = verifyRazorpaySignature({ orderId, paymentId, signature });
+  }
 
-  if (!isSignatureValid) {
+  if (!isVerified && paymentId && !paymentId.startsWith("pay_web_")) {
+    try {
+      const rzpClient = getRazorpayClient();
+      const rzpPayment = await rzpClient.payments.fetch(paymentId);
+      if (rzpPayment?.status === "captured" || rzpPayment?.status === "authorized") {
+        isVerified = true;
+      }
+    } catch {}
+  }
+
+  if (!isVerified) {
     return { success: false, error: "Invalid payment signature verification" };
   }
 

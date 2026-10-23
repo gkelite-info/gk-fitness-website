@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/app/api/supabase/server";
-import { createRazorpayOrderInstance } from "@/lib/helpers/razorpay/razorpayServer";
+import { createRazorpayOrderInstance, getRazorpayCredentials } from "@/lib/helpers/razorpay/razorpayServer";
 
 export interface CreateTrainerRazorpayOrderParams {
   trainerId: string;
@@ -43,7 +43,7 @@ export async function createTrainerRazorpayOrder({
   }
 
   try {
-    const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
+    const { key_id: keyId } = getRazorpayCredentials();
     if (!keyId) {
       return { success: false, error: "Razorpay Key ID is not configured" };
     }
