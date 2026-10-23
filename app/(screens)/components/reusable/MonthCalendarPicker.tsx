@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { CalendarBlank, CaretDown, CaretLeft, CaretRight } from "@phosphor-icons/react";
-import { MONTH_NAMES } from "./monthCalendarUtils";
+import { MONTH_NAMES, SHORT_MONTHS } from "./monthCalendarUtils";
 import MonthCalendarDaysGrid from "./MonthCalendarDaysGrid";
 import MonthCalendarSelectGrid from "./MonthCalendarSelectGrid";
 
@@ -13,6 +13,7 @@ interface MonthCalendarPickerProps {
   className?: string;
   label?: string;
   noTruncate?: boolean;
+  showDay?: boolean;
 }
 
 export default function MonthCalendarPicker({
@@ -21,6 +22,7 @@ export default function MonthCalendarPicker({
   className = "",
   label,
   noTruncate = false,
+  showDay = false,
 }: MonthCalendarPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -103,7 +105,6 @@ export default function MonthCalendarPicker({
       setIsOpen(false);
       setViewMode("calendar");
     };
-
     if (isOpen) document.addEventListener("mousedown", handleOutside);
     return () => document.removeEventListener("mousedown", handleOutside);
   }, [isOpen]);
@@ -115,31 +116,26 @@ export default function MonthCalendarPicker({
     const step = viewMode === "calendar" ? [0, -1] : viewMode === "months" ? [-1, 0] : [-5, 0];
     setViewDate(new Date(viewYear + step[0], viewMonth + step[1], 1));
   };
-
   const handleNext = () => {
     const step = viewMode === "calendar" ? [0, 1] : viewMode === "months" ? [1, 0] : [5, 0];
     setViewDate(new Date(viewYear + step[0], viewMonth + step[1], 1));
   };
-
   const handleSelectMonth = (monthIndex: number) => {
     const updated = new Date(viewYear, monthIndex, 1);
     setViewDate(updated);
     onChange(updated);
     setViewMode("calendar");
   };
-
   const handleSelectYear = (year: number) => {
     const updated = new Date(year, viewMonth, 1);
     setViewDate(updated);
     onChange(updated);
     setViewMode("months");
   };
-
   const handleSelectDay = (day: number) => {
     onChange(new Date(viewYear, viewMonth, day));
     setIsOpen(false);
   };
-
   const handleSelectThisMonth = () => {
     const now = new Date();
     setViewDate(now);
@@ -151,7 +147,8 @@ export default function MonthCalendarPicker({
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
   const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate();
-  const displayLabel = label || `${MONTH_NAMES[value.getMonth()]} ${value.getFullYear()}`;
+  const formattedDay = `${String(value.getDate()).padStart(2, "0")} ${SHORT_MONTHS[value.getMonth()]} ${value.getFullYear()}`;
+  const displayLabel = label || (showDay ? formattedDay : `${MONTH_NAMES[value.getMonth()]} ${value.getFullYear()}`);
 
   const renderCalendarContent = () => {
     const activeCoords = !isMobile && coords.top === 0 && coords.left === 0 ? calculateCoords() : coords;
@@ -261,17 +258,17 @@ export default function MonthCalendarPicker({
         ref={triggerRef}
         type="button"
         onClick={handleToggle}
-        className="w-full h-[40px] px-3 py-2 bg-[#181A22] border border-[#242836] hover:border-[#383D50] focus:border-[#D4FF32] rounded-xl text-xs sm:text-sm text-white flex items-center justify-between gap-2.5 transition-colors cursor-pointer select-none"
+        className="w-full h-[40px] px-2.5 sm:px-3 py-2 bg-[#181A22] border border-[#242836] hover:border-[#383D50] focus:border-[#D4FF32] rounded-xl text-xs text-white flex items-center justify-between gap-1.5 transition-colors cursor-pointer select-none"
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <CalendarBlank size={16} className="text-[#D4FF32] shrink-0" />
-          <span className={`${noTruncate ? "whitespace-nowrap" : "truncate"} font-medium`}>
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <CalendarBlank size={15} className="text-[#D4FF32] shrink-0" />
+          <span className={`${noTruncate ? "whitespace-nowrap" : "truncate"} font-medium text-xs text-white`}>
             {displayLabel}
           </span>
         </div>
         <CaretDown
-          size={14}
-          className={`text-[#64748B] shrink-0 transition-transform duration-200 ${
+          size={13}
+          className={`text-[#64748B] shrink-0 ml-1.5 transition-transform duration-200 ${
             isOpen ? "rotate-180 text-white" : ""
           }`}
         />

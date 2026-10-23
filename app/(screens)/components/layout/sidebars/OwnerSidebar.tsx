@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Users, CurrencyInr, Compass, User, Barbell, Crown, Wallet, CalendarCheck, Headset, Receipt, Package, Clock, ListChecks, Bell, Fingerprint } from "@phosphor-icons/react/dist/ssr";
+import { House, Users, CurrencyInr, Compass, User, Barbell, Crown, Wallet, CalendarCheck, Headset, Receipt, Package, Clock, ListChecks, Bell, Fingerprint, Ticket } from "@phosphor-icons/react/dist/ssr";
 
 import { useEffect, useRef } from "react";
 
@@ -16,6 +16,7 @@ const navLinks = [
   { name: "Expenditure", href: "/owner/expenditure", icon: Receipt },
   { name: "Inventory", href: "/owner/inventory", icon: Package },
   { name: "Explore", href: "/owner/explore", icon: Compass },
+  { name: "Gym Pass Visitors", href: "/owner/gym-pass-visitors", icon: Ticket },
   { name: "Enquiries", href: "/owner/enquiries", icon: Headset },
   { name: "Membership Expiry", href: "/owner/membership-expiry", icon: Clock },
   { name: "Manual Attendance", href: "/owner/manual-attendance", icon: ListChecks },
@@ -35,37 +36,29 @@ export default function OwnerSidebar() {
   }, [pathname]);
 
   return (
-    <div className="w-[256px] h-full bg-[#0E0F13] border-r-[2px] border-[#232631] flex flex-col px-4 py-6 overflow-hidden">
-      <div className="flex flex-row items-center gap-3 px-3 w-full shrink-0 mb-8">
+    <div className="w-[268px] h-full bg-[#0E0F13] border-r-[2px] border-[#232631] flex flex-col px-3.5 py-6 overflow-hidden shrink-0">
+      <div className="flex flex-row items-center gap-3 px-2.5 w-full shrink-0 mb-7">
         <div className="w-10 h-10 bg-[#D4FF32] rounded-xl flex items-center justify-center relative z-10 shadow-[0_10px_15px_-3px_rgba(212,255,50,0.2),0_4px_6px_-4px_rgba(212,255,50,0.2)]">
           <div className="absolute inset-0 bg-white/5 rounded-xl z-0 pointer-events-none" />
           <Barbell size={24} weight="fill" className="text-black relative z-10" />
         </div>
         <div className="flex flex-col justify-center">
-          <h1 className="font-['Nimbus_Sans'] font-bold text-base leading-6 tracking-[-0.4px] text-white m-0">
+          <h1 className="font-bold text-base leading-6 tracking-[-0.4px] text-white m-0">
             GK-Gym Life
           </h1>
-          <span className="font-['Nimbus_Sans'] font-medium text-[11px] leading-4 text-[#94A3B8]">
+          <span className="font-medium text-[11px] leading-4 text-[#94A3B8]">
             Owner Portal
           </span>
         </div>
       </div>
 
-      <div className="flex flex-col items-start gap-2 w-full flex-1 overflow-y-auto scrollbar-themed pr-2">
+      <div className="flex flex-col items-start gap-1.5 w-full flex-1 overflow-y-auto overflow-x-hidden scrollbar-themed pr-2">
         {navLinks.map((link) => {
           let isActive = pathname === link.href || (link.href !== "/owner" && pathname.startsWith(`${link.href}/`));
 
-          // Make Home active if we are on a dashboard inner screen
           if (link.name === "Home" && pathname.startsWith("/owner/alerts-reminders")) {
             isActive = true;
           }
-          // If Home is active due to being on alerts-reminders, we don't want Reminders to ALSO be active
-          // Wait, if they click Reminders from sidebar, they probably want Reminders to be active. 
-          // But the user explicitly requested Home to be active when navigating from Home.
-          // To satisfy the user exactly, let's keep Home active for this route, and prevent Reminders from being active to avoid double-active tabs.
-          // if (link.name === "Reminders" && pathname.startsWith("/owner/alerts-reminders")) {
-          //   isActive = false;
-          // }
 
           const Icon = link.icon;
           return (
@@ -74,17 +67,17 @@ export default function OwnerSidebar() {
               href={link.href}
               prefetch={true}
               ref={isActive ? activeItemRef : null}
-              className={`flex flex-row items-center px-4 py-3 gap-3.5 w-full h-[46px] rounded-2xl transition-all shrink-0 ${isActive
+              className={`flex flex-row items-center px-3.5 py-2.5 gap-2.5 w-full h-[44px] rounded-xl transition-all shrink-0 ${isActive
                 ? "bg-gradient-to-r from-[rgba(212,255,50,0.18)] to-[rgba(212,255,50,0.05)] border border-[#D4FF32] sidebar-glow text-[#D4FF32]"
-                : "text-[#94A3B8] hover:text-white"
+                : "text-[#94A3B8] hover:text-white hover:bg-white/[0.03]"
                 }`}
             >
               <Icon
                 size={20}
                 weight={isActive ? "fill" : "regular"}
-                className={isActive ? "text-[#D4FF32]" : "text-[#94A3B8] group-hover:text-white"}
+                className={isActive ? "text-[#D4FF32] shrink-0" : "text-[#94A3B8] group-hover:text-white shrink-0"}
               />
-              <span className={`font-['Nimbus_Sans'] text-sm leading-5 tracking-[0.35px] ${isActive ? 'font-semibold' : 'font-medium'}`}>
+              <span className={`text-[13.5px] leading-tight tracking-[0.2px] truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
                 {link.name}
               </span>
             </Link>
