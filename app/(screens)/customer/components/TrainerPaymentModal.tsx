@@ -144,24 +144,27 @@ export default function TrainerPaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-[#141414] border border-[#262626] rounded-3xl w-full max-w-md max-h-[90dvh] sm:max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#222222] shrink-0">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4 py-16 sm:py-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-[#141414] border border-[#262626] rounded-2xl sm:rounded-3xl w-full max-w-md max-h-[calc(100svh-140px)] sm:max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+        <div className="flex items-center justify-between p-3.5 sm:p-5 border-b border-[#222222] shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#D7FF00]/15 flex items-center justify-center border border-[#D7FF00]/30">
-              <Barbell size={18} className="text-[#D7FF00]" weight="fill" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#D7FF00]/15 flex items-center justify-center border border-[#D7FF00]/30 shrink-0">
+              <Barbell size={16} className="text-[#D7FF00]" weight="fill" />
             </div>
             <div>
-              <h2 className="text-white text-base sm:text-lg font-semibold">Personal Trainer Plan</h2>
-              <p className="text-[#8E8E93] text-xs">Direct 1-on-1 Coaching & Routine</p>
+              <h2 className="text-white text-sm sm:text-base font-semibold">Personal Trainer Plan</h2>
+              <p className="text-[#8E8E93] text-[11px] sm:text-xs">Direct 1-on-1 Coaching & Routine</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#1F1F1F] flex items-center justify-center text-[#8E8E93] hover:text-white transition-colors cursor-pointer">
-            <X size={16} weight="bold" />
+          <button
+            onClick={onClose}
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1F1F1F] flex items-center justify-center text-[#8E8E93] hover:text-white transition-colors cursor-pointer shrink-0"
+          >
+            <X size={15} weight="bold" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-3.5 sm:gap-4 custom-scrollbar">
+        <div className="flex-1 min-h-0 overflow-y-auto p-3.5 sm:p-5 flex flex-col gap-3 sm:gap-4 custom-scrollbar">
           <div>
             <label className="text-[#8E8E93] text-[11px] uppercase tracking-wider font-semibold block mb-1.5">
               Choose Personal Trainer
@@ -170,7 +173,7 @@ export default function TrainerPaymentModal({
               <select
                 value={selectedTrainerId}
                 onChange={(e) => setSelectedTrainerId(e.target.value)}
-                className="w-full bg-[#1C1C1E] border border-[#2A2A2A] rounded-xl px-3.5 py-2.5 text-xs text-white appearance-none focus:outline-none focus:border-[#D7FF00]/60 transition-colors pr-8 cursor-pointer"
+                className="w-full bg-[#1C1C1E] border border-[#2A2A2A] rounded-xl px-3 py-2 text-xs text-white appearance-none focus:outline-none focus:border-[#D7FF00]/60 transition-colors pr-8 cursor-pointer"
               >
                 {loadingTrainers ? (
                   <option value="">Loading trainers...</option>
@@ -192,49 +195,49 @@ export default function TrainerPaymentModal({
             </div>
           </div>
 
-          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-3.5 sm:p-4">
-            <div className="flex items-center justify-between mb-3">
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-2.5">
               <div>
-                <span className="text-[#8E8E93] text-[11px] uppercase tracking-wider font-semibold">Selected Trainer</span>
+                <span className="text-[#8E8E93] text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Selected Trainer</span>
                 <h3 className="text-white text-sm sm:text-base font-bold">{activeTrainerName}</h3>
                 <span className="text-[#D7FF00] text-xs font-medium capitalize">{activeSpecialization} Coach</span>
               </div>
               <div className="text-right">
-                <span className="text-[#8E8E93] text-[11px] uppercase tracking-wider font-semibold">Monthly Fee</span>
+                <span className="text-[#8E8E93] text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Monthly Fee</span>
                 <div className="text-[#D7FF00] text-xl sm:text-2xl font-bold">₹{activeTrainerPrice}</div>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-[#262626] flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-[#CCCCCC] text-xs">
-                <CheckCircle size={15} className="text-[#34C759] shrink-0" weight="fill" />
+            <div className="pt-2.5 border-t border-[#262626] flex flex-col gap-1.5 sm:gap-2">
+              <div className="flex items-center gap-2 text-[#CCCCCC] text-[11px] sm:text-xs">
+                <CheckCircle size={14} className="text-[#34C759] shrink-0" weight="fill" />
                 <span>1-Month Dedicated Personal Guidance</span>
               </div>
-              <div className="flex items-center gap-2 text-[#CCCCCC] text-xs">
-                <CheckCircle size={15} className="text-[#34C759] shrink-0" weight="fill" />
+              <div className="flex items-center gap-2 text-[#CCCCCC] text-[11px] sm:text-xs">
+                <CheckCircle size={14} className="text-[#34C759] shrink-0" weight="fill" />
                 <span>Custom Diet & Workout Routine Adjustments</span>
               </div>
-              <div className="flex items-center gap-2 text-[#CCCCCC] text-xs">
-                <CalendarCheck size={15} className="text-[#34C759] shrink-0" weight="fill" />
+              <div className="flex items-center gap-2 text-[#CCCCCC] text-[11px] sm:text-xs">
+                <CalendarCheck size={14} className="text-[#34C759] shrink-0" weight="fill" />
                 <span>Flexible weekday timing & slot coordination</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-[#1C200E] border border-[#3E4C14] rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5">
-            <ShieldCheck size={20} className="text-[#D7FF00] shrink-0" weight="fill" />
+          <div className="bg-[#1C200E] border border-[#3E4C14] rounded-2xl p-2.5 sm:p-3.5 flex items-center gap-2.5">
+            <ShieldCheck size={18} className="text-[#D7FF00] shrink-0" weight="fill" />
             <div className="flex-1">
               <p className="text-white text-xs font-semibold">Verified Razorpay Gateway</p>
-              <p className="text-[#8E8E93] text-[11px]">Instant activation upon successful payment.</p>
+              <p className="text-[#8E8E93] text-[10px] sm:text-[11px]">Instant activation upon successful payment.</p>
             </div>
           </div>
         </div>
 
-        <div className="p-4 sm:p-5 border-t border-[#222222] bg-[#141414] flex flex-col gap-2 shrink-0">
+        <div className="p-3 sm:p-4 border-t border-[#222222] bg-[#141414] flex flex-col gap-2 shrink-0">
           <button
             onClick={handlePayNow}
             disabled={isProcessing || !selectedTrainerId}
-            className="w-full bg-[#D7FF00] hover:bg-[#bce000] text-black font-bold py-3 sm:py-3.5 rounded-xl transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 text-xs sm:text-sm"
+            className="w-full bg-[#D7FF00] hover:bg-[#bce000] text-black font-bold py-2.5 sm:py-3.5 rounded-xl transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 text-xs sm:text-sm"
           >
             {isProcessing ? (
               <span>Processing Booking...</span>
@@ -245,7 +248,7 @@ export default function TrainerPaymentModal({
           <button
             onClick={onClose}
             disabled={isProcessing}
-            className="w-full bg-[#1F1F1F] hover:bg-[#2A2A2A] text-[#8E8E93] hover:text-white font-medium py-2.5 rounded-xl transition-colors text-xs cursor-pointer"
+            className="w-full bg-[#1F1F1F] hover:bg-[#2A2A2A] text-[#8E8E93] hover:text-white font-medium py-2 sm:py-2.5 rounded-xl transition-colors text-xs cursor-pointer"
           >
             Cancel
           </button>
