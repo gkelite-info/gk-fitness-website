@@ -28,6 +28,7 @@ export async function verifyTrainerPaymentAndAssign({
   let isVerified = Boolean(isTestTxn);
   let detectedPaymentMode = "online";
   let rzpPayment: any = null;
+  let verificationError = "Invalid payment signature verification";
 
   if (!isVerified && orderId && signature) {
     const isSignatureValid = verifyRazorpaySignature({
@@ -65,13 +66,17 @@ export async function verifyTrainerPaymentAndAssign({
           isVerified = true;
         }
       }
-    } catch (fetchErr) {
+    } catch (fetchErr: any) {
       console.warn("[verifyTrainerPayment] Direct Razorpay verification:", fetchErr);
+      const errMsg = fetchErr?.error?.description || fetchErr?.message || "";
+      if (fetchErr?.statusCode === 401 || errMsg.includes("Authentication failed")) {
+        verificationError = "Razorpay authentication failed on server. Please update RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Vercel environment variables.";
+      }
     }
   }
 
   if (!isVerified) {
-    return { success: false, error: "Invalid payment signature verification" };
+    return { success: false, error: verificationError };
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
