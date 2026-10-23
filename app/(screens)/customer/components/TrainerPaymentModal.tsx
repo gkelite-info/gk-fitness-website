@@ -144,15 +144,15 @@ export default function TrainerPaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-[#141414] border border-[#262626] rounded-3xl w-full max-w-md flex flex-col overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between p-5 border-b border-[#222222]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-[#141414] border border-[#262626] rounded-3xl w-full max-w-md max-h-[90dvh] sm:max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#222222] shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-[#D7FF00]/15 flex items-center justify-center border border-[#D7FF00]/30">
               <Barbell size={18} className="text-[#D7FF00]" weight="fill" />
             </div>
             <div>
-              <h2 className="text-white text-lg font-semibold">Personal Trainer Plan</h2>
+              <h2 className="text-white text-base sm:text-lg font-semibold">Personal Trainer Plan</h2>
               <p className="text-[#8E8E93] text-xs">Direct 1-on-1 Coaching & Routine</p>
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function TrainerPaymentModal({
           </button>
         </div>
 
-        <div className="p-5 flex flex-col gap-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-3.5 sm:gap-4 custom-scrollbar">
           <div>
             <label className="text-[#8E8E93] text-[11px] uppercase tracking-wider font-semibold block mb-1.5">
               Choose Personal Trainer
@@ -192,16 +192,16 @@ export default function TrainerPaymentModal({
             </div>
           </div>
 
-          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-4">
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-3.5 sm:p-4">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <span className="text-[#8E8E93] text-[11px] uppercase tracking-wider font-semibold">Selected Trainer</span>
-                <h3 className="text-white text-base font-bold">{activeTrainerName}</h3>
+                <h3 className="text-white text-sm sm:text-base font-bold">{activeTrainerName}</h3>
                 <span className="text-[#D7FF00] text-xs font-medium capitalize">{activeSpecialization} Coach</span>
               </div>
               <div className="text-right">
                 <span className="text-[#8E8E93] text-[11px] uppercase tracking-wider font-semibold">Monthly Fee</span>
-                <div className="text-[#D7FF00] text-2xl font-bold">₹{activeTrainerPrice}</div>
+                <div className="text-[#D7FF00] text-xl sm:text-2xl font-bold">₹{activeTrainerPrice}</div>
               </div>
             </div>
 
@@ -221,8 +221,8 @@ export default function TrainerPaymentModal({
             </div>
           </div>
 
-          <div className="bg-[#1C200E] border border-[#3E4C14] rounded-2xl p-3.5 flex items-center gap-2.5">
-            <ShieldCheck size={22} className="text-[#D7FF00] shrink-0" weight="fill" />
+          <div className="bg-[#1C200E] border border-[#3E4C14] rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5">
+            <ShieldCheck size={20} className="text-[#D7FF00] shrink-0" weight="fill" />
             <div className="flex-1">
               <p className="text-white text-xs font-semibold">Verified Razorpay Gateway</p>
               <p className="text-[#8E8E93] text-[11px]">Instant activation upon successful payment.</p>
@@ -230,16 +230,16 @@ export default function TrainerPaymentModal({
           </div>
         </div>
 
-        <div className="p-5 border-t border-[#222222] bg-[#141414] flex flex-col gap-2.5">
+        <div className="p-4 sm:p-5 border-t border-[#222222] bg-[#141414] flex flex-col gap-2 shrink-0">
           <button
             onClick={handlePayNow}
             disabled={isProcessing || !selectedTrainerId}
-            className="w-full bg-[#D7FF00] hover:bg-[#bce000] text-black font-bold py-3.5 rounded-xl transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            className="w-full bg-[#D7FF00] hover:bg-[#bce000] text-black font-bold py-3 sm:py-3.5 rounded-xl transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 text-xs sm:text-sm"
           >
             {isProcessing ? (
-              <span className="text-xs">Processing Booking...</span>
+              <span>Processing Booking...</span>
             ) : (
-              <span className="text-sm">Pay ₹{activeTrainerPrice} & Assign Trainer</span>
+              <span>Pay ₹{activeTrainerPrice} & Assign Trainer</span>
             )}
           </button>
           <button
