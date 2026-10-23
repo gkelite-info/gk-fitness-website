@@ -53,6 +53,13 @@ export default function SuperAdminUsersView({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
+  useEffect(() => {
+    setCurrentPage(1);
+    setSearchQuery("");
+    setStatusFilter("all");
+    setGymFilter("all");
+  }, [currentTab]);
+
   const handleTabChange = (newTab: UserRoleTab) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", newTab);

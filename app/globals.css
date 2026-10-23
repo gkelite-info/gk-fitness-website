@@ -93,8 +93,7 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .scrollbar-themed {
-  scrollbar-width: thin !important;
-  scrollbar-color: #D4FF32 #14151A !important;
+  /* Do not use scrollbar-color as it disables WebKit box-shadow glow in modern browsers */
 }
 
 .scrollbar-themed::-webkit-scrollbar {
@@ -111,12 +110,12 @@ body::-webkit-scrollbar-thumb:hover {
   background: #D4FF32 !important;
   border-radius: 999px;
   border: 1px solid rgba(212, 255, 50, 0.8) !important;
-  box-shadow: 0 0 10px #D4FF32, 0 0 20px rgba(212, 255, 50, 0.7) !important;
+  box-shadow: 0 0 10px #D4FF32, 0 0 20px rgba(212, 255, 50, 0.7), 0 0 30px rgba(212, 255, 50, 0.4) !important;
 }
 
 .scrollbar-themed::-webkit-scrollbar-thumb:hover {
   background: #E2FF66 !important;
-  box-shadow: 0 0 14px #D4FF32, 0 0 25px rgba(212, 255, 50, 0.9) !important;
+  box-shadow: 0 0 14px #D4FF32, 0 0 25px rgba(212, 255, 50, 0.9), 0 0 40px rgba(212, 255, 50, 0.6) !important;
 }
 
 .scrollbar-themed::-webkit-scrollbar-button:single-button:vertical:decrement {
@@ -135,6 +134,30 @@ body::-webkit-scrollbar-thumb:hover {
   background-repeat: no-repeat;
   background-size: 6px 6px;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='6' height='6' viewBox='0 0 6 6'><polygon points='3,5 0,1 6,1' fill='%23D4FF32'/></svg>");
+}
+
+.scrollbar-sidebar {
+  /* WebKit glowing neon scrollbar */
+}
+
+.scrollbar-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-sidebar::-webkit-scrollbar-thumb {
+  background: #D4FF32 !important;
+  border-radius: 9999px;
+  border: 1px solid rgba(212, 255, 50, 0.8) !important;
+  box-shadow: 0 0 10px #D4FF32, 0 0 20px rgba(212, 255, 50, 0.7), 0 0 30px rgba(212, 255, 50, 0.4) !important;
+}
+
+.scrollbar-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #E2FF66 !important;
+  box-shadow: 0 0 14px #D4FF32, 0 0 25px rgba(212, 255, 50, 0.9) !important;
 }
 
 .scrollbar-orange {

@@ -7,6 +7,18 @@ export interface PlatformKpiItem {
   iconType: "active-gyms" | "total-gyms" | "new-gyms" | "total-users";
 }
 
+export interface TopUserMetricCardItem {
+  id: string;
+  label: string;
+  value: string;
+  href: string;
+  tabKey: "owners" | "trainers" | "global-trainers" | "gym-customers" | "individual-customers";
+  iconType: "owners" | "gym-customers" | "individual-customers" | "global-trainers" | "trainers";
+  iconColor: string;
+  iconBg: string;
+  iconBorder: string;
+}
+
 export interface DashboardActionCardItem {
   id: string;
   title: string;

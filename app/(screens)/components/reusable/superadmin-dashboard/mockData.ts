@@ -1,9 +1,68 @@
 import {
   PlatformKpiItem,
+  TopUserMetricCardItem,
   DashboardActionCardItem,
   RecentlyRegisteredGym,
   RecentSupportRequest,
 } from "./types";
+
+export const TOP_USER_METRICS: TopUserMetricCardItem[] = [
+  {
+    id: "metric-total-owners",
+    label: "Total Owners",
+    value: "86",
+    href: "/superadmin/users?tab=owners",
+    tabKey: "owners",
+    iconType: "owners",
+    iconColor: "#34D399",
+    iconBg: "rgba(6, 78, 59, 0.4)",
+    iconBorder: "rgba(52, 211, 153, 0.25)",
+  },
+  {
+    id: "metric-gym-customers",
+    label: "Total Gym Customers",
+    value: "1,248",
+    href: "/superadmin/users?tab=gym-customers",
+    tabKey: "gym-customers",
+    iconType: "gym-customers",
+    iconColor: "#38BDF8",
+    iconBg: "rgba(23, 37, 84, 0.5)",
+    iconBorder: "rgba(56, 189, 248, 0.25)",
+  },
+  {
+    id: "metric-individual-customers",
+    label: "Individual Customers",
+    value: "842",
+    href: "/superadmin/users?tab=individual-customers",
+    tabKey: "individual-customers",
+    iconType: "individual-customers",
+    iconColor: "#F59E0B",
+    iconBg: "rgba(69, 26, 3, 0.5)",
+    iconBorder: "rgba(245, 158, 11, 0.25)",
+  },
+  {
+    id: "metric-global-trainers",
+    label: "Global Trainers",
+    value: "28",
+    href: "/superadmin/users?tab=global-trainers",
+    tabKey: "global-trainers",
+    iconType: "global-trainers",
+    iconColor: "#C084FC",
+    iconBg: "rgba(59, 7, 100, 0.5)",
+    iconBorder: "rgba(192, 132, 252, 0.25)",
+  },
+  {
+    id: "metric-trainers",
+    label: "Trainers",
+    value: "48",
+    href: "/superadmin/users?tab=trainers",
+    tabKey: "trainers",
+    iconType: "trainers",
+    iconColor: "#2DD4BF",
+    iconBg: "rgba(4, 47, 46, 0.5)",
+    iconBorder: "rgba(45, 212, 191, 0.25)",
+  },
+];
 
 export const PLATFORM_KPIS: PlatformKpiItem[] = [
   { id: "active-gyms", label: "Active Gyms", value: "98", change: "↑ 12%", changePeriod: "vs last month", iconType: "active-gyms" },
