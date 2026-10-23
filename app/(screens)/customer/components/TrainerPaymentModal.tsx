@@ -96,9 +96,9 @@ export default function TrainerPaymentModal({
           try {
             toast.loading("Verifying payment...", { id: "trainer-pay" });
             const verifyRes = await verifyTrainerPaymentAndAssign({
-              orderId: response.razorpay_order_id,
+              orderId: response?.razorpay_order_id || orderResult?.orderId || "",
               paymentId: response.razorpay_payment_id,
-              signature: response.razorpay_signature,
+              signature: response?.razorpay_signature || "",
               trainerId: selectedTrainerId,
               amount: activeTrainerPrice,
             });
