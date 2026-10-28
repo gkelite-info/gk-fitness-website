@@ -11,8 +11,12 @@ export interface CustomerProfileData {
     startDate: string;
     expiryDate: string;
     duration: string;
-    status: "Active" | "Inactive";
+    status: "Active" | "Inactive" | "Pending Activation" | string;
     remainingDays: number;
+    pendingPlanId?: string | null;
+    pendingPlanName?: string | null;
+    pendingAmount?: number | null;
+    GymCustomerMembershipPlanId?: string;
   };
   trainer?: {
     name: string;

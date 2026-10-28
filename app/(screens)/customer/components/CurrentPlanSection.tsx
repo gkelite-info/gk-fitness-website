@@ -1,9 +1,31 @@
 "use client";
 
 import { Crown, CheckCircle, XCircle, CaretRight } from "@phosphor-icons/react";
+import { parseDurationMonths } from "@/lib/helpers/gymCustomerMembershipPlans/membershipPaymentLogic";
+import { calculatePlanStats } from "@/lib/planCalculations";
+
+export interface CurrentCustomerPlan {
+  planId?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  is_Active?: boolean;
+  isActive?: boolean;
+  customAmount?: number | null;
+  pendingPlanId?: string | null;
+  pendingAmount?: number | string | null;
+  pendingPlan?: { planName?: string };
+  plan?: {
+    planId?: string;
+    planName?: string;
+    price?: number;
+    durationMonths?: string | number | null;
+  };
+  durationMonths?: string | number | null;
+  price?: number;
+}
 
 interface CurrentPlanSectionProps {
-  currentPlan: any;
+  currentPlan: CurrentCustomerPlan | null | undefined;
   isLoading: boolean;
   onRenew: (planId: string, planName: string) => void;
   renewingPlanId: string | null;
@@ -41,16 +63,30 @@ export default function CurrentPlanSection({
     );
   }
 
-  const isExpired = currentPlan.endDate ? new Date(currentPlan.endDate).getTime() < Date.now() : false;
-  const isActive = Boolean(currentPlan.is_Active ?? currentPlan.isActive) && !isExpired;
-  const statusLabel = isExpired ? "Expired" : (isActive ? "Active" : "Inactive");
-  const statusColor = isExpired ? "#EF4444" : (isActive ? "#D7FF00" : "#8E8E93");
+  const numericAmount = Number(currentPlan.plan?.price ?? currentPlan.customAmount ?? currentPlan.price ?? 0);
+  const currentPlanMonths = parseDurationMonths(currentPlan.plan?.durationMonths || currentPlan.durationMonths || 1);
+  const planAmount = numericAmount > 0 ? `₹${numericAmount}` : (currentPlan.plan?.price ? `₹${currentPlan.plan.price}` : "₹0");
+
+  const stats = calculatePlanStats({
+    planPrice: numericAmount,
+    durationMonths: currentPlanMonths,
+    startDate: currentPlan.startDate,
+    endDate: currentPlan.endDate,
+    isActive: Boolean(currentPlan.is_Active ?? currentPlan.isActive),
+  });
+
+  const remainingDays = stats.standardRemainingDays;
+  const isPendingActivation =
+    !currentPlan.startDate ||
+    !currentPlan.endDate ||
+    (!Boolean(currentPlan.is_Active ?? currentPlan.isActive) && !currentPlan.endDate);
+  const isExpired = !isPendingActivation && (stats.isExpired || remainingDays === 0);
+  const isActive = !isPendingActivation && stats.isPlanActive;
+  const statusLabel = isPendingActivation ? "Pending Activation" : isExpired ? "Expired" : (isActive ? "Active" : "Inactive");
+  const statusColor = isPendingActivation ? "#F59E0B" : isExpired ? "#EF4444" : (isActive ? "#D7FF00" : "#8E8E93");
   const planName = currentPlan.plan?.planName || "Membership Plan";
-  const planAmount = currentPlan.customAmount
-    ? `₹${currentPlan.customAmount}`
-    : currentPlan.plan?.price
-      ? `₹${currentPlan.plan.price}`
-      : "₹0";
+  const currentDailyRate = stats.dailyRate;
+  const unusedCredit = stats.unusedCredit;
 
   const targetPlanId = currentPlan.planId || currentPlan.plan?.planId;
   const isRenewingThis = renewingPlanId === targetPlanId;
@@ -66,7 +102,7 @@ export default function CurrentPlanSection({
   return (
     <div className="mb-6">
       <span className="text-[#8E8E93] text-[10px] font-bold tracking-widest uppercase block mb-3">
-        YOUR CURRENT PLAN
+        {isPendingActivation ? "ASSIGNED MEMBERSHIP PLAN" : "YOUR CURRENT PLAN"}
       </span>
       <div className="bg-[#1C1C1E] rounded-3xl p-5 border border-[#27272A]">
         <div className="flex items-center">
@@ -77,7 +113,9 @@ export default function CurrentPlanSection({
             <h3 className="text-white text-lg font-semibold truncate mb-0.5">{planName}</h3>
             <div className="flex items-baseline mb-1.5">
               <span className="text-white text-base font-semibold">{planAmount}</span>
-              <span className="text-[#8E8E93] text-xs ml-1">/ Month</span>
+              <span className="text-[#8E8E93] text-xs ml-1">
+                {currentPlanMonths > 1 ? `/ ${currentPlanMonths} Months` : "/ Month"}
+              </span>
             </div>
             <div className="flex items-center flex-wrap gap-2">
               <div className="flex items-center">
@@ -99,9 +137,51 @@ export default function CurrentPlanSection({
           </div>
         </div>
 
-        {(!isActive || isExpired) && (
+        {isActive && unusedCredit > 0 && (
+          <div className="mt-3 pt-3 border-t border-[#27272A] flex items-center justify-between text-xs">
+            <span className="text-[#8E8E93]">
+              Daily Rate: <span className="text-white font-medium">₹{currentDailyRate}/day</span> ({remainingDays} days left)
+            </span>
+            <span className="text-[#D7FF00] font-semibold">
+              Unused Credit: ₹{unusedCredit}
+            </span>
+          </div>
+        )}
+
+        {currentPlan?.pendingPlanId && (
+          <div className="mt-4 pt-3.5 border-t border-[#27272A] bg-[#221B13] border border-[#5E4218] rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[#F59E0B] text-[10px] font-bold tracking-widest uppercase">
+                UPGRADE PENDING
+              </span>
+              {currentPlan.pendingAmount !== undefined && currentPlan.pendingAmount !== null && (
+                <span className="text-[#D7FF00] font-extrabold text-sm">
+                  ₹{Number(currentPlan.pendingAmount)}
+                </span>
+              )}
+            </div>
+            <h4 className="text-white text-sm font-bold">
+              {currentPlan.pendingPlan?.planName || "New Plan"}
+            </h4>
+            <p className="text-gray-400 text-[11px] mt-0.5">
+              Your gym owner initiated an upgrade. Complete payment below to activate your new tier!
+            </p>
+            <button
+              onClick={() => onRenew(currentPlan.pendingPlanId!, currentPlan.pendingPlan?.planName || "Upgraded Plan")}
+              disabled={isRenewingThis}
+              className="w-full bg-[#D7FF00] hover:bg-[#cbf200] text-black font-bold text-xs py-3 px-4 rounded-xl mt-3 flex items-center justify-center transition-all active:scale-[0.99] cursor-pointer"
+            >
+              <span className="mr-1 uppercase tracking-wider">
+                COMPLETE UPGRADE PAYMENT {currentPlan.pendingAmount !== undefined && currentPlan.pendingAmount !== null ? `(₹${Number(currentPlan.pendingAmount)})` : ""}
+              </span>
+              <CaretRight size={14} color="#000000" weight="bold" />
+            </button>
+          </div>
+        )}
+
+        {(!isActive || isExpired || isPendingActivation) && (
           <button
-            onClick={() => onRenew(targetPlanId, planName)}
+            onClick={() => onRenew(targetPlanId!, planName)}
             disabled={isRenewingThis || !targetPlanId}
             className="w-full bg-[#D7FF00] hover:bg-[#cbf200] py-3.5 px-5 rounded-2xl flex items-center justify-center mt-4 transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
           >
@@ -110,7 +190,7 @@ export default function CurrentPlanSection({
             ) : (
               <>
                 <span className="text-black text-xs font-bold tracking-wider mr-1 uppercase">
-                  RENEW PLAN
+                  {isPendingActivation ? "ACTIVATE MEMBERSHIP NOW" : "RENEW PLAN"}
                 </span>
                 <CaretRight size={15} color="#000000" weight="bold" />
               </>

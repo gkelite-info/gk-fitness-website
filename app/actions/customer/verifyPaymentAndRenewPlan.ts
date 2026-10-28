@@ -3,6 +3,7 @@
 import { createClient } from "@/app/api/supabase/server";
 import { revalidatePath } from "next/cache";
 import { verifyRazorpaySignature, getRazorpayClient } from "@/lib/helpers/razorpay/razorpayServer";
+import { executeMembershipPaymentSuccess } from "@/lib/helpers/gymCustomerMembershipPlans/membershipPaymentLogic";
 
 export interface VerifyPaymentAndRenewParams {
   orderId?: string | null;
@@ -11,6 +12,15 @@ export interface VerifyPaymentAndRenewParams {
   planId: string;
   customerId?: string;
   gymId?: string;
+}
+
+interface RazorpayPaymentInfo {
+  id?: string;
+  status?: string;
+  amount?: number;
+  currency?: string;
+  method?: string;
+  vpa?: string | null;
 }
 
 export async function verifyPaymentAndRenewPlan({
@@ -23,8 +33,9 @@ export async function verifyPaymentAndRenewPlan({
 }: VerifyPaymentAndRenewParams) {
   let isVerified = false;
   let verificationError = "Invalid payment signature verification";
+  let detectedPaymentMethod: string | null = null;
+  let rzpPayment: RazorpayPaymentInfo | null = null;
 
-  // 1. Signature check
   if (orderId && signature) {
     isVerified = verifyRazorpaySignature({ orderId, paymentId, signature });
     if (!isVerified) {
@@ -32,19 +43,18 @@ export async function verifyPaymentAndRenewPlan({
     }
   }
 
-  // 2. Direct API verification & auto-capture fallback
-  if (!isVerified && paymentId && !paymentId.startsWith("pay_web_")) {
+  if (paymentId && !paymentId.startsWith("pay_web_")) {
     try {
       const rzpClient = getRazorpayClient();
-      let rzpPayment = await rzpClient.payments.fetch(paymentId);
+      rzpPayment = (await rzpClient.payments.fetch(paymentId)) as RazorpayPaymentInfo;
       if (rzpPayment) {
-        if (rzpPayment.status === "authorized") {
+        if (rzpPayment.status === "authorized" && typeof rzpPayment.amount === "number") {
           try {
-            rzpPayment = await rzpClient.payments.capture(
+            rzpPayment = (await rzpClient.payments.capture(
               paymentId,
               rzpPayment.amount,
               rzpPayment.currency || "INR"
-            );
+            )) as RazorpayPaymentInfo;
           } catch (capErr) {
             console.warn("[verifyPaymentAndRenewPlan] Auto-capture note:", capErr);
           }
@@ -53,13 +63,18 @@ export async function verifyPaymentAndRenewPlan({
         if (rzpPayment.status === "captured" || rzpPayment.status === "authorized") {
           isVerified = true;
         }
+
+        if (rzpPayment.method) {
+          detectedPaymentMethod = rzpPayment.method;
+        }
       }
-    } catch (fetchErr: any) {
+    } catch (fetchErr: unknown) {
       console.warn("[verifyPaymentAndRenewPlan] Direct Razorpay verification note:", fetchErr);
-      const errMsg = fetchErr?.error?.description || fetchErr?.message || "";
-      if (fetchErr?.statusCode === 401 || errMsg.includes("Authentication failed")) {
+      const errObj = fetchErr as { statusCode?: number; error?: { description?: string }; message?: string };
+      const errMsg = errObj?.error?.description || errObj?.message || "";
+      if (errObj?.statusCode === 401 || errMsg.includes("Authentication failed")) {
         verificationError = "Razorpay authentication failed on server. Please update RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Vercel environment variables.";
-      } else if (errMsg) {
+      } else if (errMsg && !isVerified) {
         verificationError = `Payment verification error: ${errMsg}`;
       }
     }
@@ -171,147 +186,28 @@ export async function verifyPaymentAndRenewPlan({
     return { success: false, error: "Customer record not found" };
   }
 
-  const { data: planInfo, error: planError } = await supabase
-    .from("gym_membership_plans")
-    .select("planId, planName, durationMonths, price")
-    .eq("planId", planId)
-    .single();
-
-  if (planError || !planInfo) {
-    return { success: false, error: "Plan details not found" };
-  }
-
-  let durationMonths = 1;
-  if (planInfo.durationMonths) {
-    const rawStr = String(planInfo.durationMonths).toLowerCase().trim();
-    if (rawStr.includes("year")) {
-      const yearMatch = rawStr.match(/\d+/);
-      durationMonths = yearMatch ? parseInt(yearMatch[0], 10) * 12 : 12;
-    } else {
-      const numMatch = rawStr.match(/\d+/);
-      durationMonths = numMatch ? parseInt(numMatch[0], 10) : 1;
-    }
-  }
-
-  const { data: existingPlans } = await supabase
-    .from("gym_customer_membership_plans")
-    .select("*")
-    .eq("customerId", resolvedCustomerId)
-    .eq("is_deleted", false)
-    .order("createdAt", { ascending: false });
-
-  const latestExisting = existingPlans?.[0];
-  const now = new Date();
-  let startDate = now;
-
-  if (latestExisting?.endDate) {
-    const existingEndDate = new Date(latestExisting.endDate);
-    if (existingEndDate > now && (latestExisting.is_Active ?? latestExisting.isActive)) {
-      startDate = existingEndDate;
-    }
-  }
-
-  const calculatedEnd = new Date(startDate);
-  const targetDay = startDate.getDate();
-  calculatedEnd.setMonth(calculatedEnd.getMonth() + durationMonths);
-  if (calculatedEnd.getDate() !== targetDay) {
-    calculatedEnd.setDate(0);
-  }
-
-  const finalStartDate = startDate.toISOString();
-  const finalEndDate = calculatedEnd.toISOString();
-  const nowIso = now.toISOString();
-
-  if (latestExisting?.GymCustomerMembershipPlanId) {
-    const { error: updateError } = await supabase
-      .from("gym_customer_membership_plans")
-      .update({
-        planId: planInfo.planId,
-        gymId: resolvedGymId,
-        customAmount: planInfo.price || 0,
-        startDate: finalStartDate,
-        endDate: finalEndDate,
-        is_Active: true,
-        updatedAt: nowIso,
-      })
-      .eq("GymCustomerMembershipPlanId", latestExisting.GymCustomerMembershipPlanId);
-
-    if (updateError) {
-      return { success: false, error: updateError.message };
-    }
-  } else {
-    const newPlanId = crypto.randomUUID();
-    const { error: insertError } = await supabase
-      .from("gym_customer_membership_plans")
-      .insert([{
-        GymCustomerMembershipPlanId: newPlanId,
-        customerId: resolvedCustomerId,
-        gymId: resolvedGymId,
-        planId: planInfo.planId,
-        customAmount: planInfo.price || 0,
-        startDate: finalStartDate,
-        endDate: finalEndDate,
-        createdBy: user.id,
-        is_Active: true,
-        is_deleted: false,
-        createdAt: nowIso,
-        updatedAt: nowIso,
-      }]);
-
-    if (insertError) {
-      return { success: false, error: insertError.message };
-    }
-  }
-
   try {
-    await supabase.from("customer_gym_payments").insert([{
-      customerPaymentId: crypto.randomUUID(),
+    const result = await executeMembershipPaymentSuccess({
+      supabase,
       customerId: resolvedCustomerId,
       gymId: resolvedGymId,
-      planId: planInfo.planId,
-      amountPaid: Number(planInfo.price) || 0,
-      paymentMethod: "CARD",
-      status: "SUCCESSFUL",
-      transactionId: paymentId,
-      notes: `Razorpay Order: ${orderId} | Payment: ${paymentId}`,
-      is_deleted: false,
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    }]);
+      planId,
+      customerUserId: user.id,
+      gatewayPaymentId: paymentId,
+      gatewayOrderId: orderId,
+      paymentMethod: detectedPaymentMethod || rzpPayment?.method || "other",
+      upiId: rzpPayment?.vpa || null,
+      amountPaidOverride: rzpPayment?.amount ? Number(rzpPayment.amount) / 100 : undefined,
+    });
 
-    const { data: ownerRecord } = await supabase
-      .from("gym_owners")
-      .select("gymOwnerId")
-      .eq("gymId", resolvedGymId)
-      .eq("is_deleted", false)
-      .limit(1)
-      .maybeSingle();
-
-    if (ownerRecord?.gymOwnerId) {
-      await supabase.from("gym_payments").insert([{
-        gymPaymentId: crypto.randomUUID(),
-        customerId: resolvedCustomerId,
-        gymId: resolvedGymId,
-        planId: planInfo.planId,
-        paymentMethod: "qrscan",
-        amountPaid: Number(planInfo.price) || 0,
-        paymentDate: now.toISOString().split("T")[0],
-        paymentTime: now.toTimeString().substring(0, 5),
-        transactionId: paymentId,
-        notes: `Razorpay Online Payment (Order: ${orderId})`,
-        paymentTakenBy: ownerRecord.gymOwnerId,
-        is_deleted: false,
-        createdAt: nowIso,
-        updatedAt: nowIso,
-      }]);
-    }
-  } catch (paymentErr) {
-    console.error("Failed to insert payment logs:", paymentErr);
+    revalidatePath("/customer");
+    revalidatePath("/owner");
+    revalidatePath("/owner/payments");
+    revalidatePath("/owner/finance");
+    return { success: true, planName: result.planName, paymentId };
+  } catch (err: unknown) {
+    console.error("[verifyPaymentAndRenewPlan] Execution error:", err);
+    const errorMsg = err instanceof Error ? err.message : "Failed to process membership renewal";
+    return { success: false, error: errorMsg };
   }
-
-  revalidatePath("/customer");
-  revalidatePath("/owner");
-  revalidatePath("/owner/payments");
-  revalidatePath("/owner/finance");
-  return { success: true, planName: planInfo.planName, paymentId };
 }

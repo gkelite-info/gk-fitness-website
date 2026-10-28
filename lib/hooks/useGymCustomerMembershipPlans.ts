@@ -21,7 +21,9 @@ export function useGymCustomerMembershipPlans(userId: string | null, customerId?
         .select(`
           *,
           gym_customers(fullName, email, phone, creator:users!gym_customers_createdBy_fkey(profilePhoto)),
-          gym_membership_plans(planName, durationMonths, price)
+          plan:gym_membership_plans!gym_customer_membership_plans_planId_fkey(planName, durationMonths, price),
+          gym_membership_plans:gym_membership_plans!gym_customer_membership_plans_planId_fkey(planName, durationMonths, price),
+          pendingPlan:gym_membership_plans!gym_customer_membership_plans_pendingPlanId_fkey(planName, durationMonths, price)
         `)
         .eq('gymId', gymId)
         .eq('is_deleted', false)
@@ -58,3 +60,10 @@ export function useGymCustomerMembershipPlansPaginated(userId: string | null, pa
     enabled: !!userId,
   });
 }
+
+export {
+  useSaveGymCustomerMembershipPlan,
+  useSetGymCustomerPendingPlan,
+  useRevokeGymCustomerPendingPlan,
+  useCompleteUpgradePayment,
+} from './gymCustomerMembershipPlans/useGymCustomerMembershipPlans';
