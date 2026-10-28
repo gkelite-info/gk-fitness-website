@@ -14,13 +14,10 @@ import {
   Ticket,
   PlayCircle,
   MapPin,
-<<<<<<< Updated upstream
   CurrencyCircleDollar,
   CookingPot,
   User,
-=======
   ChatCircleDots,
->>>>>>> Stashed changes
 } from "@phosphor-icons/react";
 
 interface NavItem {

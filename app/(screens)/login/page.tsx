@@ -102,13 +102,9 @@ function LoginContent() {
       window.location.href = "/owner";
     } else if (normalizedRole === "globaltrainer" || normalizedRole === "global_trainer" || typeParam === "globaltrainer") {
       window.location.href = "/globaltrainer";
-<<<<<<< Updated upstream
-    } else if (role === "customer" || role === "individual") {
-=======
     } else if (normalizedRole === "trainer") {
       window.location.href = "/trainer";
-    } else if (normalizedRole === "customer" || normalizedRole === "individual" || typeParam === "individual") {
->>>>>>> Stashed changes
+    } else if (normalizedRole === "customer" || normalizedRole === "individual" || typeParam === "individual" || role === "customer" || role === "individual") {
       window.location.href = "/customer";
     } else {
       window.location.href = "/";
