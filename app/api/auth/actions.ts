@@ -99,9 +99,9 @@ export async function loginUser(email: string, password: string, selectedType?: 
     if (normalizedType === "globaltrainer") {
       roleMatches = cleanRole === "globaltrainer" || cleanRole === "trainer";
     } else if (normalizedType === "owner" || normalizedType === "gymowner") {
-      roleMatches = cleanRole === "owner" || cleanRole === "superadmin";
+      roleMatches = cleanRole === "owner";
     } else if (normalizedType === "individual" || normalizedType === "customer") {
-      roleMatches = cleanRole === "customer" || cleanRole === "individual";
+      roleMatches = cleanRole === "customer" || cleanRole === "individual" || cleanRole === "superadmin";
     } else if (normalizedType === "trainer") {
       roleMatches = cleanRole === "trainer" || cleanRole === "globaltrainer";
     } else {
