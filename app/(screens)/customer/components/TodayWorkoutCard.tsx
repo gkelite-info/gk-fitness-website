@@ -1,8 +1,7 @@
 "use client";
 
 import { Barbell, Clock, ArrowRight } from "@phosphor-icons/react";
-import Image from "next/image";
-import { openAppOrStore } from "../../../utils/deepLink";
+import { openAppOrStore } from "@/app/utils/deepLink";
 
 export default function TodayWorkoutCard() {
   return (
@@ -27,11 +26,12 @@ export default function TodayWorkoutCard() {
         </div>
 
         <button
+          type="button"
           onClick={() => openAppOrStore("home")}
           className="bg-[#D7FF00] rounded-full py-3 px-5 flex items-center justify-center self-start w-fit active:opacity-90 hover:bg-[#c2e600] transition-colors cursor-pointer"
         >
-          <span className="text-black font-bold text-sm mr-2 tracking-wide">OPEN WORKOUTS</span>
-          <div className="w-6 h-6 rounded-full bg-black/10 flex items-center justify-center">
+          <span className="text-black font-bold text-sm mr-2 tracking-wide cursor-pointer">OPEN WORKOUTS</span>
+          <div className="w-6 h-6 rounded-full bg-black/10 flex items-center justify-center cursor-pointer">
             <ArrowRight size={14} color="#000000" weight="bold" />
           </div>
         </button>
@@ -39,9 +39,9 @@ export default function TodayWorkoutCard() {
 
       <div className="items-end justify-center hidden sm:flex shrink-0">
         <div className="w-[145px] h-[160px] relative">
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#1A1A1A] to-[#2A2A2A] rounded-2xl flex items-center justify-center border border-[#333]">
-                <Barbell size={64} className="text-[#444] opacity-50" weight="fill" />
-            </div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#1A1A1A] to-[#2A2A2A] rounded-2xl flex items-center justify-center border border-[#333]">
+            <Barbell size={64} className="text-[#444] opacity-50" weight="fill" />
+          </div>
         </div>
       </div>
     </div>

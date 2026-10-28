@@ -1,5 +1,6 @@
 import { createClient } from '@/app/api/supabase/client';
 import { rollbackRegistrationData } from '@/lib/helpers/registrationRollbackHelper';
+import { sendUserRegistrationEmails } from '@/lib/helpers/registrationEmailService';
 
 export type CustomerGender = 'male' | 'female' | 'other';
 
@@ -307,6 +308,19 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
       throw new Error(
         `2-table atomic verification failed (users: ${isTable1Ok}, gym_customers: ${isTable2Ok}). Initiating rollback.`
       );
+    }
+
+    if (!existingCustomer && cleanEmail) {
+      sendUserRegistrationEmails({
+        name: params.fullName.trim(),
+        email: cleanEmail,
+        phone: cleanPhone,
+        role: "Customer",
+        userId: targetUserId,
+        gender: params.gender,
+        dob: params.dateOfBirth,
+        planId: params.membershipPlanId,
+      }).catch((e) => console.warn('[customerHelper] Registration email error:', e));
     }
 
     return {

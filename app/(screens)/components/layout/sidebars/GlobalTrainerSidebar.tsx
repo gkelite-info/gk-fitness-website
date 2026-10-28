@@ -23,10 +23,10 @@ export default function GlobalTrainerSidebar() {
             <Barbell size={24} weight="fill" className="text-black relative z-10" />
           </div>
           <div className="flex flex-col justify-center">
-            <h1 className="font-['Nimbus_Sans'] font-bold text-base leading-6 tracking-[-0.4px] text-white m-0">
+            <h1 className="font-bold text-base leading-6 tracking-[-0.4px] text-white m-0">
               GK-Gym Life
             </h1>
-            <span className="font-['Nimbus_Sans'] font-medium text-[11px] leading-4 text-[#94A3B8]">
+            <span className="font-medium text-[11px] leading-4 text-[#94A3B8]">
               Global Portal
             </span>
           </div>
@@ -50,7 +50,7 @@ export default function GlobalTrainerSidebar() {
                   weight={isActive ? "fill" : "regular"}
                   className={isActive ? "text-[#D4FF32]" : "text-[#94A3B8] group-hover:text-white"}
                 />
-                <span className={`font-['Nimbus_Sans'] text-sm leading-5 tracking-[0.35px] ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                <span className={`text-sm leading-5 tracking-[0.35px] ${isActive ? 'font-semibold' : 'font-medium'}`}>
                   {link.name}
                 </span>
               </Link>

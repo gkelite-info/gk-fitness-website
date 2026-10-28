@@ -2,9 +2,10 @@
 
 import { createClient } from "@/app/api/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { headers } from "next/headers";
 import { SignupFormValues, validateSignupForm } from "@/lib/validations/signupValidation";
 import { capitalizeWords } from "@/lib/validations/demoValidation";
-import { sendSignupConfirmationEmail } from "@/lib/helpers/emailService";
+import { sendUserRegistrationEmails } from "@/lib/helpers/registrationEmailService";
 
 export interface SignupResponse {
   success: boolean;
@@ -54,7 +55,7 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
       const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
         email: cleanEmail,
         password: data.password,
-        email_confirm: true,
+        email_confirm: false,
         user_metadata: {
           name: cleanName,
           phone: cleanPhone,
@@ -78,6 +79,7 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
           },
         },
       });
+
 
       if (authError) {
         return { success: false, error: authError.message };
@@ -115,7 +117,7 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
 
     if (dbError) {
       if (adminClient && authUserId) {
-        await adminClient.auth.admin.deleteUser(authUserId).catch(() => {});
+        await adminClient.auth.admin.deleteUser(authUserId).catch(() => { });
       }
       return { success: false, error: `Account registration failed: ${dbError.message}` };
     }
@@ -179,14 +181,56 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
       console.warn("[signupCustomerAction] demo_bookings table sync warning:", demoError.message);
     }
 
-    const emailRes = await sendSignupConfirmationEmail({
-      email: cleanEmail,
+    let planLabel = "Customer Membership";
+    if (finalPlanId) {
+      const { data: planInfo } = await checkClient
+        .from("subscriptions")
+        .select("label, planName")
+        .eq("subscriptionPlanId", finalPlanId)
+        .maybeSingle();
+      if (planInfo) {
+        planLabel = planInfo.label || planInfo.planName || planLabel;
+      }
+    }
+
+    let confirmationUrl: string | undefined;
+    try {
+      const headerList = await headers();
+      const forwardedHost = headerList.get("x-forwarded-host");
+      const host = forwardedHost || headerList.get("host");
+      const isLocal = host?.includes("localhost") || host?.includes("127.0.0.1");
+      const proto = headerList.get("x-forwarded-proto") || (isLocal ? "http" : "https");
+      const currentOrigin = host
+        ? `${proto}://${host}`
+        : (process.env.NODE_ENV === "production" ? "https://www.gkgymlife.com" : (process.env.NEXT_PUBLIC_SITE_URL || "https://www.gkgymlife.com"));
+      confirmationUrl = `${currentOrigin}/api/auth/verify-email?uid=${encodeURIComponent(authUserId)}&email=${encodeURIComponent(cleanEmail)}`;
+    } catch {
+      const siteUrl = process.env.NODE_ENV === "production" ? "https://www.gkgymlife.com" : (process.env.NEXT_PUBLIC_SITE_URL || "https://www.gkgymlife.com");
+      confirmationUrl = `${siteUrl}/api/auth/verify-email?uid=${encodeURIComponent(authUserId)}&email=${encodeURIComponent(cleanEmail)}`;
+    }
+
+    const emailRes = await sendUserRegistrationEmails({
       name: cleanName,
-      userId: authUserId,
+      email: cleanEmail,
+      phone: cleanPhone,
       role: "Customer",
+      userId: authUserId,
+      gymName: data.gymName?.trim() || (data.city ? `${data.city.trim()} Fitness` : "Individual Customer"),
+      gender: data.gender,
+      dob: data.dob,
+      address: data.address?.trim(),
+      city: data.city?.trim(),
+      state: data.state?.trim(),
+      country: data.country?.trim() || "India",
+      pincode: data.pincode ? String(data.pincode) : undefined,
+      memberCount: data.memberCount?.trim(),
+      planId: finalPlanId,
+      planName: planLabel,
+      isSignup: true,
+      confirmationUrl,
     });
     if (!emailRes.success) {
-      console.warn("[signupCustomerAction] Resend email warning:", emailRes.error);
+      console.warn("[signupCustomerAction] Registration email warning:", emailRes.errors);
     }
 
     return {

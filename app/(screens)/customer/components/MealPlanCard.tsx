@@ -1,7 +1,7 @@
 "use client";
 
 import { BowlFood, ForkKnife, ArrowRight } from "@phosphor-icons/react";
-import Image from "next/image";
+import { openAppOrStore } from "@/app/utils/deepLink";
 
 export default function MealPlanCard() {
   return (
@@ -29,13 +29,14 @@ export default function MealPlanCard() {
           </div>
         </div>
 
-        <a
-          href="gk-fitness://nutrition"
-          className="bg-[#C4EF00] rounded-xl py-3 px-5 flex items-center justify-center self-start w-fit active:opacity-90 hover:bg-[#b0d600] transition-colors"
+        <button
+          type="button"
+          onClick={() => openAppOrStore("nutrition")}
+          className="bg-[#C4EF00] rounded-xl py-3 px-5 flex items-center justify-center self-start w-fit active:opacity-90 hover:bg-[#b0d600] transition-colors cursor-pointer"
         >
-          <span className="text-black font-bold text-sm mr-2">Open Nutrition</span>
-          <ArrowRight size={16} color="#000000" weight="bold" />
-        </a>
+          <span className="text-black font-bold text-sm mr-2 cursor-pointer">Open Nutrition</span>
+          <ArrowRight size={16} color="#000000" weight="bold" className="cursor-pointer" />
+        </button>
       </div>
 
       <div className="absolute -right-20 top-0 bottom-0 flex justify-center items-center opacity-50 sm:opacity-100 hidden sm:flex">

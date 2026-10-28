@@ -12,7 +12,6 @@ import {
   BowlFood,
   ChartLineUp,
   DeviceMobile,
-  User as UserIcon,
   X,
 } from "@phosphor-icons/react";
 import toast from "react-hot-toast";
@@ -36,15 +35,14 @@ export default function CustomerHeader() {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      await logoutUser();
+      await logoutUser().catch(() => {});
       const supabase = createClient();
-      await supabase.auth.signOut({ scope: 'local' });
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
       toast.success("Logged out successfully");
       window.location.href = "/login";
     } catch (error) {
       console.error("Logout error:", error);
-      toast.error("Failed to log out");
-      setIsLoggingOut(false);
+      window.location.href = "/login";
     }
   };
 
@@ -76,7 +74,7 @@ export default function CustomerHeader() {
         <button
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Toggle navigation menu"
-          className="relative w-10 h-10 rounded-2xl bg-[#141414] border border-[#222222] flex flex-col items-center justify-center gap-[5px] hover:bg-[#1A1A1A] hover:border-[#333333] active:scale-95 transition-all duration-300 group focus:outline-none"
+          className="relative w-10 h-10 rounded-2xl bg-[#141414] border border-[#222222] flex flex-col items-center justify-center gap-[5px] hover:bg-[#1A1A1A] hover:border-[#333333] active:scale-95 transition-all duration-300 group focus:outline-none cursor-pointer"
         >
           <span
             className={`w-5 h-[2px] bg-white rounded-full transition-all duration-300 ease-in-out ${
@@ -99,7 +97,7 @@ export default function CustomerHeader() {
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
-          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm transition-opacity duration-300"
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm transition-opacity duration-300 cursor-pointer"
         />
       )}
 
@@ -129,7 +127,7 @@ export default function CustomerHeader() {
 
           <button
             onClick={() => setIsOpen(false)}
-            className="w-9 h-9 rounded-xl bg-[#1C1C20] border border-[#2C2C32] flex items-center justify-center text-[#8E8E93] hover:text-white hover:bg-[#25252B] transition-colors"
+            className="w-9 h-9 rounded-xl bg-[#1C1C20] border border-[#2C2C32] flex items-center justify-center text-[#8E8E93] hover:text-white hover:bg-[#25252B] transition-colors cursor-pointer"
           >
             <X size={18} weight="bold" />
           </button>
@@ -139,7 +137,7 @@ export default function CustomerHeader() {
           <a
             href="/customer"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3.5 px-4 py-3 rounded-2xl bg-[#1C1C20] text-[#D7FF00] font-semibold text-sm transition-all"
+            className="flex items-center gap-3.5 px-4 py-3 rounded-2xl bg-[#1C1C20] text-[#D7FF00] font-semibold text-sm transition-all cursor-pointer"
           >
             <House size={20} weight="fill" />
             <span>Dashboard</span>
@@ -148,7 +146,7 @@ export default function CustomerHeader() {
           <a
             href="gk-fitness://memberships"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[#C0C0C6] hover:text-white hover:bg-[#1A1A1E] font-medium text-sm transition-all"
+            className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[#C0C0C6] hover:text-white hover:bg-[#1A1A1E] font-medium text-sm transition-all cursor-pointer"
           >
             <CreditCard size={20} />
             <span>Memberships</span>
@@ -157,7 +155,7 @@ export default function CustomerHeader() {
           <a
             href="gk-fitness://workouts"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[#C0C0C6] hover:text-white hover:bg-[#1A1A1E] font-medium text-sm transition-all"
+            className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[#C0C0C6] hover:text-white hover:bg-[#1A1A1E] font-medium text-sm transition-all cursor-pointer"
           >
             <Barbell size={20} />
             <span>Workouts</span>
@@ -166,7 +164,7 @@ export default function CustomerHeader() {
           <a
             href="gk-fitness://nutrition"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[#C0C0C6] hover:text-white hover:bg-[#1A1A1E] font-medium text-sm transition-all"
+            className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[#C0C0C6] hover:text-white hover:bg-[#1A1A1E] font-medium text-sm transition-all cursor-pointer"
           >
             <BowlFood size={20} />
             <span>Nutrition</span>
@@ -175,7 +173,7 @@ export default function CustomerHeader() {
           <a
             href="gk-fitness://weekly-progress"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[#C0C0C6] hover:text-white hover:bg-[#1A1A1E] font-medium text-sm transition-all"
+            className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[#C0C0C6] hover:text-white hover:bg-[#1A1A1E] font-medium text-sm transition-all cursor-pointer"
           >
             <ChartLineUp size={20} />
             <span>Weekly Progress</span>
@@ -186,7 +184,7 @@ export default function CustomerHeader() {
           <a
             href="gk-fitness://"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[#D7FF00] bg-[#D7FF00]/10 hover:bg-[#D7FF00]/15 border border-[#D7FF00]/20 font-semibold text-sm transition-all"
+            className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[#D7FF00] bg-[#D7FF00]/10 hover:bg-[#D7FF00]/15 border border-[#D7FF00]/20 font-semibold text-sm transition-all cursor-pointer"
           >
             <DeviceMobile size={20} weight="fill" />
             <span>Open in Native App</span>
@@ -197,7 +195,7 @@ export default function CustomerHeader() {
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="w-full flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-2xl bg-[#2A1515] hover:bg-[#3D1C1C] border border-[#542222] text-[#FF5555] font-semibold text-sm transition-all disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-2xl bg-[#2A1515] hover:bg-[#3D1C1C] border border-[#542222] text-[#FF5555] font-semibold text-sm transition-all disabled:opacity-50 cursor-pointer"
           >
             {isLoggingOut ? (
               <div className="w-5 h-5 border-2 border-[#FF5555] border-t-transparent rounded-full animate-spin" />

@@ -81,10 +81,16 @@ export async function updateSession(request: NextRequest) {
       .select('role')
       .eq('userId', user.id)
       .single();
+<<<<<<< Updated upstream
       
     const rawRole = userData?.role || 'customer';
     const role = rawRole === 'individual' ? 'customer' : rawRole;
     
+=======
+
+    const role = userData?.role === 'individual' ? 'customer' : (userData?.role === 'global_trainer' ? 'globaltrainer' : (userData?.role || 'customer'));
+
+>>>>>>> Stashed changes
     if (role === 'superadmin') return createRedirectResponse('/superadmin');
     else if (role === 'owner') return createRedirectResponse('/owner');
     else if (role === 'trainer') return createRedirectResponse('/trainer');
@@ -99,10 +105,15 @@ export async function updateSession(request: NextRequest) {
       .select('role, isEmailVerified')
       .eq('userId', user.id)
       .single();
+<<<<<<< Updated upstream
       
     const rawRole = userData?.role || 'customer';
     const role = rawRole === 'individual' ? 'customer' : rawRole;
 
+=======
+
+    const role = userData?.role === 'individual' ? 'customer' : (userData?.role === 'global_trainer' ? 'globaltrainer' : (userData?.role || 'customer'));
+>>>>>>> Stashed changes
     if (pathname.startsWith('/superadmin') && role !== 'superadmin') return createRedirectResponse('/' + role);
     if (pathname.startsWith('/owner') && role !== 'owner') return createRedirectResponse('/' + role);
     if (pathname.startsWith('/trainer') && role !== 'trainer') return createRedirectResponse('/' + role);
@@ -112,3 +123,4 @@ export async function updateSession(request: NextRequest) {
 
   return supabaseResponse;
 }
+

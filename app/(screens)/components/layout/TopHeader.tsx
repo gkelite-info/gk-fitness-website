@@ -68,7 +68,7 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
       <div className="flex items-center gap-4 w-full sm:w-auto">
         <button
           onClick={onOpenSidebar}
-          className="lg:hidden flex items-center justify-center p-2 rounded-lg bg-[#15161C] border border-[#232631] text-white hover:bg-[#1f212a] transition-colors"
+          className="lg:hidden flex items-center justify-center p-2 rounded-lg bg-[#15161C] border border-[#232631] text-white hover:bg-[#1f212a] transition-colors cursor-pointer"
         >
           <List size={24} weight="bold" />
         </button>

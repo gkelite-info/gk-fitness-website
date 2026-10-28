@@ -1,6 +1,7 @@
 "use server";
 
 import { sendMailViaTransport } from "./mailTransport";
+import { sendUserRegistrationEmails } from "./registrationEmailService";
 
 export type PaymentEmailOptions = {
   email: string;
@@ -127,6 +128,8 @@ export type SignupEmailOptions = {
   userId?: string;
   role?: string;
   loginUrl?: string;
+  phone?: string;
+  gymName?: string;
 };
 
 export async function sendSignupConfirmationEmail({
@@ -135,58 +138,21 @@ export async function sendSignupConfirmationEmail({
   userId,
   role = "Customer",
   loginUrl,
+  phone = "",
+  gymName,
 }: SignupEmailOptions) {
   if (!email) {
     return { success: false, error: "No email provided." };
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const accessUrl =
-    loginUrl ||
-    (userId
-      ? `${siteUrl}/api/auth/verify-email?uid=${encodeURIComponent(userId)}&email=${encodeURIComponent(email)}`
-      : `${siteUrl}/choose-account`);
-
-  const htmlContent = `
-    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0F141F; padding: 20px;">
-      <div style="background-color: #161C24; border-radius: 12px; overflow: hidden; border: 1px solid #232B35;">
-        <div style="background: linear-gradient(135deg, #131926 0%, #0F141F 100%); padding: 30px; text-align: center; border-bottom: 1px solid #1E2638;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 0.5px;">GK <span style="color: #D4FF32;">GYM LIFE</span></h1>
-          <div style="display: inline-block; margin-top: 10px; padding: 4px 12px; background: rgba(212, 255, 50, 0.1); border: 1px solid rgba(212, 255, 50, 0.25); border-radius: 16px;">
-            <p style="color: #D4FF32; margin: 0; font-size: 12px; font-weight: 700;">Action Required: Accept Invitation</p>
-          </div>
-        </div>
-        <div style="padding: 30px; color: #CBD5E1; line-height: 1.6;">
-          <p style="font-size: 17px; margin-top: 0; color: #FFFFFF;">Hi <strong>${name}</strong>,</p>
-          <p style="font-size: 14px; color: #94A3B8;">
-            Welcome to GK- Gym Life! Your <strong>${role}</strong> account has been created. Please accept your details below to verify your email and unlock access to your portal.
-          </p>
-          <div style="background-color: #10141A; border: 1px solid #232B35; border-radius: 10px; padding: 20px; margin: 20px 0;">
-            <p style="margin: 0 0 10px 0; font-size: 12px; color: #D4FF32; font-weight: 700; text-transform: uppercase;">Registration Details</p>
-            <p style="margin: 4px 0; font-size: 14px; color: #FFFFFF;"><strong>Email:</strong> ${email}</p>
-            <p style="margin: 4px 0; font-size: 14px; color: #FFFFFF;"><strong>Account Type:</strong> ${role}</p>
-            <p style="margin: 4px 0; font-size: 14px; color: #EAB308;"><strong>Status:</strong> Pending Email Acceptance</p>
-          </div>
-          <div style="text-align: center; margin: 28px 0;">
-            <a href="${accessUrl}" style="background-color: #D4FF32; color: #000000; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 800; font-size: 14px; display: inline-block; letter-spacing: 0.3px;">
-              Accept Your Details &rarr;
-            </a>
-          </div>
-          <p style="font-size: 13px; color: #64748B; margin-bottom: 0;">
-            If you did not sign up for this account, please contact our support team.
-          </p>
-        </div>
-        <div style="background-color: #0F141F; padding: 16px; border-top: 1px solid #1E2638; text-align: center;">
-          <p style="margin: 0; color: #64748b; font-size: 12px;">GK- Gym Life &bull; Your fitness journey, our priority.</p>
-        </div>
-      </div>
-    </div>
-  `;
-
-  return await sendMailViaTransport({
-    to: email,
-    subject: "Action Required: Accept Your Details - Welcome to GK- Gym Life",
-    html: htmlContent,
+  return await sendUserRegistrationEmails({
+    name,
+    email,
+    phone,
+    role,
+    userId,
+    loginUrl,
+    gymName,
   });
 }
 

@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import { Suspense } from "react";
 import { getTrainerIndividualClients } from "@/app/actions/trainer/getTrainerIndividualClients";
 import TrainerIndividualMembershipsView from "../components/reusable/trainers/TrainerIndividualMembershipsView";
@@ -31,6 +32,30 @@ export default async function GlobalTrainerDashboard() {
           <TrainerIndividualMembershipsView initialData={initialData} />
         </Suspense>
       </div>
+=======
+import { getGlobalTrainerDashboardData } from "@/app/actions/globaltrainer/getGlobalTrainerDashboard";
+import GlobalTrainerGreeting from "./components/GlobalTrainerGreeting";
+import GlobalTrainerSessionsCard from "./components/GlobalTrainerSessionsCard";
+import GlobalTrainerScheduleSection from "./components/GlobalTrainerScheduleSection";
+import GlobalTrainerQuickActions from "./components/GlobalTrainerQuickActions";
+import GlobalTrainerSessionRequestsCard from "./components/GlobalTrainerSessionRequestsCard";
+
+export default async function GlobalTrainerDashboard() {
+  const data = await getGlobalTrainerDashboardData();
+
+  return (
+    <div className="flex flex-col pb-12">
+      <GlobalTrainerGreeting trainerName={data.trainerName} />
+      <GlobalTrainerSessionsCard
+        totalSessions={data.totalSessions}
+        completedSessions={data.completedSessions}
+        upcomingSessions={data.upcomingSessions}
+        dateLabel={data.dateLabel}
+      />
+      <GlobalTrainerScheduleSection schedule={data.schedule} />
+      <GlobalTrainerQuickActions />
+      <GlobalTrainerSessionRequestsCard pendingRequestsCount={data.pendingRequestsCount} />
+>>>>>>> Stashed changes
     </div>
   );
 }

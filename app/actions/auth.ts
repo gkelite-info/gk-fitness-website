@@ -72,14 +72,12 @@ export async function loginWithRoleAction(params: LoginRoleParams): Promise<Logi
   if (typeId) {
     if (preUserFound || preIsOwner || preIsCustomer || preIsTrainer || preIsGlobalTrainer) {
       let preRoleValid = false;
-      if (typeId === "individual") {
-        if (!preIsOwner && !preIsCustomer && !preIsTrainer && !preIsGlobalTrainer) {
+      if (typeId === "individual" || typeId === "customer" || typeId === "gym-customer") {
+        if (preIsCustomer || (!preIsOwner && !preIsTrainer && !preIsGlobalTrainer)) {
           preRoleValid = true;
         }
       } else if (typeId === "owner" || typeId === "gym-owner") {
         if (preIsOwner || uRec?.role === "superadmin") preRoleValid = true;
-      } else if (typeId === "customer" || typeId === "gym-customer") {
-        if (preIsCustomer) preRoleValid = true;
       } else if (typeId === "gym_trainer" || typeId === "gym-trainer" || typeId === "trainer") {
         if (preIsTrainer) preRoleValid = true;
       } else if (typeId === "global_trainer" || typeId === "global-trainer" || typeId === "globaltrainer") {

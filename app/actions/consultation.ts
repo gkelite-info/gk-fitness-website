@@ -6,6 +6,7 @@ import {
   DemoBookingRecord,
 } from "@/lib/helpers/demoBookings/demoBookingsHelper";
 import { capitalizeWords } from "@/lib/validations/demoValidation";
+import { sendUserRegistrationEmails } from "@/lib/helpers/registrationEmailService";
 
 export type ConsultationRole = GymRole;
 
@@ -81,6 +82,20 @@ export async function submitConsultationRequest(data: ConsultationFormData): Pro
         error: bookingRes.error || "Failed to submit demo booking.",
       };
     }
+
+    await sendUserRegistrationEmails({
+      name: capitalizeWords(fullName),
+      email: email || "",
+      phone: normalizedPhone,
+      role: (data.role as string) || "Gym Owner",
+      gymName: capitalizeWords(gymName),
+      city: capitalizeWords(city),
+      memberCount: data.memberCount || "100 - 300",
+      notes: data.notes || undefined,
+      planId: data.subscriptionPlanId || null,
+    }).catch((err) => {
+      console.warn("[submitConsultationRequest] Registration email notice:", err);
+    });
 
     return {
       success: true,
