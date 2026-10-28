@@ -1,6 +1,7 @@
 import { createUser } from '@/lib/helpers/otpHelper';
 import { rollbackRegistrationData } from '@/lib/helpers/registrationRollbackHelper';
 import { createClient } from '@/app/api/supabase/client';
+import { sendUserRegistrationEmails } from '@/lib/helpers/registrationEmailService';
 
 
 export type TrainerGender = 'male' | 'female' | 'other';
@@ -466,6 +467,19 @@ export async function saveGymTrainer(params: SaveGymTrainerParams) {
       throw new Error(
         `3-table atomic verification failed (users: ${isTable1Ok}, gym_trainers: ${isTable2Ok}, gym_trainer_schedules: ${isTable3Ok}). Initiating rollback.`
       );
+    }
+
+    if (!existingTrainer && cleanEmail) {
+      sendUserRegistrationEmails({
+        name: params.fullName.trim(),
+        email: cleanEmail,
+        phone: cleanPhone,
+        role: "Trainer",
+        userId: targetUserId,
+        gender: params.gender,
+        dob: params.dateOfBirth,
+        notes: `Specialization: ${params.specialization || "N/A"} | Experience: ${params.experienceYears || "0"} years`,
+      }).catch((e) => console.warn('[trainerHelper] Registration email error:', e));
     }
 
     return {

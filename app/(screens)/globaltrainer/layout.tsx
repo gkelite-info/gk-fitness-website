@@ -1,18 +1,18 @@
-import { ReactNode } from "react";
-import PortalLayout from "@/app/(screens)/components/layout/PortalLayout";
+import AppDeepLinkBanner from "@/app/(screens)/customer/components/AppDeepLinkBanner";
+import GlobalTrainerHeader from "./components/GlobalTrainerHeader";
 
 export default function GlobalTrainerLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   return (
-    <PortalLayout>
-      <div className="w-full h-full flex justify-center">
-        <div className="w-full max-w-[1600px]">
-          {children}
-        </div>
-      </div>
-    </PortalLayout>
+    <div className="min-h-screen bg-[#000000] flex flex-col text-white">
+      <AppDeepLinkBanner />
+      <GlobalTrainerHeader />
+      <main className="flex-1 w-full max-w-[600px] mx-auto px-5 pt-6 pb-24">
+        {children}
+      </main>
+    </div>
   );
 }

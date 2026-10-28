@@ -41,7 +41,8 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
       return <SidebarShimmer />;
     }
 
-    switch (profile.role) {
+    const role = (profile.role || "").toLowerCase().replace(/[-_]/g, "");
+    switch (role) {
       case "superadmin":
         return <SuperAdminSidebar />;
       case "owner":
@@ -51,6 +52,7 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
       case "globaltrainer":
         return <GlobalTrainerSidebar />;
       case "customer":
+      case "individual":
         return <CustomerSidebar />;
       default:
         return <SidebarShimmer />;

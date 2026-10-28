@@ -25,12 +25,16 @@ function LoginContent() {
   const signupUrl = `/signup?type=individual${planId ? `&planId=${encodeURIComponent(planId)}&planName=${encodeURIComponent(planName || "")}` : ""}`;
 
   useEffect(() => {
+    if (searchParams.get("verified") === "true") {
+      toast.success("Email verified successfully! Please sign in to continue.", { id: "email-verified-toast" });
+    }
+
     async function handleSsoRedirect() {
       if (typeof window === "undefined") return;
 
-      const searchParams = new URLSearchParams(window.location.search);
-      let accessToken = searchParams.get("access_token");
-      let refreshToken = searchParams.get("refresh_token");
+      const sp = new URLSearchParams(window.location.search);
+      let accessToken = sp.get("access_token");
+      let refreshToken = sp.get("refresh_token");
 
       if (!accessToken && window.location.hash) {
         const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
@@ -41,19 +45,14 @@ function LoginContent() {
       if (accessToken) {
         setLoading(true);
         const finalParams = new URLSearchParams(window.location.search);
-        if (!finalParams.has("access_token") && accessToken) {
-          finalParams.set("access_token", accessToken);
-        }
-        if (!finalParams.has("refresh_token") && refreshToken) {
-          finalParams.set("refresh_token", refreshToken);
-        }
+        if (accessToken) finalParams.set("access_token", accessToken);
+        if (refreshToken) finalParams.set("refresh_token", refreshToken);
         window.location.href = `/api/auth/sso?${finalParams.toString()}`;
-        return;
       }
     }
 
     handleSsoRedirect();
-  }, []);
+  }, [searchParams]);
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -76,7 +75,7 @@ function LoginContent() {
 
     setLoading(true);
 
-    const { error: authError, role } = await loginUser(email, password);
+    const { error: authError, role } = await loginUser(email, password, typeParam);
 
     if (authError) {
       toast.error(authError, { id: "login-auth-error" });
@@ -96,15 +95,16 @@ function LoginContent() {
       return;
     }
 
-    if (role === "superadmin") {
+    const normalizedRole = (role || "").toLowerCase().trim();
+    if (normalizedRole === "superadmin") {
       window.location.href = "/superadmin";
-    } else if (role === "owner") {
+    } else if (normalizedRole === "owner") {
       window.location.href = "/owner";
-    } else if (role === "trainer") {
-      window.location.href = "/trainer";
-    } else if (role === "globaltrainer") {
+    } else if (normalizedRole === "globaltrainer" || normalizedRole === "global_trainer" || typeParam === "globaltrainer") {
       window.location.href = "/globaltrainer";
-    } else if (role === "customer" || role === "individual") {
+    } else if (normalizedRole === "trainer") {
+      window.location.href = "/trainer";
+    } else if (normalizedRole === "customer" || normalizedRole === "individual" || typeParam === "individual" || role === "customer" || role === "individual") {
       window.location.href = "/customer";
     } else {
       window.location.href = "/";

@@ -62,9 +62,6 @@ export default function UploadReviewModal({
     setIsSubmitting(true);
 
     try {
-      /* Video uploading commented out - Here text and photos will be uploaded
-      const finalVideos: string[] = videos.filter((v) => !v.startsWith("blob:"));
-      */
       const finalPhotos: string[] = photos.filter((p) => !p.startsWith("blob:"));
       let uploadedAttachmentUrl: string | null = null;
 
@@ -86,24 +83,13 @@ export default function UploadReviewModal({
 
           if (uploadRes.url) {
             uploadedAttachmentUrl = uploadRes.url;
-            /* Video uploading commented out - Here text and photos will be uploaded
-            if (file.type.startsWith("video/")) {
-              if (!finalVideos.includes(uploadRes.url)) {
-                finalVideos.push(uploadRes.url);
-              }
-            } else {
-            */
             if (!finalPhotos.includes(uploadRes.url)) {
               finalPhotos.push(uploadRes.url);
             }
-            /* } */
           }
         }
       }
 
-      /* Video uploading commented out - Here text and photos will be uploaded
-      const deduplicatedVideos = Array.from(new Set(finalVideos));
-      */
       const deduplicatedPhotos = Array.from(new Set(finalPhotos));
 
       if (!uploadedAttachmentUrl) {
@@ -117,6 +103,7 @@ export default function UploadReviewModal({
         ratings: Number(rating),
         review: reviewText,
         attachmentUrl: uploadedAttachmentUrl,
+        status: "pending",
       });
 
       if (!res.success) {
@@ -137,36 +124,37 @@ export default function UploadReviewModal({
         rating,
         text: reviewText,
         photos: deduplicatedPhotos.length > 0 ? deduplicatedPhotos : ["/images/landing/crm-technology.jpg"],
-        videos: [] /* Video uploading commented out - Here text and photos will be uploaded */,
+        videos: [],
         date: today,
       });
 
-      toast.success("Review and photo saved successfully!");
+      toast.success("Review and photo submitted successfully!");
       onClose();
     } catch (err: any) {
-      toast.error(err?.message || "Failed to upload review");
+      toast.error(err?.message || "Failed to submit review.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg bg-[#14151A] border border-[#232631] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#232631] shrink-0">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+      <div className="relative w-full max-w-lg bg-[#14151A] border border-[#232631] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#232631]">
           <div>
-            <h3 className="text-base sm:text-lg font-bold text-white">Upload Review</h3>
+            <h3 className="text-base sm:text-lg font-black uppercase italic tracking-tight text-white">
+              SHARE YOUR <span className="text-[#D4FF32] not-italic">EXPERIENCE</span>
+            </h3>
             <p className="text-xs text-[#94A3B8] mt-0.5">
-              Share your journey and photos with GK- Gym Life.
-              {/* Video uploading in comment: and workout videos */}
+              Upload photos and tell us about your journey
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#94A3B8] hover:text-white hover:bg-[#1E2028] transition-colors cursor-pointer shrink-0"
+            className="w-8 h-8 rounded-lg bg-[#1C1E24] hover:bg-[#252830] text-[#94A3B8] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
           >
-            <X size={20} weight="bold" />
+            <X size={18} weight="bold" />
           </button>
         </div>
 
@@ -178,6 +166,7 @@ export default function UploadReviewModal({
             <input
               type="text"
               required
+              maxLength={255}
               placeholder="e.g. Rahul Sharma"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
@@ -192,6 +181,7 @@ export default function UploadReviewModal({
             <input
               type="email"
               required
+              maxLength={255}
               placeholder="e.g. yourname@gmail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -239,12 +229,18 @@ export default function UploadReviewModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5 uppercase tracking-wider">
-              YOUR REVIEW / EXPERIENCE *
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-[#CBD5E1] uppercase tracking-wider">
+                YOUR REVIEW / EXPERIENCE *
+              </label>
+              <span className="text-[11px] text-[#64748B]">
+                {reviewText.length}/255
+              </span>
+            </div>
             <textarea
               required
               rows={3}
+              maxLength={255}
               placeholder="Tell us about your experience with GK- Gym Life, operations, gym workouts, or coaching..."
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}

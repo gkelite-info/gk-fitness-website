@@ -2,41 +2,133 @@
 
 import { createClient } from "@/app/api/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
 
-export async function loginUser(email: string, password: string) {
+async function clearAuthCookies() {
+  try {
+    const cookieStore = await cookies();
+    const allCookies = cookieStore.getAll();
+    allCookies.forEach((c) => {
+      if (c.name.startsWith("sb-") || c.name.includes("auth-token") || c.name.includes("supabase")) {
+        cookieStore.delete(c.name);
+        cookieStore.set(c.name, "", { maxAge: 0, path: "/" });
+      }
+    });
+  } catch (err) {
+    console.error("Error clearing auth cookies:", err);
+  }
+}
+
+export async function loginUser(email: string, password: string, selectedType?: string | null) {
   const supabase = await createClient();
+  const cleanEmail = email.trim().toLowerCase();
+
   const { data, error } = await supabase.auth.signInWithPassword({
-    email,
+    email: cleanEmail,
     password,
   });
 
   if (error) {
+    if (error.message.toLowerCase().includes("email not confirmed")) {
+      return { error: "Please verify your email address by clicking the confirmation link sent to your email before logging in." };
+    }
     return { error: error.message };
   }
 
-  // Fetch the user's role
+  // Fetch the user's role and verification status
   const { data: userData } = await supabase
     .from("users")
-    .select("role")
+    .select("role, isEmailVerified, email")
     .eq("userId", data.user.id)
-    .single();
+    .maybeSingle();
 
-  if (userData?.role && data.user.user_metadata?.role !== userData.role) {
-    await supabase.auth.updateUser({
-      data: { role: userData.role },
-    });
+  let userRecord = userData;
+  if (!userRecord && data.user.email) {
+    const { data: emailUser } = await supabase
+      .from("users")
+      .select("role, isEmailVerified, email")
+      .eq("email", data.user.email.toLowerCase().trim())
+      .maybeSingle();
+    userRecord = emailUser;
   }
 
-  return { success: true, role: userData?.role };
+  const rawRole = (userRecord?.role || data.user.user_metadata?.role || "").toLowerCase().trim();
+  const cleanRole = rawRole.replace(/[-_]/g, "");
+
+  if (userRecord && userRecord.role === "individual") {
+    userRecord.role = "customer";
+    await supabase
+      .from("users")
+      .update({ role: "customer" })
+      .eq("userId", data.user.id);
+  }
+
+  if (userRecord && userRecord.role === "global_trainer") {
+    userRecord.role = "globaltrainer";
+    await supabase
+      .from("users")
+      .update({ role: "globaltrainer" })
+      .eq("userId", data.user.id);
+  }
+
+  if (cleanRole === "globaltrainer" && userRecord && userRecord.isEmailVerified === false) {
+    userRecord.isEmailVerified = true;
+    await supabase
+      .from("users")
+      .update({ isEmailVerified: true })
+      .eq("userId", data.user.id);
+  }
+
+  if (data?.user?.email_confirmed_at && userRecord && userRecord.isEmailVerified === false) {
+    userRecord.isEmailVerified = true;
+    await supabase
+      .from("users")
+      .update({ isEmailVerified: true })
+      .eq("userId", data.user.id);
+  }
+
+  if (userRecord && userRecord.isEmailVerified === false && !data?.user?.email_confirmed_at && cleanRole !== "globaltrainer") {
+    await clearAuthCookies();
+    return { error: "Please check your email and click the confirmation link to activate your account before logging in." };
+  }
+
+  if (selectedType) {
+    const normalizedType = selectedType.toLowerCase().trim().replace(/[-_]/g, "");
+    let roleMatches = false;
+
+    if (normalizedType === "globaltrainer") {
+      roleMatches = cleanRole === "globaltrainer" || cleanRole === "trainer";
+    } else if (normalizedType === "owner" || normalizedType === "gymowner") {
+      roleMatches = cleanRole === "owner" || cleanRole === "superadmin";
+    } else if (normalizedType === "individual" || normalizedType === "customer") {
+      roleMatches = cleanRole === "customer" || cleanRole === "individual";
+    } else if (normalizedType === "trainer") {
+      roleMatches = cleanRole === "trainer" || cleanRole === "globaltrainer";
+    } else {
+      roleMatches = true;
+    }
+
+    if (!roleMatches) {
+      await clearAuthCookies();
+      return { error: "Invalid credentials or check role" };
+    }
+  }
+
+  if (userRecord?.role && data.user.user_metadata?.role !== userRecord.role) {
+    try {
+      await supabase.auth.updateUser({
+        data: { role: userRecord.role },
+      });
+    } catch {
+      // Best-effort metadata update
+    }
+  }
+
+  return { success: true, role: userRecord?.role || data.user.user_metadata?.role };
 }
 
 export async function logoutUser() {
-  try {
-    const supabase = await createClient();
-    await supabase.auth.signOut({ scope: 'local' });
-  } catch (err) {
-    console.error("Error signing out on server:", err);
-  }
+  await clearAuthCookies();
   return { success: true };
 }
 
@@ -76,6 +168,10 @@ export async function getCurrentUserRole() {
       .select("role, name, email, isEmailVerified")
       .eq("userId", user.id)
       .maybeSingle();
+
+    if (userData && userData.isEmailVerified === false) {
+      return { success: false, error: "Email not verified" };
+    }
 
     return {
       success: true,

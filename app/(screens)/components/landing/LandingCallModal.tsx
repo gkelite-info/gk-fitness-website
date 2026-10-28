@@ -31,7 +31,7 @@ export default function LandingCallModal({
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(phoneNumber);
+      await navigator.clipboard.writeText(`+91${phoneNumber}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2200);
     } catch {
@@ -60,7 +60,7 @@ export default function LandingCallModal({
                 Call GK-Gym Life
               </h3>
               <p className="text-xs text-[#94A3B8]">
-                Direct Contact & Support
+                Direct Contact &amp; Support
               </p>
             </div>
           </div>

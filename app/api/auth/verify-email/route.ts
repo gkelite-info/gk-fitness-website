@@ -5,10 +5,16 @@ import { createClient as createServerClient } from "@/app/api/supabase/server";
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const uid = searchParams.get("uid");
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin || "http://localhost:3000";
+  const email = searchParams.get("email");
 
-  if (!uid) {
-    return NextResponse.redirect(`${siteUrl}/choose-account?error=invalid_verification`);
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const host = forwardedHost || request.headers.get("host");
+  const isLocal = host?.includes("localhost") || host?.includes("127.0.0.1");
+  const proto = request.headers.get("x-forwarded-proto") || (isLocal ? "http" : "https");
+  const siteUrl = host ? `${proto}://${host}` : (request.nextUrl.origin || "https://www.gkgymlife.com");
+
+  if (!uid && !email) {
+    return NextResponse.redirect(`${siteUrl}/login?type=individual&error=invalid_verification`);
   }
 
   try {
@@ -20,31 +26,41 @@ export async function GET(request: NextRequest) {
         auth: { persistSession: false },
       });
 
-      await adminClient
-        .from("users")
-        .update({
-          isEmailVerified: true,
-          updatedAt: new Date().toISOString(),
-        })
-        .eq("userId", uid);
+      if (uid && email) {
+        await adminClient
+          .from("users")
+          .update({ isEmailVerified: true, updatedAt: new Date().toISOString() })
+          .or(`userId.eq.${uid},email.eq.${email.trim().toLowerCase()}`);
+      } else if (uid) {
+        await adminClient
+          .from("users")
+          .update({ isEmailVerified: true, updatedAt: new Date().toISOString() })
+          .eq("userId", uid);
+      } else if (email) {
+        await adminClient
+          .from("users")
+          .update({ isEmailVerified: true, updatedAt: new Date().toISOString() })
+          .eq("email", email.trim().toLowerCase());
+      }
 
-      await adminClient.auth.admin.updateUserById(uid, {
-        email_confirm: true,
-      });
+      if (uid) {
+        await adminClient.auth.admin.updateUserById(uid, {
+          email_confirm: true,
+        });
+      }
     } else {
       const serverClient = await createServerClient();
-      await serverClient
-        .from("users")
-        .update({
-          isEmailVerified: true,
-          updatedAt: new Date().toISOString(),
-        })
-        .eq("userId", uid);
+      if (uid) {
+        await serverClient
+          .from("users")
+          .update({ isEmailVerified: true, updatedAt: new Date().toISOString() })
+          .eq("userId", uid);
+      }
     }
 
-    return NextResponse.redirect(`${siteUrl}/choose-account?verified=true`);
+    return NextResponse.redirect(`${siteUrl}/login?type=individual&verified=true`);
   } catch (err) {
     console.error("[verify-email] Verification error:", err);
-    return NextResponse.redirect(`${siteUrl}/choose-account?error=verification_failed`);
+    return NextResponse.redirect(`${siteUrl}/login?type=individual&error=verification_failed`);
   }
 }

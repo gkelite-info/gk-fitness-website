@@ -34,6 +34,12 @@ const ALL_ACCOUNT_TYPES: AccountTypeItem[] = [
     typeId: "owner",
     icon: Buildings,
   },
+  {
+    id: "globaltrainer",
+    title: "Global Trainer",
+    typeId: "globaltrainer",
+    icon: Globe,
+  },
 ];
 
 function ChooseAccountContent() {
@@ -46,7 +52,7 @@ function ChooseAccountContent() {
   const isPlanFlow = Boolean(planId || fromParam === "plan");
 
   const accountTypes = isPlanFlow
-    ? ALL_ACCOUNT_TYPES.filter((item) => item.id !== "owner")
+    ? ALL_ACCOUNT_TYPES.filter((item) => item.id !== "owner" && item.id !== "globaltrainer")
     : ALL_ACCOUNT_TYPES;
 
   useEffect(() => {
@@ -71,7 +77,9 @@ function ChooseAccountContent() {
           router.replace("/superadmin");
         } else if (userRole === "owner") {
           router.replace("/owner");
-        } else if (userRole === "trainer" || userRole === "global_trainer" || userRole === "globaltrainer") {
+        } else if (userRole === "globaltrainer" || userRole === "global_trainer") {
+          router.replace("/globaltrainer");
+        } else if (userRole === "trainer") {
           router.replace("/trainer");
         } else {
           router.replace("/customer");

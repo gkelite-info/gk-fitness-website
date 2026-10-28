@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { Phone, WhatsappLogo } from "@phosphor-icons/react";
 import LandingCallModal from "./LandingCallModal";
+import LandingWhatsAppModal from "./LandingWhatsAppModal";
 
 export default function LandingStickyMobileBar() {
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
 
   const scrollToAudit = () => {
     const el = document.getElementById("audit-form");
@@ -25,15 +27,14 @@ export default function LandingStickyMobileBar() {
           Request For Demo
         </button>
 
-        <a
-          href="https://wa.me/919000266832?text=Hi,%20I%20want%20to%20know%20more%20about%20GK-%20Gym%20Life%20Powered%20Gyms"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
+          onClick={() => setIsWhatsAppModalOpen(true)}
           aria-label="Chat on WhatsApp"
-          className="w-12 h-12 rounded-xl bg-[#15161C] border border-white/10 flex items-center justify-center text-[#25D366] hover:bg-white/10 transition-colors shrink-0"
+          className="w-12 h-12 rounded-xl bg-[#15161C] border border-white/10 flex items-center justify-center text-[#25D366] hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
         >
           <WhatsappLogo size={22} weight="fill" />
-        </a>
+        </button>
 
         <button
           type="button"
@@ -48,6 +49,12 @@ export default function LandingStickyMobileBar() {
       <LandingCallModal
         isOpen={isCallModalOpen}
         onClose={() => setIsCallModalOpen(false)}
+        phoneNumber="9000266832"
+      />
+
+      <LandingWhatsAppModal
+        isOpen={isWhatsAppModalOpen}
+        onClose={() => setIsWhatsAppModalOpen(false)}
         phoneNumber="9000266832"
       />
     </>

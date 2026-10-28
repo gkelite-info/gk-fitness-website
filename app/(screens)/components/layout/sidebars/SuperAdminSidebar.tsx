@@ -17,6 +17,7 @@ import {
   CurrencyCircleDollar,
   CookingPot,
   User,
+  ChatCircleDots,
 } from "@phosphor-icons/react";
 
 interface NavItem {
@@ -35,6 +36,7 @@ const navLinks: NavItem[] = [
   { name: "Gyms", href: "/superadmin/gyms", icon: Barbell, badge: 120 },
   { name: "Demo Requests", href: "/superadmin/demo-requests", icon: EnvelopeSimple },
   { name: "Website Videos", href: "/superadmin/website-videos", icon: PlayCircle },
+  { name: "Website Reviews", href: "/superadmin/reviews", icon: ChatCircleDots },
   { name: "Trainers", href: "/superadmin/trainers", icon: Users, badge: 48 },
   { name: "Explore", href: "/superadmin/explore", icon: MagnifyingGlass },
   { name: "Plans & Subscriptions", href: "/superadmin/plans", icon: Star },

@@ -1,109 +1,30 @@
-import { createClient } from "@supabase/supabase-js";
-import { supabase as anonSupabase } from "@/lib/supabase";
+import {
+  ReviewRole,
+  ReviewStatus,
+  ReviewRecord,
+  CreateReviewInput,
+  UpdateReviewInput,
+  FetchReviewsFilters,
+} from "./reviewsTypes";
+import { getAdminClient } from "./reviewsStorageHelper";
 
-export type ReviewRole = "owner" | "trainer" | "customer" | "globaltrainer" | "individual" | "superadmin";
-
-export interface ReviewRecord {
-  reviewId: string;
-  fullname: string;
-  email: string;
-  role: ReviewRole;
-  ratings: number;
-  review: string | null;
-  attachmentUrl: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateReviewInput {
-  reviewId?: string;
-  fullname: string;
-  email: string;
-  role: ReviewRole | string;
-  ratings: number;
-  review?: string | null;
-  attachmentUrl?: string | null;
-}
-
-export interface FetchReviewsFilters {
-  role?: ReviewRole;
-  minRating?: number;
-  limit?: number;
-  offset?: number;
-}
-
-export const REVIEWS_BUCKET = "reviews";
-
-export function getAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://swzhxokkrolnxvhekrmj.supabase.co";
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (serviceRoleKey) {
-    return createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false },
-    });
-  }
-
-  return anonSupabase;
-}
+export * from "./reviewsTypes";
+export * from "./reviewsStorageHelper";
 
 export function normalizeReviewRole(rawRole: string): ReviewRole {
   const lower = (rawRole || "").toLowerCase().trim();
   if (lower.includes("owner")) return "owner";
-  if (lower.includes("trainer") || lower.includes("coach")) return "trainer";
   if (lower.includes("global")) return "globaltrainer";
+  if (lower.includes("trainer") || lower.includes("coach")) return "trainer";
   if (lower.includes("admin")) return "superadmin";
   return "customer";
 }
 
-export async function ensureReviewsBucket(): Promise<boolean> {
-  try {
-    const adminClient = getAdminClient();
-    const { data: buckets } = await adminClient.storage.listBuckets();
-    const exists = buckets?.some((b) => b.name === REVIEWS_BUCKET);
-
-    if (!exists) {
-      const { error } = await adminClient.storage.createBucket(REVIEWS_BUCKET, {
-        public: true,
-        fileSizeLimit: 52428800,
-      });
-      return !error;
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export async function uploadReviewAttachment(
-  fileData: ArrayBuffer | Blob | Buffer,
-  fileName: string,
-  contentType?: string
-): Promise<{ publicUrl: string | null; error?: string }> {
-  try {
-    const adminClient = getAdminClient();
-    const cleanName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, "");
-    const storagePath = `uploads/${Date.now()}_${cleanName}`;
-
-    const { error: uploadError } = await adminClient.storage
-      .from(REVIEWS_BUCKET)
-      .upload(storagePath, fileData, {
-        contentType: contentType || "application/octet-stream",
-        upsert: true,
-      });
-
-    if (uploadError) {
-      return { publicUrl: null, error: uploadError.message };
-    }
-
-    const { data: publicUrlData } = adminClient.storage
-      .from(REVIEWS_BUCKET)
-      .getPublicUrl(storagePath);
-
-    return { publicUrl: publicUrlData.publicUrl };
-  } catch (err: any) {
-    return { publicUrl: null, error: err?.message || "Storage upload failed" };
-  }
+export function normalizeReviewStatus(rawStatus?: string | null): ReviewStatus {
+  const lower = (rawStatus || "").toLowerCase().trim();
+  if (lower === "visible" || lower === "approved") return "visible";
+  if (lower === "invisible" || lower === "deleted" || lower === "hidden" || lower === "rejected") return "invisible";
+  return "pending";
 }
 
 export async function createReview(
@@ -121,16 +42,18 @@ export async function createReview(
     const client = getAdminClient();
     const now = new Date().toISOString();
     const validRole = normalizeReviewRole(input.role);
+    const validStatus = normalizeReviewStatus(input.status);
     const reviewId = input.reviewId || crypto.randomUUID();
 
     const insertPayload: ReviewRecord = {
       reviewId,
-      fullname: input.fullname.trim(),
-      email: input.email.trim(),
+      fullname: input.fullname.trim().slice(0, 255),
+      email: input.email.trim().slice(0, 255),
       role: validRole,
       ratings: Number(input.ratings) || 5,
-      review: input.review?.trim() || null,
-      attachmentUrl: input.attachmentUrl?.trim() || null,
+      review: input.review ? input.review.trim().slice(0, 255) : null,
+      attachmentUrl: input.attachmentUrl ? input.attachmentUrl.trim().slice(0, 255) : null,
+      status: validStatus,
       createdAt: now,
       updatedAt: now,
     };
@@ -161,12 +84,22 @@ export async function fetchReviews(
       .select("*", { count: "exact" })
       .order("createdAt", { ascending: false });
 
-    if (filters?.role) {
+    if (filters?.role && filters.role !== ("all" as any)) {
       query = query.eq("role", filters.role);
+    }
+
+    if (filters?.status && filters.status !== "all") {
+      const normalized = normalizeReviewStatus(filters.status);
+      query = query.eq("status", normalized);
     }
 
     if (typeof filters?.minRating === "number") {
       query = query.gte("ratings", filters.minRating);
+    }
+
+    if (filters?.searchQuery?.trim()) {
+      const q = filters.searchQuery.trim();
+      query = query.or(`fullname.ilike.%${q}%,email.ilike.%${q}%,review.ilike.%${q}%`);
     }
 
     if (typeof filters?.limit === "number") {
@@ -204,6 +137,90 @@ export async function fetchReviewById(
     return { data };
   } catch (err: any) {
     return { data: null, error: err?.message || "Failed to fetch review." };
+  }
+}
+
+export async function updateReviewStatus(
+  reviewId: string,
+  status: ReviewStatus | string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const client = getAdminClient();
+    const { error } = await client
+      .from("reviews")
+      .update({
+        status: normalizeReviewStatus(status),
+        updatedAt: new Date().toISOString(),
+      })
+      .eq("reviewId", reviewId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to update review status." };
+  }
+}
+
+export async function batchUpdateReviewStatus(
+  reviewIds: string[],
+  status: ReviewStatus | string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!reviewIds || reviewIds.length === 0) return { success: true };
+    const client = getAdminClient();
+    const { error } = await client
+      .from("reviews")
+      .update({
+        status: normalizeReviewStatus(status),
+        updatedAt: new Date().toISOString(),
+      })
+      .in("reviewId", reviewIds);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to batch update reviews." };
+  }
+}
+
+export async function updateReview(
+  reviewId: string,
+  updates: UpdateReviewInput
+): Promise<{ data: ReviewRecord | null; error?: string }> {
+  try {
+    const client = getAdminClient();
+    const payload: Record<string, any> = {
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (updates.fullname !== undefined) payload.fullname = updates.fullname.trim().slice(0, 255);
+    if (updates.email !== undefined) payload.email = updates.email.trim().slice(0, 255);
+    if (updates.role !== undefined) payload.role = normalizeReviewRole(updates.role);
+    if (updates.ratings !== undefined) payload.ratings = Number(updates.ratings) || 5;
+    if (updates.review !== undefined) payload.review = updates.review ? updates.review.trim().slice(0, 255) : null;
+    if (updates.attachmentUrl !== undefined) payload.attachmentUrl = updates.attachmentUrl ? updates.attachmentUrl.trim().slice(0, 255) : null;
+    if (updates.status !== undefined) payload.status = normalizeReviewStatus(updates.status);
+
+    const { data, error } = await client
+      .from("reviews")
+      .update(payload)
+      .eq("reviewId", reviewId)
+      .select()
+      .single();
+
+    if (error) {
+      return { data: null, error: error.message };
+    }
+
+    return { data };
+  } catch (err: any) {
+    return { data: null, error: err?.message || "Failed to update review." };
   }
 }
 

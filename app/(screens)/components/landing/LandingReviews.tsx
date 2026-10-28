@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Camera, Plus } from "@phosphor-icons/react";
 import UploadReviewModal from "./UploadReviewModal";
@@ -8,6 +8,7 @@ import ReviewDetailModal, { ReviewItem } from "./ReviewDetailModal";
 import LandingReviewCard from "./LandingReviewCard";
 import LandingReviewsShimmer from "./LandingReviewsShimmer";
 import { getReviewsAction } from "@/app/actions/reviews";
+import { useRealtimeReviews } from "@/lib/hooks/reviews/useRealtimeReviews";
 
 export default function LandingReviews() {
   const router = useRouter();
@@ -36,68 +37,75 @@ export default function LandingReviews() {
     router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
   };
 
-  useEffect(() => {
-    async function loadDbReviews() {
-      try {
-        const res = await getReviewsAction({ limit: 12 });
-        if (res.success && res.data && res.data.length > 0) {
-          const mapped: ReviewItem[] = res.data.map((r) => {
-            const initials =
-              r.fullname
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()
-                .slice(0, 2) || "U";
+  const loadDbReviews = useCallback(async () => {
+    try {
+      const res = await getReviewsAction({ limit: 12 });
+      if (res.success && res.data && res.data.length > 0) {
+        const visibleReviews = res.data.filter(
+          (r) => r.status === "visible" || (r.status as any) === "approved"
+        );
 
-            const isVideo =
-              r.attachmentUrl &&
-              (r.attachmentUrl.endsWith(".mp4") ||
-                r.attachmentUrl.endsWith(".webm") ||
-                r.attachmentUrl.endsWith(".mov") ||
-                r.attachmentUrl.includes("video"));
+        const mapped: ReviewItem[] = visibleReviews.map((r) => {
+          const initials =
+            r.fullname
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .toUpperCase()
+              .slice(0, 2) || "U";
 
-            return {
-              id: r.reviewId,
-              initials,
-              initialsBg: "bg-[#D4FF32]/20 text-[#D4FF32]",
-              name: r.fullname,
-              role:
-                r.role === "owner"
-                  ? "Gym Owner"
-                  : r.role === "trainer"
-                    ? "Trainer / Coach"
-                    : r.role === "globaltrainer"
-                      ? "Global Trainer"
-                      : r.role === "individual"
-                        ? "Global Customer"
-                        : r.role === "superadmin"
-                          ? "Super Admin"
-                          : "Gym Member",
-              rating: Math.round(r.ratings),
-              text: r.review || "",
-              videos: isVideo && r.attachmentUrl ? [r.attachmentUrl] : [],
-              photos: !isVideo && r.attachmentUrl ? [r.attachmentUrl] : [],
-              date: new Intl.DateTimeFormat("en-US", {
-                month: "short",
-                day: "2-digit",
-                year: "numeric",
-              }).format(new Date(r.createdAt)),
-            };
-          });
+          const isVideo =
+            r.attachmentUrl &&
+            (r.attachmentUrl.endsWith(".mp4") ||
+              r.attachmentUrl.endsWith(".webm") ||
+              r.attachmentUrl.endsWith(".mov") ||
+              r.attachmentUrl.includes("video"));
 
-          setReviews(mapped);
-        } else {
-          setReviews([]);
-        }
-      } catch {
+          return {
+            id: r.reviewId,
+            initials,
+            initialsBg: "bg-[#D4FF32]/20 text-[#D4FF32]",
+            name: r.fullname,
+            role:
+              r.role === "owner"
+                ? "Gym Owner"
+                : r.role === "trainer"
+                  ? "Trainer / Coach"
+                  : r.role === "globaltrainer"
+                    ? "Global Trainer"
+                    : (r.role as string) === "individual"
+                      ? "Global Customer"
+                      : r.role === "superadmin"
+                        ? "Super Admin"
+                        : "Gym Member",
+            rating: Math.round(r.ratings),
+            text: r.review || "",
+            videos: isVideo && r.attachmentUrl ? [r.attachmentUrl] : [],
+            photos: !isVideo && r.attachmentUrl ? [r.attachmentUrl] : [],
+            date: new Intl.DateTimeFormat("en-US", {
+              month: "short",
+              day: "2-digit",
+              year: "numeric",
+            }).format(new Date(r.createdAt)),
+          };
+        });
+
+        setReviews(mapped);
+      } else {
         setReviews([]);
-      } finally {
-        setIsLoading(false);
       }
+    } catch {
+      setReviews([]);
+    } finally {
+      setIsLoading(false);
     }
-    loadDbReviews();
   }, []);
+
+  useEffect(() => {
+    loadDbReviews();
+  }, [loadDbReviews]);
+
+  useRealtimeReviews(loadDbReviews);
 
   const handleAddNewReview = (newRev: {
     name: string;
@@ -178,7 +186,6 @@ export default function LandingReviews() {
             <h3 className="text-base sm:text-lg font-bold text-white mb-1.5">No Reviews Yet</h3>
             <p className="text-xs sm:text-sm text-[#94A3B8] max-w-md mb-6">
               Be the first to share your fitness journey, photos, and experience with the GK- Gym Life community.
-              {/* Video uploading in comment: workout videos */}
             </p>
             <button
               type="button"

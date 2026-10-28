@@ -15,17 +15,22 @@ interface LandingRoiCalculatorProps {
 }
 
 export default function LandingRoiCalculator({ onOpenConsultation }: LandingRoiCalculatorProps) {
-  const [planAmount, setPlanAmount] = useState<number>(1999);
-  const [customers, setCustomers] = useState<number>(250);
-  const [rentExpense, setRentExpense] = useState<number>(60000);
-  const [staffExpense, setStaffExpense] = useState<number>(45000);
-  const [maintenanceExpense, setMaintenanceExpense] = useState<number>(20000);
-  const [otherExpense, setOtherExpense] = useState<number>(15000);
+  const [planAmount, setPlanAmount] = useState<number | "">("");
+  const [customers, setCustomers] = useState<number | "">("");
+  const [rentExpense, setRentExpense] = useState<number | "">("");
+  const [staffExpense, setStaffExpense] = useState<number | "">("");
+  const [maintenanceExpense, setMaintenanceExpense] = useState<number | "">("");
+  const [otherExpense, setOtherExpense] = useState<number | "">("");
 
-  const totalMembers = customers;
-  const monthlyRevenue = Math.max(0, customers * planAmount);
+  const totalMembers = typeof customers === "number" ? customers : 0;
+  const numPlan = typeof planAmount === "number" ? planAmount : 0;
+  const monthlyRevenue = Math.max(0, totalMembers * numPlan);
   const yearlyRevenue = monthlyRevenue * 12;
-  const monthlyExpenses = Math.max(0, rentExpense + staffExpense + maintenanceExpense + otherExpense);
+  const numRent = typeof rentExpense === "number" ? rentExpense : 0;
+  const numStaff = typeof staffExpense === "number" ? staffExpense : 0;
+  const numMaintenance = typeof maintenanceExpense === "number" ? maintenanceExpense : 0;
+  const numOther = typeof otherExpense === "number" ? otherExpense : 0;
+  const monthlyExpenses = Math.max(0, numRent + numStaff + numMaintenance + numOther);
   const yearlyExpenses = monthlyExpenses * 12;
   const monthlyNetProfit = monthlyRevenue - monthlyExpenses;
   const yearlyNetProfit = yearlyRevenue - yearlyExpenses;
@@ -63,10 +68,10 @@ export default function LandingRoiCalculator({ onOpenConsultation }: LandingRoiC
                 </span>
                 <input
                   type="number"
-                  placeholder="e.g. 1999"
-                  value={planAmount === 0 ? "" : planAmount}
-                  onChange={(e) => setPlanAmount(Math.max(0, Number(e.target.value) || 0))}
-                  className="w-full h-14 pl-9 pr-24 rounded-xl bg-[#0F1015] border border-white/10 text-white font-black text-lg sm:text-xl focus:border-[#D4FF32] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                  placeholder="1999"
+                  value={planAmount}
+                  onChange={(e) => setPlanAmount(e.target.value === "" ? "" : Math.max(0, Number(e.target.value)))}
+                  className="w-full h-14 pl-9 pr-24 rounded-xl bg-[#0F1015] border border-white/10 text-white font-black text-lg sm:text-xl placeholder:text-[#64748B] focus:border-[#D4FF32] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[#94A3B8] pointer-events-none">
                   / Month
@@ -84,10 +89,10 @@ export default function LandingRoiCalculator({ onOpenConsultation }: LandingRoiC
               <div className="relative">
                 <input
                   type="number"
-                  placeholder="Enter customer count"
-                  value={customers === 0 ? "" : customers}
-                  onChange={(e) => setCustomers(Math.max(0, Number(e.target.value) || 0))}
-                  className="w-full h-14 pl-4 pr-24 rounded-xl bg-[#0F1015] border border-white/10 text-white font-black text-lg sm:text-xl focus:border-[#D4FF32] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                  placeholder="250"
+                  value={customers}
+                  onChange={(e) => setCustomers(e.target.value === "" ? "" : Math.max(0, Number(e.target.value)))}
+                  className="w-full h-14 pl-4 pr-24 rounded-xl bg-[#0F1015] border border-white/10 text-white font-black text-lg sm:text-xl placeholder:text-[#64748B] focus:border-[#D4FF32] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[#94A3B8] pointer-events-none">
                   Members
@@ -125,10 +130,10 @@ export default function LandingRoiCalculator({ onOpenConsultation }: LandingRoiC
                   </span>
                   <input
                     type="number"
-                    placeholder="0"
-                    value={rentExpense === 0 ? "" : rentExpense}
-                    onChange={(e) => setRentExpense(Math.max(0, Number(e.target.value) || 0))}
-                    className="w-full h-11 pl-7 pr-3 rounded-xl bg-[#0F1015] border border-white/10 text-white font-bold text-sm focus:border-[#D4FF32] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                    placeholder="60000"
+                    value={rentExpense}
+                    onChange={(e) => setRentExpense(e.target.value === "" ? "" : Math.max(0, Number(e.target.value)))}
+                    className="w-full h-11 pl-7 pr-3 rounded-xl bg-[#0F1015] border border-white/10 text-white font-bold text-sm placeholder:text-[#64748B] focus:border-[#D4FF32] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
                   />
                 </div>
               </div>
@@ -143,10 +148,10 @@ export default function LandingRoiCalculator({ onOpenConsultation }: LandingRoiC
                   </span>
                   <input
                     type="number"
-                    placeholder="0"
-                    value={staffExpense === 0 ? "" : staffExpense}
-                    onChange={(e) => setStaffExpense(Math.max(0, Number(e.target.value) || 0))}
-                    className="w-full h-11 pl-7 pr-3 rounded-xl bg-[#0F1015] border border-white/10 text-white font-bold text-sm focus:border-[#D4FF32] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                    placeholder="45000"
+                    value={staffExpense}
+                    onChange={(e) => setStaffExpense(e.target.value === "" ? "" : Math.max(0, Number(e.target.value)))}
+                    className="w-full h-11 pl-7 pr-3 rounded-xl bg-[#0F1015] border border-white/10 text-white font-bold text-sm placeholder:text-[#64748B] focus:border-[#D4FF32] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
                   />
                 </div>
               </div>
@@ -161,10 +166,10 @@ export default function LandingRoiCalculator({ onOpenConsultation }: LandingRoiC
                   </span>
                   <input
                     type="number"
-                    placeholder="0"
-                    value={maintenanceExpense === 0 ? "" : maintenanceExpense}
-                    onChange={(e) => setMaintenanceExpense(Math.max(0, Number(e.target.value) || 0))}
-                    className="w-full h-11 pl-7 pr-3 rounded-xl bg-[#0F1015] border border-white/10 text-white font-bold text-sm focus:border-[#D4FF32] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                    placeholder="20000"
+                    value={maintenanceExpense}
+                    onChange={(e) => setMaintenanceExpense(e.target.value === "" ? "" : Math.max(0, Number(e.target.value)))}
+                    className="w-full h-11 pl-7 pr-3 rounded-xl bg-[#0F1015] border border-white/10 text-white font-bold text-sm placeholder:text-[#64748B] focus:border-[#D4FF32] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
                   />
                 </div>
               </div>
@@ -179,10 +184,10 @@ export default function LandingRoiCalculator({ onOpenConsultation }: LandingRoiC
                   </span>
                   <input
                     type="number"
-                    placeholder="0"
-                    value={otherExpense === 0 ? "" : otherExpense}
-                    onChange={(e) => setOtherExpense(Math.max(0, Number(e.target.value) || 0))}
-                    className="w-full h-11 pl-7 pr-3 rounded-xl bg-[#0F1015] border border-white/10 text-white font-bold text-sm focus:border-[#D4FF32] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                    placeholder="15000"
+                    value={otherExpense}
+                    onChange={(e) => setOtherExpense(e.target.value === "" ? "" : Math.max(0, Number(e.target.value)))}
+                    className="w-full h-11 pl-7 pr-3 rounded-xl bg-[#0F1015] border border-white/10 text-white font-bold text-sm placeholder:text-[#64748B] focus:border-[#D4FF32] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
                   />
                 </div>
               </div>
