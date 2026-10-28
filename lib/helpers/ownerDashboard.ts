@@ -73,7 +73,7 @@ export async function getGymCustomerMembershipPlans(userId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("gym_customer_membership_plans")
-    .select("*, customer:gym_customers(*), plan:gym_membership_plans(*)")
+    .select("*, customer:gym_customers(*), plan:gym_membership_plans!gym_customer_membership_plans_planId_fkey(*), pendingPlan:gym_membership_plans!gym_customer_membership_plans_pendingPlanId_fkey(*)")
     .eq("gymId", gymId)
     .eq("is_deleted", false);
 

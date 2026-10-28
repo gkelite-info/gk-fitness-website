@@ -107,7 +107,7 @@ export async function getMembership() {
 
   const { data: plans } = await supabase
     .from("gym_customer_membership_plans")
-    .select("*, plan:gym_membership_plans(planName, durationMonths, price)")
+    .select("*, plan:gym_membership_plans!gym_customer_membership_plans_planId_fkey(planName, durationMonths, price), pendingPlan:gym_membership_plans!gym_customer_membership_plans_pendingPlanId_fkey(planName, durationMonths, price)")
     .eq("customerId", customerId)
     .eq("is_deleted", false)
     .order("createdAt", { ascending: false });
@@ -126,6 +126,27 @@ export async function getMembership() {
   const currentDaysLeft = diffDays > 0 ? diffDays : 0;
   const isExpired = end ? end.getTime() <= now.getTime() : true;
   const isActive = Boolean(latestPlan?.is_Active ?? latestPlan?.isActive);
+  const isPendingActivation =
+    !latestPlan?.startDate ||
+    !latestPlan?.endDate ||
+    (!isActive && !latestPlan?.endDate);
+
+  if (isPendingActivation) {
+    return {
+      status: "pending_activation",
+      planName: latestPlan?.plan?.planName?.toUpperCase() || "PENDING ACTIVATION",
+      daysLeft: 0,
+      progressPercentage: 0,
+      gymId,
+      customerId,
+      planId: latestPlan?.planId,
+      pendingPlanId: latestPlan?.pendingPlanId || null,
+      pendingPlanName: latestPlan?.pendingPlan?.planName || null,
+      pendingAmount: latestPlan?.pendingAmount ? Number(latestPlan.pendingAmount) : null,
+      startDate: null,
+      endDate: null,
+    };
+  }
 
   if (isExpired || !isActive) {
     return {
@@ -136,6 +157,9 @@ export async function getMembership() {
       gymId,
       customerId,
       planId: latestPlan?.planId,
+      pendingPlanId: latestPlan?.pendingPlanId || null,
+      pendingPlanName: latestPlan?.pendingPlan?.planName || null,
+      pendingAmount: latestPlan?.pendingAmount ? Number(latestPlan.pendingAmount) : null,
       startDate: latestPlan?.startDate,
       endDate: latestPlan?.endDate,
     };
@@ -160,6 +184,9 @@ export async function getMembership() {
     gymId,
     customerId,
     planId: latestPlan?.planId,
+    pendingPlanId: latestPlan?.pendingPlanId || null,
+    pendingPlanName: latestPlan?.pendingPlan?.planName || null,
+    pendingAmount: latestPlan?.pendingAmount ? Number(latestPlan.pendingAmount) : null,
     startDate: latestPlan?.startDate,
     endDate: latestPlan?.endDate,
   };

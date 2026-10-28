@@ -2,6 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchGymCustomerMembershipPlans,
   saveGymCustomerMembershipPlan,
+  setGymCustomerPendingPlan,
+  revokeGymCustomerPendingPlan,
+  completeUpgradePayment,
   SaveGymCustomerMembershipPlanParams
 } from '@/lib/helpers/gymCustomerMembershipPlans/gymCustomerMembershipPlans';
 
@@ -26,7 +29,67 @@ export function useSaveGymCustomerMembershipPlan() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gymCustomerMembershipPlans'] });
       queryClient.invalidateQueries({ queryKey: ['customerProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['gymCustomerMembershipHistories'] });
     },
   });
 }
 
+export function useSetGymCustomerPendingPlan() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: { GymCustomerMembershipPlanId: string; pendingPlanId: string | null; pendingAmount?: number | null }) => {
+      return await setGymCustomerPendingPlan(params);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gymCustomerMembershipPlans'] });
+      queryClient.invalidateQueries({ queryKey: ['customerProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['gymCustomerMembershipHistories'] });
+    },
+  });
+}
+
+export function useRevokeGymCustomerPendingPlan() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: { GymCustomerMembershipPlanId: string; customerId?: string; gymId?: string }) => {
+      return await revokeGymCustomerPendingPlan(params);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gymCustomerMembershipPlans'] });
+      queryClient.invalidateQueries({ queryKey: ['customerProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['gymCustomerMembershipHistories'] });
+    },
+  });
+}
+
+export function useCompleteUpgradePayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      GymCustomerMembershipPlanId: string;
+      pendingPlanId: string;
+      durationMonths: number | string;
+      amountPaid: number;
+    }) => {
+      return await completeUpgradePayment(params);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gymCustomerMembershipPlans'] });
+      queryClient.invalidateQueries({ queryKey: ['customerProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['gymCustomerMembershipHistories'] });
+    },
+  });
+}
+
+export {
+  useGymCustomerMembershipHistories,
+  useGymCustomerMembershipHistoryById,
+  useGymCustomerMembershipHistoriesPaginated,
+  useSaveGymCustomerMembershipHistory,
+  useLogGymCustomerMembershipHistory,
+  useUpdateGymCustomerMembershipHistory,
+  useDeleteGymCustomerMembershipHistory,
+} from './gymCustomerMembershipHistories';

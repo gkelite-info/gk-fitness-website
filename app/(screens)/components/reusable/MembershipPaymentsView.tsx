@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembershipPaymentsHeader from "./membership-payments/MembershipPaymentsHeader";
 import PlanHeroCard from "./membership-payments/PlanHeroCard";
@@ -11,6 +11,7 @@ import { useGymCustomerMembershipPlans } from "@/lib/hooks/gymCustomerMembership
 import { useCustomerGymPayments } from "@/lib/hooks/customerGymPayments/useCustomerGymPayments";
 import { useCustomerSpecificGymPayments } from "@/lib/hooks/useGymPayments";
 import { useGymMembershipPlans } from "@/lib/hooks/useGymMembershipPlans";
+import ChangePlanModal from "../../owner/users/_components/ChangePlanModal";
 
 export type { MembershipPaymentsData, PaymentRecord };
 
@@ -21,11 +22,12 @@ interface MembershipPaymentsViewProps {
 
 export default function MembershipPaymentsView({ onEditPlan, userId }: MembershipPaymentsViewProps) {
   const router = useRouter();
+  const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
 
   const { data: gymCustomer, isLoading: isCustomerLoading } = useGymCustomerById(userId);
   const gymId = gymCustomer?.gymId;
 
-  const { data: customerPlans, isLoading: isPlansLoading } = useGymCustomerMembershipPlans(gymId, userId);
+  const { data: customerPlans, isLoading: isPlansLoading, refetch: refetchPlans } = useGymCustomerMembershipPlans(gymId, userId);
   const { data: membershipPlans, isLoading: isMembershipPlansLoading } = useGymMembershipPlans(gymId);
   const { data: customerPayments, isLoading: isPaymentsLoading } = useCustomerGymPayments(gymId, userId);
   const { data: gymPayments, isLoading: isGymPaymentsLoading } = useCustomerSpecificGymPayments(gymId, userId);
@@ -39,6 +41,20 @@ export default function MembershipPaymentsView({ onEditPlan, userId }: Membershi
     if (!activeCustomerPlan || !membershipPlans) return null;
     return membershipPlans.find(p => p.planId === activeCustomerPlan.planId);
   }, [activeCustomerPlan, membershipPlans]);
+
+  const currentPlanForModal = useMemo(() => {
+    if (!activeCustomerPlan) return null;
+    return {
+      planId: activeCustomerPlan.planId,
+      planName: (activeCustomerPlan as any).plan?.planName || activePlanDetails?.planName,
+      price: (activeCustomerPlan as any).plan?.price || activePlanDetails?.price,
+      durationMonths: (activeCustomerPlan as any).plan?.durationMonths || activePlanDetails?.durationMonths,
+      startDate: activeCustomerPlan.startDate,
+      endDate: activeCustomerPlan.endDate,
+      is_Active: activeCustomerPlan.is_Active,
+      customAmount: activeCustomerPlan.customAmount,
+    };
+  }, [activeCustomerPlan, activePlanDetails]);
 
   const data: MembershipPaymentsData = useMemo(() => {
     const formatDate = (dateStr: string) => {
@@ -92,17 +108,17 @@ export default function MembershipPaymentsView({ onEditPlan, userId }: Membershi
     );
   }
 
+  const handleEditPlanClick = onEditPlan || (() => setIsChangeModalOpen(true));
+
   return (
     <div className="flex flex-col items-start px-4 sm:px-6 py-6 gap-6 w-full max-w-[1051px] mx-auto overflow-y-auto scrollbar-themed h-full bg-[#111319]">
-
       <MembershipPaymentsHeader
         memberCode={data.memberCode}
-        onEditPlan={onEditPlan}
+        onEditPlan={handleEditPlanClick}
       />
 
       <PlanHeroCard
         plan={data.plan}
-      // onEditPlan={onEditPlan}
       />
 
       <PaymentHistoryTable
@@ -113,6 +129,21 @@ export default function MembershipPaymentsView({ onEditPlan, userId }: Membershi
           }
         }}
       />
+
+      {userId && gymId && (
+        <ChangePlanModal
+          isOpen={isChangeModalOpen}
+          onClose={() => setIsChangeModalOpen(false)}
+          customerId={userId}
+          customerName={gymCustomer?.fullName || "Member"}
+          gymId={gymId}
+          currentPlan={currentPlanForModal}
+          onSuccess={() => {
+            refetchPlans();
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }

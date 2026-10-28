@@ -1,6 +1,7 @@
 "use client";
 
 import { Crown, Star, Diamond, CheckCircle, CaretRight } from "@phosphor-icons/react";
+import { computeUpgradeCalculation } from "@/lib/helpers/gymCustomerMembershipPlans/membershipPaymentLogic";
 
 interface Plan {
   planId: string;
@@ -10,6 +11,7 @@ interface Plan {
 }
 
 interface AvailablePlansSectionProps {
+  currentPlan?: any;
   plans: Plan[];
   isLoading: boolean;
   onRenew: (planId: string, planName: string) => void;
@@ -17,11 +19,16 @@ interface AvailablePlansSectionProps {
 }
 
 export default function AvailablePlansSection({
+  currentPlan,
   plans,
   isLoading,
   onRenew,
   renewingPlanId,
 }: AvailablePlansSectionProps) {
+  if (currentPlan?.pendingPlanId || (plans.length === 0 && !isLoading)) {
+    return null;
+  }
+
   return (
     <div>
       <span className="text-[#8E8E93] text-[10px] font-bold tracking-widest uppercase block mb-3">
@@ -45,6 +52,9 @@ export default function AvailablePlansSection({
             const isRenewingThis = renewingPlanId === plan.planId;
             const iconBg = isFirst ? "bg-[#374151]" : "bg-[#6D28D9]";
             const checkColor = isFirst ? "#D7FF00" : "#A78BFA";
+            const calc = computeUpgradeCalculation(currentPlan, plan);
+            const isUpgradeWithCredit = Boolean(calc?.isUpgrade && calc.unusedCredit > 0);
+            const payableAmount = calc?.payableAmount ?? plan.price;
 
             return (
               <div
@@ -90,6 +100,23 @@ export default function AvailablePlansSection({
                   </div>
                 </div>
 
+                {isUpgradeWithCredit && calc && (
+                  <div className="bg-[#141414] border border-[#27272A] rounded-2xl p-3.5 mb-4 space-y-1.5">
+                    <div className="flex justify-between text-xs text-[#8E8E93]">
+                      <span>New Plan Price</span>
+                      <span className="text-white font-medium">₹{calc.newPlanPrice}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-[#D7FF00]">
+                      <span>Credit from Current Plan ({calc.remainingDays} days left)</span>
+                      <span className="font-semibold">-₹{calc.unusedCredit}</span>
+                    </div>
+                    <div className="border-t border-[#222222] pt-1.5 flex justify-between items-baseline">
+                      <span className="text-xs font-semibold text-white">Net Amount to Pay</span>
+                      <span className="text-base font-bold text-[#D7FF00]">₹{calc.payableAmount}</span>
+                    </div>
+                  </div>
+                )}
+
                 <button
                   onClick={() => onRenew(plan.planId, plan.planName)}
                   disabled={isRenewingThis}
@@ -100,7 +127,7 @@ export default function AvailablePlansSection({
                   ) : (
                     <>
                       <span className="text-black text-xs font-bold tracking-wider mr-1 uppercase">
-                        RENEW PLAN
+                        {isUpgradeWithCredit ? `UPGRADE PLAN (₹${payableAmount})` : "UPGRADE PLAN"}
                       </span>
                       <CaretRight size={15} color="#000000" weight="bold" />
                     </>

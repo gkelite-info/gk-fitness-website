@@ -6,12 +6,16 @@ import { CustomerProfileData } from "./types";
 interface CustomerMembershipCardProps {
   membership?: CustomerProfileData["membership"];
   onEditPlan?: () => void;
+  onRevokePlan?: () => void;
 }
 
-export default function CustomerMembershipCard({ membership, onEditPlan }: CustomerMembershipCardProps) {
+export default function CustomerMembershipCard({ membership, onEditPlan, onRevokePlan }: CustomerMembershipCardProps) {
+  const isPending = !membership?.startDate || !membership?.expiryDate || membership?.status === 'Pending Activation';
+  const effectiveStatus = isPending ? 'Pending Activation' : (membership?.status || 'Inactive');
+  const buttonLabel = effectiveStatus === 'Active' ? 'Upgrade Plan' : isPending ? 'Pay & Activate' : 'Edit Plan';
+
   return (
     <div className="flex flex-col justify-between items-start p-4 sm:p-6 w-full md:flex-[7] bg-[#10151E] border border-[#1B2433] shadow-lg rounded-2xl h-full min-h-[274px]">
-
       <div className="flex flex-row justify-between items-start w-full gap-4">
         <div className="flex flex-row items-center gap-3.5">
           <div className="flex items-center justify-center w-11 h-11 bg-[#1C2214] border border-[#3B4C12] rounded-full shrink-0">
@@ -32,7 +36,7 @@ export default function CustomerMembershipCard({ membership, onEditPlan }: Custo
         >
           <Pen size={14} className="text-[#D2F802]" />
           <span className="font-sans font-semibold text-xs leading-4 text-[#D2F802] hidden sm:block">
-            Edit Plan
+            {buttonLabel}
           </span>
         </button>
       </div>
@@ -58,9 +62,14 @@ export default function CustomerMembershipCard({ membership, onEditPlan }: Custo
         </div>
         <div className="flex flex-col items-start gap-1">
           <span className="font-sans font-normal text-xs leading-4 text-[#9CA3AF]">Status</span>
-          <div className={`px-2.5 py-0.5 rounded border ${membership?.status === 'Active' ? 'bg-[#112613] border-[#1F5426] text-[#4ADE80]' : 'bg-[#2F1B1E] border-[#482025] text-[#F87171]'}`}>
+          <div className={`px-2.5 py-0.5 rounded border ${effectiveStatus === 'Active'
+            ? 'bg-[#112613] border-[#1F5426] text-[#4ADE80]'
+            : effectiveStatus === 'Pending Activation'
+              ? 'bg-[#332511] border-[#5E4218] text-[#F59E0B]'
+              : 'bg-[#2F1B1E] border-[#482025] text-[#F87171]'
+            }`}>
             <span className="font-sans font-semibold text-[11px] leading-4">
-              {membership?.status || "-"}
+              {effectiveStatus}
             </span>
           </div>
         </div>
@@ -73,11 +82,32 @@ export default function CustomerMembershipCard({ membership, onEditPlan }: Custo
             Remaining Days
           </span>
         </div>
-        <div className="font-sans font-extrabold text-2xl leading-none tracking-tight text-[#D2F802] shrink-0">
-          {membership?.remainingDays || 0} <span className="text-sm font-bold">Days</span>
+        <div className={`font-sans font-extrabold ${isPending ? 'text-lg sm:text-xl text-[#F59E0B]' : 'text-2xl text-[#D2F802]'} leading-none tracking-tight shrink-0`}>
+          {isPending ? 'Awaiting Activation' : `${membership?.remainingDays || 0} Days`}
         </div>
       </div>
 
+      {membership?.pendingPlanId && (
+        <div className="mt-4 pt-3.5 border-t border-[#1B2433] flex flex-row items-center justify-between w-full">
+          <div className="flex-1 mr-3">
+            <div className="text-[#F59E0B] text-xs font-semibold">
+              Upgrade Pending: {membership.pendingPlanName || "New Plan"}{membership.pendingAmount ? ` (₹${Number(membership.pendingAmount).toFixed(0)})` : ""}
+            </div>
+            <div className="text-gray-400 text-[11px] mt-0.5">
+              Customer has not paid yet. Active access remains undisturbed.
+            </div>
+          </div>
+          {onRevokePlan && (
+            <button
+              type="button"
+              onClick={onRevokePlan}
+              className="bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 px-3 py-1.5 rounded-lg text-red-400 text-xs font-semibold transition-colors cursor-pointer shrink-0"
+            >
+              Revoke
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

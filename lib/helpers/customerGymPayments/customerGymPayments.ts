@@ -1,14 +1,34 @@
 import { createClient } from '@/app/api/supabase/client';
 
 export enum PaymentMethod {
-    UPI = 'UPI',
-    CARD = 'CARD',
+  UPI = 'UPI',
+  CARD = 'CARD',
+  NETBANKING = 'NETBANKING',
+  WALLET = 'WALLET',
 }
 
 export enum PaymentStatus {
-    PENDING = 'PENDING',
-    SUCCESSFUL = 'SUCCESSFUL',
-    FAILED = 'FAILED',
+  PENDING = 'PENDING',
+  SUCCESSFUL = 'SUCCESSFUL',
+  FAILED = 'FAILED',
+}
+
+export function mapToCustomerPaymentMethod(method?: string | null): PaymentMethod {
+  if (!method) return PaymentMethod.UPI;
+  const m = method.toUpperCase().trim();
+  if (m === 'NETBANKING' || m.includes('NET') || m.includes('BANK')) {
+    return PaymentMethod.NETBANKING;
+  }
+  if (m === 'CARD' || m.includes('CARD') || m === 'DEBIT' || m === 'CREDIT') {
+    return PaymentMethod.CARD;
+  }
+  if (m === 'WALLET' || m.includes('WALLET') || m === 'PAYTM' || m === 'PHONEPE') {
+    return PaymentMethod.WALLET;
+  }
+  if (m === 'UPI' || m.includes('UPI') || m.includes('QR') || m.includes('VPA')) {
+    return PaymentMethod.UPI;
+  }
+  return PaymentMethod.UPI;
 }
 
 export interface CustomerGymPaymentAttributes {
@@ -16,10 +36,10 @@ export interface CustomerGymPaymentAttributes {
   customerId: string;
   gymId: string;
   planId: string;
-  paymentMethod: PaymentMethod | string;
+  paymentMethod: PaymentMethod | 'UPI' | 'CARD' | 'NETBANKING' | 'WALLET' | string;
   upiId?: string | null;
   amountPaid: number;
-  status?: PaymentStatus | string;
+  status?: PaymentStatus | 'PENDING' | 'SUCCESSFUL' | 'FAILED' | string;
   transactionId?: string | null;
   notes?: string | null;
   is_deleted?: boolean;
@@ -33,10 +53,10 @@ export interface SaveCustomerGymPaymentParams {
   customerId: string;
   gymId: string;
   planId: string;
-  paymentMethod: PaymentMethod | string;
+  paymentMethod: PaymentMethod | 'UPI' | 'CARD' | 'NETBANKING' | 'WALLET' | string;
   upiId?: string | null;
   amountPaid: number;
-  status?: PaymentStatus | string;
+  status?: PaymentStatus | 'PENDING' | 'SUCCESSFUL' | 'FAILED' | string;
   transactionId?: string | null;
   notes?: string | null;
 }
@@ -102,6 +122,8 @@ export async function saveCustomerGymPayment(paymentData: SaveCustomerGymPayment
     }
   }
 
+  const resolvedMethod = mapToCustomerPaymentMethod(paymentData.paymentMethod);
+
   if (isUpdate && paymentData.customerPaymentId) {
     const { data, error } = await supabase
       .from('customer_gym_payments')
@@ -109,7 +131,7 @@ export async function saveCustomerGymPayment(paymentData: SaveCustomerGymPayment
         customerId: paymentData.customerId,
         gymId: paymentData.gymId,
         planId: paymentData.planId,
-        paymentMethod: paymentData.paymentMethod,
+        paymentMethod: resolvedMethod,
         upiId: paymentData.upiId || null,
         amountPaid: paymentData.amountPaid,
         status: paymentData.status || PaymentStatus.PENDING,
@@ -132,7 +154,7 @@ export async function saveCustomerGymPayment(paymentData: SaveCustomerGymPayment
       customerId: paymentData.customerId,
       gymId: paymentData.gymId,
       planId: paymentData.planId,
-      paymentMethod: paymentData.paymentMethod,
+      paymentMethod: resolvedMethod,
       upiId: paymentData.upiId || null,
       amountPaid: paymentData.amountPaid,
       status: paymentData.status || PaymentStatus.PENDING,
@@ -198,7 +220,7 @@ export async function fetchCustomerGymPaymentsPaginated(
   if (searchQuery) {
     query = query.ilike('gym_customers.fullName', `%${searchQuery}%`);
   }
-  
+
   if (customerId) {
     query = query.eq('customerId', customerId);
   }

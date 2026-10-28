@@ -17,8 +17,8 @@ export function useCustomers(gymId: string | null, filter: string, debouncedSear
         .from('gym_customers')
         .select(
           planFilter !== 'All' 
-            ? '*, gym_customer_membership_plans!inner(planId, endDate, is_Active, is_deleted, gym_membership_plans(planName))' 
-            : '*, gym_customer_membership_plans(planId, endDate, is_Active, is_deleted, gym_membership_plans(planName))', 
+            ? '*, gym_customer_membership_plans!inner(planId, endDate, is_Active, is_deleted, gym_membership_plans:gym_membership_plans!gym_customer_membership_plans_planId_fkey(planName))' 
+            : '*, gym_customer_membership_plans(planId, endDate, is_Active, is_deleted, gym_membership_plans:gym_membership_plans!gym_customer_membership_plans_planId_fkey(planName))', 
           { count: 'exact' }
         )
         .eq('gymId', gymId);

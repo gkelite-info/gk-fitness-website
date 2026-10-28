@@ -2,6 +2,7 @@
 
 import { createClient } from "@/app/api/supabase/server";
 import { createRazorpayOrderInstance, getRazorpayCredentials } from "@/lib/helpers/razorpay/razorpayServer";
+import { determinePlanActionAndProration } from "@/lib/helpers/gymCustomerMembershipPlans/membershipPaymentLogic";
 
 export interface CreateRazorpayOrderActionParams {
   planId: string;
@@ -61,9 +62,12 @@ export async function createRazorpayOrder({
   }
 
   let planInfo: { planId: string; planName: string; price: number } | null = null;
+  let effectivePrice = 0;
+  let actionType = "ASSIGNED";
+
   const { data: gymPlan } = await supabase
     .from("gym_membership_plans")
-    .select("planId, planName, price")
+    .select("planId, planName, price, durationMonths")
     .eq("planId", planId)
     .maybeSingle();
 
@@ -73,6 +77,53 @@ export async function createRazorpayOrder({
       planName: gymPlan.planName,
       price: Number(gymPlan.price) || 0,
     };
+
+    const { data: existingPlans } = await supabase
+      .from("gym_customer_membership_plans")
+      .select("*, plan:gym_membership_plans!gym_customer_membership_plans_planId_fkey(planId, planName, durationMonths, price), pendingPlan:gym_membership_plans!gym_customer_membership_plans_pendingPlanId_fkey(planId, planName, durationMonths, price)")
+      .eq("customerId", resolvedCustomerId)
+      .eq("is_deleted", false)
+      .order("createdAt", { ascending: false });
+
+    const { data: latestPaidHistory } = await supabase
+      .from("gym_customer_membership_histories")
+      .select("*, plan:gym_membership_plans!planId(planId, planName, durationMonths, price)")
+      .eq("customerId", resolvedCustomerId)
+      .eq("paymentStatus", "paid")
+      .eq("is_deleted", false)
+      .order("createdAt", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const targetCustomerPlan = existingPlans?.[0] || null;
+    if (
+      targetCustomerPlan &&
+      targetCustomerPlan.pendingPlanId === planId &&
+      targetCustomerPlan.pendingAmount !== undefined &&
+      targetCustomerPlan.pendingAmount !== null &&
+      Number(targetCustomerPlan.pendingAmount) >= 0
+    ) {
+      effectivePrice = Number(targetCustomerPlan.pendingAmount);
+      actionType = "UPGRADED";
+    } else {
+      try {
+        const proration = determinePlanActionAndProration({
+          newPlan: {
+            planId: gymPlan.planId,
+            planName: gymPlan.planName,
+            price: Number(gymPlan.price) || 0,
+            durationMonths: gymPlan.durationMonths,
+          },
+          existingCustomerPlan: targetCustomerPlan,
+          previousHistory: latestPaidHistory,
+        });
+
+        effectivePrice = proration.payableAmount;
+        actionType = proration.actionType;
+      } catch (prorationErr: any) {
+        return { success: false, error: prorationErr.message || "Plan downgrade is not permitted" };
+      }
+    }
   } else {
     const { data: subPlan } = await supabase
       .from("subscriptions")
@@ -86,6 +137,7 @@ export async function createRazorpayOrder({
         planName: subPlan.planName,
         price: Number(subPlan.price) || 0,
       };
+      effectivePrice = planInfo.price;
     }
   }
 
@@ -93,8 +145,7 @@ export async function createRazorpayOrder({
     return { success: false, error: "Membership plan not found" };
   }
 
-  const price = Number(planInfo.price) || 0;
-  if (price <= 0) {
+  if (effectivePrice <= 0) {
     return { success: false, error: "Invalid plan pricing" };
   }
 
@@ -107,7 +158,7 @@ export async function createRazorpayOrder({
     let order: any = null;
     try {
       order = await createRazorpayOrderInstance({
-        amount: price,
+        amount: effectivePrice,
         currency: "INR",
         receipt: `rcpt_${Date.now()}`,
         notes: {
@@ -115,6 +166,7 @@ export async function createRazorpayOrder({
           planName: planInfo.planName,
           customerId: resolvedCustomerId,
           gymId: resolvedGymId || "",
+          actionType,
         },
       });
     } catch (orderErr: any) {
@@ -133,7 +185,7 @@ export async function createRazorpayOrder({
     return {
       success: true,
       orderId: order?.id,
-      amount: order ? order.amount : Math.round(price * 100),
+      amount: order ? order.amount : Math.round(effectivePrice * 100),
       currency: order ? order.currency : "INR",
       keyId,
       planName: planInfo.planName,
