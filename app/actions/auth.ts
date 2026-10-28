@@ -40,6 +40,7 @@ export async function loginWithRoleAction(params: LoginRoleParams): Promise<Logi
   let preIsCustomer = false;
   let preIsTrainer = false;
   let preIsGlobalTrainer = false;
+  let preIsSuperAdmin = false;
   let preUserFound = false;
 
   const { data: uRec } = await dbClient
@@ -54,7 +55,7 @@ export async function loginWithRoleAction(params: LoginRoleParams): Promise<Logi
     if (uRec.role === "customer") preIsCustomer = true;
     if (uRec.role === "trainer") preIsTrainer = true;
     if (uRec.role === "global_trainer" || uRec.role === "globaltrainer") preIsGlobalTrainer = true;
-    if (uRec.role === "superadmin") preIsOwner = true;
+    if (uRec.role === "superadmin") preIsSuperAdmin = true;
   }
 
   const [oRes, cRes, tRes, gtRes] = await Promise.all([
@@ -70,14 +71,14 @@ export async function loginWithRoleAction(params: LoginRoleParams): Promise<Logi
   if (gtRes.data && gtRes.data.is_deleted !== true) preIsGlobalTrainer = true;
 
   if (typeId) {
-    if (preUserFound || preIsOwner || preIsCustomer || preIsTrainer || preIsGlobalTrainer) {
+    if (preUserFound || preIsOwner || preIsCustomer || preIsTrainer || preIsGlobalTrainer || preIsSuperAdmin) {
       let preRoleValid = false;
       if (typeId === "individual" || typeId === "customer" || typeId === "gym-customer") {
-        if (preIsCustomer || (!preIsOwner && !preIsTrainer && !preIsGlobalTrainer)) {
+        if (preIsCustomer || preIsSuperAdmin || (!preIsOwner && !preIsTrainer && !preIsGlobalTrainer)) {
           preRoleValid = true;
         }
       } else if (typeId === "owner" || typeId === "gym-owner") {
-        if (preIsOwner || uRec?.role === "superadmin") preRoleValid = true;
+        if (preIsOwner) preRoleValid = true;
       } else if (typeId === "gym_trainer" || typeId === "gym-trainer" || typeId === "trainer") {
         if (preIsTrainer) preRoleValid = true;
       } else if (typeId === "global_trainer" || typeId === "global-trainer" || typeId === "globaltrainer") {

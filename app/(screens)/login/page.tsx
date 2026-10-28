@@ -15,7 +15,6 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showMobileForm, setShowMobileForm] = useState(false);
-
   const passwordRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,7 +22,6 @@ function LoginContent() {
   const isOwner = typeParam === "owner";
   const planId = searchParams.get("planId"), planName = searchParams.get("planName");
   const signupUrl = `/signup?type=individual${planId ? `&planId=${encodeURIComponent(planId)}&planName=${encodeURIComponent(planName || "")}` : ""}`;
-
   useEffect(() => {
     if (searchParams.get("verified") === "true") {
       toast.success("Email verified successfully! Please sign in to continue.", { id: "email-verified-toast" });
@@ -56,7 +54,6 @@ function LoginContent() {
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-
     if (!email.trim()) {
       toast.error("Please enter your email address", { id: "login-email-empty" });
       return;
@@ -74,7 +71,6 @@ function LoginContent() {
     }
 
     setLoading(true);
-
     const { error: authError, role } = await loginUser(email, password, typeParam);
 
     if (authError) {
@@ -82,20 +78,21 @@ function LoginContent() {
       setLoading(false);
       return;
     }
-
     toast.success("Successfully logged in!", { id: "login-success" });
-
+    const normalizedRole = (role || "").toLowerCase().trim();
     const searchParams = new URLSearchParams(window.location.search);
     const returnTo = searchParams.get("returnTo");
     if (returnTo && returnTo.startsWith("/") && returnTo !== "/login") {
+      if (normalizedRole === "superadmin" && !returnTo.startsWith("/superadmin")) {
+        window.location.href = "/superadmin";
+        return;
+      }
       const targetReturn = returnTo.startsWith("/individual")
         ? returnTo.replace(/^\/individual/, "/customer")
         : returnTo;
       window.location.href = targetReturn;
       return;
     }
-
-    const normalizedRole = (role || "").toLowerCase().trim();
     if (normalizedRole === "superadmin") {
       window.location.href = "/superadmin";
     } else if (normalizedRole === "owner") {
@@ -117,17 +114,14 @@ function LoginContent() {
       passwordRef.current?.focus();
     }
   };
-
   const openMobileForm = (e?: React.SyntheticEvent) => {
     if (e) e.stopPropagation();
     setShowMobileForm(true);
   };
-
   const closeMobileForm = (e?: React.SyntheticEvent) => {
     if (e) e.stopPropagation();
     setShowMobileForm(false);
   };
-
   return (
     <div className="min-h-screen bg-[#0C0D10] text-white overflow-hidden relative">
       <motion.div
