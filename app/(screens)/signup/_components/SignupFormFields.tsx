@@ -10,6 +10,7 @@ import {
   Eye,
   EyeSlash,
 } from "@phosphor-icons/react";
+import toast from "react-hot-toast";
 import SignupAddressFields from "./SignupAddressFields";
 
 interface PlanOption {
@@ -76,7 +77,7 @@ export default function SignupFormFields(props: SignupFormFieldsProps) {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value.trim())}
               placeholder="Enter your email"
               className="w-full h-12 bg-[#18181B] border border-[#27272A] rounded-xl pl-11 pr-4 text-sm text-white placeholder:text-[#71717A] focus:outline-none focus:border-[#D4FF32] transition-all"
             />
@@ -94,8 +95,22 @@ export default function SignupFormFields(props: SignupFormFieldsProps) {
             <input
               type="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+              onChange={(e) => {
+                let digits = e.target.value.replace(/\D/g, "");
+                if (digits.startsWith("91") && digits.length === 12) {
+                  digits = digits.slice(2);
+                } else if (digits.startsWith("0") && digits.length === 11) {
+                  digits = digits.slice(1);
+                }
+                const raw = digits.slice(0, 10);
+                if (raw.length > 0 && !/^[6-9]/.test(raw)) {
+                  toast.error("Mobile number must start with 6, 7, 8, or 9", { id: "phone-prefix" });
+                  return;
+                }
+                setPhone(raw);
+              }}
               placeholder="Enter mobile number"
+              maxLength={10}
               className="w-full h-12 bg-[#18181B] border border-[#27272A] rounded-xl pl-11 pr-4 text-sm text-white placeholder:text-[#71717A] focus:outline-none focus:border-[#D4FF32] transition-all"
             />
           </div>

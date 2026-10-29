@@ -96,16 +96,24 @@ function SignupContent() {
     e.preventDefault();
 
     if (!name.trim()) return toast.error("Please enter your full name");
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Please enter a valid email address");
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!email.trim() || !emailRegex.test(email.trim())) {
+      return toast.error("Please enter a valid email address (e.g. name@example.com)");
+    }
     const cleanPhone = phone.replace(/\D/g, "");
-    if (cleanPhone.length < 10) return toast.error("Please enter a valid 10-digit mobile number");
+    if (!cleanPhone) return toast.error("Please enter your mobile number");
+    if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      return toast.error("Mobile number must be 10 digits and start with 6, 7, 8, or 9");
+    }
     if (!dob) return toast.error("Please select your date of birth");
     if (!selectedPlanId) return toast.error("Please select a membership plan");
     if (!gender) return toast.error("Please select your gender");
     if (!streetAddress.trim()) return toast.error("Please enter your address");
     if (!country.trim()) return toast.error("Please enter your country");
     if (!state.trim()) return toast.error("Please enter your state");
+    if (!/^[A-Za-z\s]+$/.test(state.trim())) return toast.error("State should contain only letters");
     if (!city.trim()) return toast.error("Please enter your city");
+    if (!/^[A-Za-z\s]+$/.test(city.trim())) return toast.error("City should contain only letters");
     const cleanPincode = pincode.replace(/\D/g, "");
     if (!cleanPincode || cleanPincode.length < 6) return toast.error("Please enter a valid 6-digit PIN code");
     if (!password || password.length < 6) return toast.error("Password must be at least 6 characters");

@@ -29,8 +29,8 @@ export function validateSignupField(field: keyof SignupFormValues, value: any): 
     case "email": {
       const trimmed = (value || "").trim();
       if (!trimmed) return "Email address is required.";
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(trimmed)) return "Please enter a valid email address.";
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(trimmed)) return "Please enter a valid email address (e.g. name@example.com).";
       return null;
     }
     case "password": {
@@ -42,7 +42,21 @@ export function validateSignupField(field: keyof SignupFormValues, value: any): 
       const digits = (value || "").replace(/\D/g, "");
       if (!digits) return "Mobile number is required.";
       if (digits.length !== 10) return "Mobile number must be exactly 10 digits.";
-      if (!/^[6-9]\d{9}$/.test(digits)) return "Must start with 6, 7, 8, or 9.";
+      if (!/^[6-9]\d{9}$/.test(digits)) return "Mobile number must start with 6, 7, 8, or 9.";
+      return null;
+    }
+    case "state": {
+      const trimmed = (value || "").trim();
+      if (trimmed && !/^[A-Za-z\s]+$/.test(trimmed)) {
+        return "State can only contain letters and spaces.";
+      }
+      return null;
+    }
+    case "city": {
+      const trimmed = (value || "").trim();
+      if (trimmed && !/^[A-Za-z\s]+$/.test(trimmed)) {
+        return "City can only contain letters and spaces.";
+      }
       return null;
     }
     case "pincode": {
@@ -59,7 +73,15 @@ export function validateSignupField(field: keyof SignupFormValues, value: any): 
 
 export function validateSignupForm(values: SignupFormValues): SignupFormErrors {
   const errors: SignupFormErrors = {};
-  const fields: (keyof SignupFormValues)[] = ["name", "email", "password", "phone", "pincode"];
+  const fields: (keyof SignupFormValues)[] = [
+    "name",
+    "email",
+    "password",
+    "phone",
+    "state",
+    "city",
+    "pincode",
+  ];
 
   fields.forEach((field) => {
     const err = validateSignupField(field, values[field]);

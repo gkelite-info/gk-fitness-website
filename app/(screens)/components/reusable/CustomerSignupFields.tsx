@@ -54,7 +54,7 @@ export default function CustomerSignupFields({
             type="email"
             placeholder="rahul@example.com"
             value={values.email}
-            onChange={(e) => onChange("email", e.target.value)}
+            onChange={(e) => onChange("email", e.target.value.trim())}
             onBlur={() => onBlur("email")}
             className={`w-full h-11 px-3.5 rounded-xl bg-[#090A0E] border text-white text-sm outline-none transition-colors ${
               touched.email && errors.email
@@ -113,7 +113,14 @@ export default function CustomerSignupFields({
               maxLength={10}
               placeholder="98765 43210"
               value={values.phone}
-              onChange={(e) => onChange("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
+              onChange={(e) => {
+                let digits = e.target.value.replace(/\D/g, "");
+                if (digits.startsWith("91") && digits.length === 12) digits = digits.slice(2);
+                else if (digits.startsWith("0") && digits.length === 11) digits = digits.slice(1);
+                const raw = digits.slice(0, 10);
+                if (raw.length > 0 && !/^[6-9]/.test(raw)) return;
+                onChange("phone", raw);
+              }}
               onBlur={() => onBlur("phone")}
               className={`w-full h-11 pl-12 pr-3.5 rounded-xl bg-[#090A0E] border text-white text-sm outline-none transition-colors ${
                 touched.phone && errors.phone
@@ -196,7 +203,7 @@ export default function CustomerSignupFields({
             type="text"
             placeholder="e.g. Hyderabad"
             value={values.city || ""}
-            onChange={(e) => onChange("city", e.target.value)}
+            onChange={(e) => onChange("city", e.target.value.replace(/[^A-Za-z\s]/g, ""))}
             className="w-full h-11 px-3.5 rounded-xl bg-[#090A0E] border border-white/10 text-white text-sm outline-none focus:border-[#D4FF32] transition-colors capitalize"
           />
         </div>
@@ -209,7 +216,7 @@ export default function CustomerSignupFields({
             type="text"
             placeholder="e.g. Telangana"
             value={values.state || ""}
-            onChange={(e) => onChange("state", e.target.value)}
+            onChange={(e) => onChange("state", e.target.value.replace(/[^A-Za-z\s]/g, ""))}
             className="w-full h-11 px-3.5 rounded-xl bg-[#090A0E] border border-white/10 text-white text-sm outline-none focus:border-[#D4FF32] transition-colors capitalize"
           />
         </div>
