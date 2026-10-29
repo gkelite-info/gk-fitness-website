@@ -30,7 +30,7 @@ export function usePlanCheckout({
 }: UsePlanCheckoutParams) {
   const [renewingPlanId, setRenewingPlanId] = useState<string | null>(null);
 
-  const handleRenew = async (targetPlanId: string, targetPlanName: string) => {
+  const handleRenew = async (targetPlanId: string, targetPlanName: string, amount?: number) => {
     try {
       setRenewingPlanId(targetPlanId);
       const isScriptLoaded = await loadRazorpayScript();
@@ -44,6 +44,7 @@ export function usePlanCheckout({
         planId: targetPlanId,
         customerId: resolvedCustomerId,
         gymId: resolvedGymId,
+        amount,
       });
 
       if (!orderResult.success) {

@@ -17,7 +17,9 @@ async function fetchRoleData(supabase: any, role: string, userId: string, email:
     }
     case 'customer': {
       const { data } = await supabase.from('gym_customers').select('*').eq('email', email);
-      return data || [];
+      if (data && data.length > 0) return data;
+      const { data: indivData } = await supabase.from('individual_customer_plans').select('*').eq('userId', userId);
+      return indivData || [];
     }
     case 'individual': {
       const { data } = await supabase.from('individual_customer_plans').select('*').eq('userId', userId);
@@ -84,12 +86,12 @@ export function subscribeToAuthChanges(
           .select("*")
           .eq("userId", session.user.id)
           .single();
-          
+
         if (userProfile) {
-           const roleData = await fetchRoleData(supabase, userProfile.role, session.user.id, userProfile.email);
-           callback(session.user, userProfile, roleData);
+          const roleData = await fetchRoleData(supabase, userProfile.role, session.user.id, userProfile.email);
+          callback(session.user, userProfile, roleData);
         } else {
-           callback(session.user, null, []);
+          callback(session.user, null, []);
         }
       }
     }

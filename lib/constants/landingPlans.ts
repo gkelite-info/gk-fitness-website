@@ -1,10 +1,10 @@
-import { 
-  Sparkle, 
-  Medal, 
-  Crown, 
-  SketchLogo, 
-  Diamond, 
-  Star 
+import {
+  Sparkle,
+  Medal,
+  Crown,
+  SketchLogo,
+  Diamond,
+  Star
 } from "@phosphor-icons/react";
 import { DynamicSubscriptionPlan } from "@/lib/helpers/subscriptions/subscriptionsHelper";
 
@@ -76,7 +76,7 @@ export const DEFAULT_CUSTOMER_PLANS: DynamicSubscriptionPlan[] = [
     id: "default-cust-basic",
     name: "Basic",
     label: null,
-    price: null,
+    price: 499,
     planFor: "customer",
     features: [
       "Personalized Workout Plans",
@@ -91,7 +91,7 @@ export const DEFAULT_CUSTOMER_PLANS: DynamicSubscriptionPlan[] = [
     id: "default-cust-silver",
     name: "Silver",
     label: null,
-    price: null,
+    price: 999,
     planFor: "customer",
     features: [
       "Everything in Basic",
@@ -106,7 +106,7 @@ export const DEFAULT_CUSTOMER_PLANS: DynamicSubscriptionPlan[] = [
     id: "default-cust-gold",
     name: "Gold",
     label: null,
-    price: null,
+    price: 1499,
     planFor: "customer",
     features: [
       "Everything in Silver",
@@ -121,7 +121,7 @@ export const DEFAULT_CUSTOMER_PLANS: DynamicSubscriptionPlan[] = [
     id: "default-cust-platinum",
     name: "Platinum",
     label: null,
-    price: null,
+    price: 2499,
     planFor: "customer",
     features: [
       "Everything in Gold",

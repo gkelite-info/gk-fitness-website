@@ -5,8 +5,6 @@ import {
   EnvelopeSimple,
   Phone,
   CalendarBlank,
-  Buildings,
-  Users,
   CaretDown,
   LockKey,
   Eye,
@@ -14,14 +12,18 @@ import {
 } from "@phosphor-icons/react";
 import SignupAddressFields from "./SignupAddressFields";
 
+interface PlanOption {
+  subscriptionPlanId: string;
+  planName: string;
+  price?: number | null;
+}
+
 interface SignupFormFieldsProps {
   name: string; setName: (v: string) => void;
   email: string; setEmail: (v: string) => void;
   phone: string; setPhone: (v: string) => void;
   gender: "male" | "female" | "other"; setGender: (v: "male" | "female" | "other") => void;
   dob: string; setDob: (v: string) => void;
-  gymName: string; setGymName: (v: string) => void;
-  memberCount: string; setMemberCount: (v: string) => void;
   streetAddress: string; setStreetAddress: (v: string) => void;
   country: string; setCountry: (v: string) => void;
   state: string; setState: (v: string) => void;
@@ -31,16 +33,19 @@ interface SignupFormFieldsProps {
   confirmPassword: string; setConfirmPassword: (v: string) => void;
   showPassword: boolean; setShowPassword: (v: boolean) => void;
   showConfirmPassword: boolean; setShowConfirmPassword: (v: boolean) => void;
+  selectedPlanId: string; setSelectedPlanId: (v: string) => void;
+  plans: PlanOption[];
+  isLoadingPlans: boolean;
 }
 
 export default function SignupFormFields(props: SignupFormFieldsProps) {
   const {
     name, setName, email, setEmail, phone, setPhone, gender, setGender,
-    dob, setDob, gymName, setGymName, memberCount, setMemberCount,
-    streetAddress, setStreetAddress, country, setCountry, state, setState,
-    city, setCity, pincode, setPincode, password, setPassword,
+    dob, setDob, streetAddress, setStreetAddress, country, setCountry,
+    state, setState, city, setCity, pincode, setPincode, password, setPassword,
     confirmPassword, setConfirmPassword, showPassword, setShowPassword,
     showConfirmPassword, setShowConfirmPassword,
+    selectedPlanId, setSelectedPlanId, plans, isLoadingPlans,
   } = props;
 
   return (
@@ -98,7 +103,7 @@ export default function SignupFormFields(props: SignupFormFieldsProps) {
 
         <div>
           <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5 ml-1">
-            Date of Birth
+            Date of Birth <span className="text-red-400">*</span>
           </label>
           <div className="relative group">
             <CalendarBlank size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#71717A] group-focus-within:text-[#D4FF32]" />
@@ -115,52 +120,47 @@ export default function SignupFormFields(props: SignupFormFieldsProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         <div>
           <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5 ml-1">
-            Gym Name <span className="text-red-400">*</span>
+            Plan <span className="text-red-400">*</span>
           </label>
-          <div className="relative group">
-            <Buildings size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#71717A] group-focus-within:text-[#D4FF32]" />
-            <input
-              type="text"
-              value={gymName}
-              onChange={(e) => setGymName(e.target.value)}
-              placeholder="Enter your gym name"
-              className="w-full h-12 bg-[#18181B] border border-[#27272A] rounded-xl pl-11 pr-4 text-sm text-white placeholder:text-[#71717A] focus:outline-none focus:border-[#D4FF32] transition-all"
-            />
+          <div className="relative">
+            <select
+              value={selectedPlanId}
+              onChange={(e) => setSelectedPlanId(e.target.value)}
+              disabled={isLoadingPlans}
+              className="w-full h-12 bg-[#18181B] border border-[#27272A] rounded-xl px-4 text-sm text-white focus:outline-none focus:border-[#D4FF32] transition-all appearance-none cursor-pointer disabled:opacity-50"
+            >
+              {isLoadingPlans ? (
+                <option value="" className="bg-[#18181B]">Loading plans...</option>
+              ) : plans.length === 0 ? (
+                <option value="" className="bg-[#18181B]">No plans available</option>
+              ) : (
+                plans.map((p) => (
+                  <option key={p.subscriptionPlanId} value={p.subscriptionPlanId} className="bg-[#18181B]">
+                    {p.planName} {p.price !== null && p.price !== undefined ? `(₹${p.price}/mo)` : ""}
+                  </option>
+                ))
+              )}
+            </select>
+            <CaretDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
           </div>
         </div>
 
         <div>
           <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5 ml-1">
-            Member Count
+            Gender <span className="text-red-400">*</span>
           </label>
-          <div className="relative group">
-            <Users size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#71717A] group-focus-within:text-[#D4FF32]" />
-            <input
-              type="text"
-              value={memberCount}
-              onChange={(e) => setMemberCount(e.target.value)}
-              placeholder="e.g. 50 - 200 or 150"
-              className="w-full h-12 bg-[#18181B] border border-[#27272A] rounded-xl pl-11 pr-4 text-sm text-white placeholder:text-[#71717A] focus:outline-none focus:border-[#D4FF32] transition-all"
-            />
+          <div className="relative">
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value as any)}
+              className="w-full h-12 bg-[#18181B] border border-[#27272A] rounded-xl px-4 text-sm text-white focus:outline-none focus:border-[#D4FF32] transition-all appearance-none cursor-pointer"
+            >
+              <option value="male" className="bg-[#18181B]">Male</option>
+              <option value="female" className="bg-[#18181B]">Female</option>
+              <option value="other" className="bg-[#18181B]">Other</option>
+            </select>
+            <CaretDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
           </div>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5 ml-1">
-          Gender <span className="text-red-400">*</span>
-        </label>
-        <div className="relative">
-          <select
-            value={gender}
-            onChange={(e) => setGender(e.target.value as any)}
-            className="w-full h-12 bg-[#18181B] border border-[#27272A] rounded-xl px-4 text-sm text-white focus:outline-none focus:border-[#D4FF32] transition-all appearance-none cursor-pointer"
-          >
-            <option value="male" className="bg-[#18181B]">Male</option>
-            <option value="female" className="bg-[#18181B]">Female</option>
-            <option value="other" className="bg-[#18181B]">Other</option>
-          </select>
-          <CaretDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
         </div>
       </div>
 
@@ -177,7 +177,7 @@ export default function SignupFormFields(props: SignupFormFieldsProps) {
         setPincode={setPincode}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         <div>
           <label className="block text-xs font-semibold text-[#CBD5E1] mb-1.5 ml-1">
             Password <span className="text-red-400">*</span>

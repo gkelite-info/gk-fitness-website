@@ -65,7 +65,11 @@ export async function fetchSubscriptionPlans(planFor?: "gyms" | "customer"): Pro
       .order("price", { ascending: true, nullsFirst: false });
 
     if (planFor) {
-      query = query.eq("planFor", planFor);
+      if (planFor === "customer") {
+        query = query.in("planFor", ["customer", "customers", "individual_customer"]);
+      } else {
+        query = query.in("planFor", ["gyms", "gym"]);
+      }
     }
 
     const { data, error } = await query;
@@ -81,16 +85,22 @@ export async function fetchSubscriptionPlans(planFor?: "gyms" | "customer"): Pro
         .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
         .map((f) => f.featureName);
 
+      const rawPlanFor = (row.planFor || "").toLowerCase();
       const normalizedPlanFor =
-        row.planFor === "customer" || row.planFor === "customers"
-          ? "customer"
-          : "gyms";
+      rawPlanFor === "customer" || rawPlanFor === "customers" || rawPlanFor === "individual_customer"
+        ? "customer"
+        : "gyms";
+
+      const parsedPrice =
+        row.price !== null && row.price !== undefined && !isNaN(Number(row.price))
+          ? Number(row.price)
+          : null;
 
       return {
         id: row.subscriptionPlanId,
         name: row.planName,
         label: row.label,
-        price: row.price,
+        price: parsedPrice,
         planFor: normalizedPlanFor,
         features: activeFeatures,
         createdAt: row.createdAt,
