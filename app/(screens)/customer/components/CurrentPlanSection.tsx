@@ -27,7 +27,7 @@ export interface CurrentCustomerPlan {
 interface CurrentPlanSectionProps {
   currentPlan: CurrentCustomerPlan | null | undefined;
   isLoading: boolean;
-  onRenew: (planId: string, planName: string) => void;
+  onRenew: (planId: string, planName: string, amount?: number) => void;
   renewingPlanId: string | null;
 }
 
@@ -79,9 +79,10 @@ export default function CurrentPlanSection({
   const isPendingActivation =
     !currentPlan.startDate ||
     !currentPlan.endDate ||
-    (!Boolean(currentPlan.is_Active ?? currentPlan.isActive) && !currentPlan.endDate);
+  (!Boolean(currentPlan.is_Active ?? currentPlan.isActive) && !currentPlan.endDate) ||
+    (currentPlan as any).status === "pending";
   const isExpired = !isPendingActivation && (stats.isExpired || remainingDays === 0);
-  const isActive = !isPendingActivation && stats.isPlanActive;
+  const isActive = !isPendingActivation && stats.isPlanActive && (currentPlan as any).status !== "pending";
   const statusLabel = isPendingActivation ? "Pending Activation" : isExpired ? "Expired" : (isActive ? "Active" : "Inactive");
   const statusColor = isPendingActivation ? "#F59E0B" : isExpired ? "#EF4444" : (isActive ? "#D7FF00" : "#8E8E93");
   const planName = currentPlan.plan?.planName || "Membership Plan";

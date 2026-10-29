@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  User,
   CaretLeft,
   CircleNotch,
   CheckCircle,
@@ -12,7 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import toast from "react-hot-toast";
 import { signupCustomerAction } from "@/app/actions/signup";
-import { getSubscriptionPlansAction } from "@/app/actions/subscriptions";
+import { useSubscriptions } from "@/lib/hooks/superadmin/subscriptions/subscriptions";
 import SignupFormFields from "./_components/SignupFormFields";
 
 function SignupContent() {
@@ -20,14 +19,13 @@ function SignupContent() {
   const searchParams = useSearchParams();
   const typeId = searchParams.get("type") || "individual";
   const planIdFromQuery = searchParams.get("planId") || "";
+  const planNameFromQuery = searchParams.get("planName") || "";
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [gender, setGender] = useState<"male" | "female" | "other">("male");
   const [dob, setDob] = useState("");
-  const [gymName, setGymName] = useState("");
-  const [memberCount, setMemberCount] = useState("");
   const [streetAddress, setStreetAddress] = useState("");
   const [country, setCountry] = useState("India");
   const [state, setState] = useState("");
@@ -43,27 +41,56 @@ function SignupContent() {
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const { data: customerSubscriptions, isLoading: isLoadingPlans } = useSubscriptions(
+    undefined,
+    "customer"
+  );
+
+  const plansList = useMemo(() => {
+    if (customerSubscriptions && customerSubscriptions.length > 0) {
+      return customerSubscriptions
+        .filter((p: any) => !p.is_deleted && p.isActive !== false)
+        .map((p: any) => ({
+          subscriptionPlanId: p.subscriptionPlanId,
+          planName: p.planName,
+          price: p.price !== null && p.price !== undefined ? Number(p.price) : null,
+        }));
+    }
+    return [];
+  }, [customerSubscriptions]);
+
   useEffect(() => {
     if (typeId === "owner") {
       router.replace("/login?type=owner&title=Gym%20Owner");
+    }
+  }, [typeId, router]);
+
+  useEffect(() => {
+    if (plansList.length === 0) return;
+
+    if (selectedPlanId && plansList.some((p) => p.subscriptionPlanId === selectedPlanId)) {
       return;
     }
-    async function resolvePlan() {
-      if (planIdFromQuery) {
-        setSelectedPlanId(planIdFromQuery);
+
+    if (planIdFromQuery && plansList.some((p) => p.subscriptionPlanId === planIdFromQuery)) {
+      setSelectedPlanId(planIdFromQuery);
+      return;
+    }
+
+    if (planNameFromQuery) {
+      const matched = plansList.find(
+        (p) => p.planName?.toLowerCase() === planNameFromQuery.toLowerCase()
+      );
+      if (matched) {
+        setSelectedPlanId(matched.subscriptionPlanId);
         return;
       }
-      try {
-        const res = await getSubscriptionPlansAction("customer");
-        if (res.success && res.data && res.data.length > 0) {
-          setSelectedPlanId(res.data[0].id);
-        }
-      } catch (err) {
-        console.error("Failed to fetch customer plans:", err);
-      }
     }
-    resolvePlan();
-  }, [typeId, planIdFromQuery, router]);
+
+    if (plansList[0]?.subscriptionPlanId) {
+      setSelectedPlanId(plansList[0].subscriptionPlanId);
+    }
+  }, [plansList, planIdFromQuery, planNameFromQuery, selectedPlanId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +99,15 @@ function SignupContent() {
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Please enter a valid email address");
     const cleanPhone = phone.replace(/\D/g, "");
     if (cleanPhone.length < 10) return toast.error("Please enter a valid 10-digit mobile number");
-    if (!gymName.trim()) return toast.error("Please enter your gym name");
+    if (!dob) return toast.error("Please select your date of birth");
+    if (!selectedPlanId) return toast.error("Please select a membership plan");
+    if (!gender) return toast.error("Please select your gender");
+    if (!streetAddress.trim()) return toast.error("Please enter your address");
+    if (!country.trim()) return toast.error("Please enter your country");
+    if (!state.trim()) return toast.error("Please enter your state");
+    if (!city.trim()) return toast.error("Please enter your city");
+    const cleanPincode = pincode.replace(/\D/g, "");
+    if (!cleanPincode || cleanPincode.length < 6) return toast.error("Please enter a valid 6-digit PIN code");
     if (!password || password.length < 6) return toast.error("Password must be at least 6 characters");
     if (password !== confirmPassword) return toast.error("Passwords do not match");
 
@@ -84,14 +119,14 @@ function SignupContent() {
       phone: cleanPhone,
       gender,
       dob: dob || undefined,
-      gymName: gymName.trim(),
-      memberCount: memberCount.trim() || undefined,
-      subscriptionPlanId: selectedPlanId || undefined,
+      gymName: "Individual Customer",
+      memberCount: "1",
+      subscriptionPlanId: selectedPlanId,
       address: streetAddress.trim(),
       country: country.trim() || "India",
       state: state.trim(),
       city: city.trim(),
-      pincode: pincode.trim(),
+      pincode: cleanPincode,
       password,
     });
 
@@ -157,8 +192,6 @@ function SignupContent() {
               phone={phone} setPhone={setPhone}
               gender={gender} setGender={setGender}
               dob={dob} setDob={setDob}
-              gymName={gymName} setGymName={setGymName}
-              memberCount={memberCount} setMemberCount={setMemberCount}
               streetAddress={streetAddress} setStreetAddress={setStreetAddress}
               country={country} setCountry={setCountry}
               state={state} setState={setState}
@@ -168,6 +201,8 @@ function SignupContent() {
               confirmPassword={confirmPassword} setConfirmPassword={setConfirmPassword}
               showPassword={showPassword} setShowPassword={setShowPassword}
               showConfirmPassword={showConfirmPassword} setShowConfirmPassword={setShowConfirmPassword}
+              selectedPlanId={selectedPlanId} setSelectedPlanId={setSelectedPlanId}
+              plans={plansList} isLoadingPlans={isLoadingPlans}
             />
 
             <button

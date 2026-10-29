@@ -56,40 +56,21 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
         email: cleanEmail,
         password: data.password,
         email_confirm: false,
-        user_metadata: {
-          name: cleanName,
-          phone: cleanPhone,
-          role: "customer",
-        },
+        user_metadata: { name: cleanName, phone: cleanPhone, role: "customer" },
       });
-
-      if (authError) {
-        return { success: false, error: authError.message };
-      }
+      if (authError) return { success: false, error: authError.message };
       authUserId = authData?.user?.id || null;
     } else {
       const { data: authData, error: authError } = await serverClient.auth.signUp({
         email: cleanEmail,
         password: data.password,
-        options: {
-          data: {
-            name: cleanName,
-            phone: cleanPhone,
-            role: "customer",
-          },
-        },
+        options: { data: { name: cleanName, phone: cleanPhone, role: "customer" } },
       });
-
-
-      if (authError) {
-        return { success: false, error: authError.message };
-      }
+      if (authError) return { success: false, error: authError.message };
       authUserId = authData?.user?.id || null;
     }
 
-    if (!authUserId) {
-      authUserId = crypto.randomUUID();
-    }
+    if (!authUserId) authUserId = crypto.randomUUID();
 
     const now = new Date().toISOString();
     const userPayload = {
@@ -114,7 +95,6 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
     };
 
     const { error: dbError } = await checkClient.from("users").insert(userPayload);
-
     if (dbError) {
       if (adminClient && authUserId) {
         await adminClient.auth.admin.deleteUser(authUserId).catch(() => { });
@@ -136,13 +116,8 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
           .is("deletedAt", null)
           .limit(1)
           .maybeSingle();
-        if (matchedPlan?.subscriptionPlanId) {
-          finalPlanId = matchedPlan.subscriptionPlanId;
-        } else {
-          finalPlanId = null;
-        }
+        finalPlanId = matchedPlan?.subscriptionPlanId || null;
       }
-
       if (!finalPlanId) {
         const { data: defaultPlan } = await checkClient
           .from("subscriptions")
@@ -154,10 +129,82 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
           .order("price", { ascending: true })
           .limit(1)
           .maybeSingle();
-
         if (defaultPlan?.subscriptionPlanId) {
           finalPlanId = defaultPlan.subscriptionPlanId;
         }
+      }
+    }
+
+    let planLabel = "Customer Membership";
+    let planPrice = 0;
+    if (finalPlanId) {
+      const { data: planInfo } = await checkClient
+        .from("subscriptions")
+        .select("subscriptionPlanId, label, planName, price")
+        .eq("subscriptionPlanId", finalPlanId)
+        .maybeSingle();
+      if (planInfo) {
+        planLabel = planInfo.label || planInfo.planName || planLabel;
+        if (planInfo.price !== null && planInfo.price !== undefined) {
+          planPrice = Number(planInfo.price) || 0;
+        }
+      }
+    }
+
+    const individualCustomerPlanId = crypto.randomUUID();
+    if (finalPlanId) {
+      const planPayload = {
+        individualCustomerPlanId,
+        subscriptionPlanId: finalPlanId,
+        userId: authUserId,
+        customAmount: planPrice,
+        startDate: null,
+        endDate: null,
+        isActive: true,
+        status: "pending",
+        transactionId: null,
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: null,
+      };
+      const { error: planErr } = await checkClient.from("individual_customer_plans").insert(planPayload);
+      if (planErr) {
+        console.error("[signupCustomerAction] individual_customer_plans error:", planErr.message);
+      }
+
+      const individualCustomerPlanHistoryId = crypto.randomUUID();
+      const historyPayload: Record<string, any> = {
+        individualCustomerPlanHistoryId,
+        individualCustomerPlanId,
+        subscriptionPlanId: finalPlanId,
+        previousSubscriptionPlanId: null,
+        userId: authUserId,
+        actionType: "ASSIGNED",
+        customAmount: planPrice,
+        unusedCredit: 0,
+        daysCarriedOver: 0,
+        startDate: null,
+        endDate: null,
+        paymentStatus: "pending",
+        transactionId: null,
+        paymentMethod: null,
+        notes: "Initial registration plan assignment",
+        createdBy: authUserId,
+        isActive: true,
+        is_deleted: false,
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: null,
+      };
+
+      let { error: histErr } = await checkClient.from("individual_customer_plan_histories").insert(historyPayload);
+      if (histErr && histErr.message?.includes("invalid input value for enum")) {
+        historyPayload.actionType = "UPGRADED";
+        const retry = await checkClient.from("individual_customer_plan_histories").insert(historyPayload);
+        histErr = retry.error;
+      }
+      if (histErr) {
+        console.error("[signupCustomerAction] individual_customer_plan_histories error:", histErr.message);
       }
     }
 
@@ -175,38 +222,20 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
       createdAt: now,
       updatedAt: now,
     };
-
     const { error: demoError } = await checkClient.from("demo_bookings").insert(demoPayload);
     if (demoError) {
       console.warn("[signupCustomerAction] demo_bookings table sync warning:", demoError.message);
     }
 
-    let planLabel = "Customer Membership";
-    if (finalPlanId) {
-      const { data: planInfo } = await checkClient
-        .from("subscriptions")
-        .select("label, planName")
-        .eq("subscriptionPlanId", finalPlanId)
-        .maybeSingle();
-      if (planInfo) {
-        planLabel = planInfo.label || planInfo.planName || planLabel;
-      }
-    }
-
     let confirmationUrl: string | undefined;
     try {
       const headerList = await headers();
-      const forwardedHost = headerList.get("x-forwarded-host");
-      const host = forwardedHost || headerList.get("host");
-      const isLocal = host?.includes("localhost") || host?.includes("127.0.0.1");
-      const proto = headerList.get("x-forwarded-proto") || (isLocal ? "http" : "https");
-      const currentOrigin = host
-        ? `${proto}://${host}`
-        : (process.env.NODE_ENV === "production" ? "https://www.gkgymlife.com" : (process.env.NEXT_PUBLIC_SITE_URL || "https://www.gkgymlife.com"));
-      confirmationUrl = `${currentOrigin}/api/auth/verify-email?uid=${encodeURIComponent(authUserId)}&email=${encodeURIComponent(cleanEmail)}`;
-    } catch {
-      const siteUrl = process.env.NODE_ENV === "production" ? "https://www.gkgymlife.com" : (process.env.NEXT_PUBLIC_SITE_URL || "https://www.gkgymlife.com");
+      const host = headerList.get("x-forwarded-host") || headerList.get("host");
+      const proto = headerList.get("x-forwarded-proto") || (host?.includes("localhost") ? "http" : "https");
+      const siteUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_SITE_URL || "https://www.gkgymlife.com");
       confirmationUrl = `${siteUrl}/api/auth/verify-email?uid=${encodeURIComponent(authUserId)}&email=${encodeURIComponent(cleanEmail)}`;
+    } catch {
+      confirmationUrl = `https://www.gkgymlife.com/api/auth/verify-email?uid=${encodeURIComponent(authUserId)}&email=${encodeURIComponent(cleanEmail)}`;
     }
 
     const emailRes = await sendUserRegistrationEmails({

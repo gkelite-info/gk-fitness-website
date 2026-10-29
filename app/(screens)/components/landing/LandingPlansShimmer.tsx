@@ -8,7 +8,7 @@ export default function LandingPlansShimmer({ count = 4 }: LandingPlansShimmerPr
       {Array.from({ length: count }).map((_, idx) => (
         <div
           key={idx}
-          className="h-[390px] sm:h-[410px] rounded-2xl bg-[#121319] border border-white/5 p-5 sm:p-6 flex flex-col justify-between shadow-xl"
+          className="h-[400px] sm:h-[420px] rounded-2xl bg-[#121319] border border-white/5 p-5 sm:p-6 flex flex-col justify-between shadow-xl"
         >
           <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/[0.06]">
             <div className="h-6 w-32 bg-white/10 rounded-lg" />

@@ -14,7 +14,7 @@ interface AvailablePlansSectionProps {
   currentPlan?: any;
   plans: Plan[];
   isLoading: boolean;
-  onRenew: (planId: string, planName: string) => void;
+  onRenew: (planId: string, planName: string, amount?: number) => void;
   renewingPlanId: string | null;
 }
 
@@ -74,9 +74,10 @@ export default function AvailablePlansSection({
                         <Diamond size={16} color="#A78BFA" weight="regular" className="shrink-0" />
                       )}
                     </div>
-                    <div className="flex items-baseline mt-0.5">
+                    <div className="flex items-baseline mt-0.5 gap-1.5 flex-wrap">
                       <span className="text-white text-base font-semibold">₹{plan.price}</span>
-                      <span className="text-[#8E8E93] text-xs ml-1">
+                      <span className="text-[#8E8E93] text-[11px] font-medium">+ GST (0%)</span>
+                      <span className="text-[#8E8E93] text-xs">
                         / {plan.durationMonths} Month{plan.durationMonths > 1 ? "s" : ""}
                       </span>
                     </div>
@@ -118,7 +119,7 @@ export default function AvailablePlansSection({
                 )}
 
                 <button
-                  onClick={() => onRenew(plan.planId, plan.planName)}
+                  onClick={() => onRenew(plan.planId, plan.planName, isUpgradeWithCredit ? payableAmount : undefined)}
                   disabled={isRenewingThis}
                   className="w-full bg-[#D7FF00] hover:bg-[#cbf200] py-3.5 px-5 rounded-2xl flex items-center justify-center transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                 >
@@ -137,7 +138,8 @@ export default function AvailablePlansSection({
             );
           })}
         </div>
-      )}
+      )
+      }
     </div>
   );
 }

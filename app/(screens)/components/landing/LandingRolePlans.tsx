@@ -43,17 +43,33 @@ export default function LandingRolePlans() {
   const renderPlanCard = (plan: DynamicSubscriptionPlan, category: "Gym" | "Customer", index: number) => {
     const visual = getPlanVisual(plan.name, index);
     const Icon = visual.icon;
+    const isCustomer = category === "Customer";
+    const hasPrice = isCustomer && plan.price !== null && plan.price !== undefined && !isNaN(Number(plan.price));
+    const formattedPrice = hasPrice ? Number(plan.price).toLocaleString("en-IN") : null;
 
     return (
       <div
         key={`${category}-${plan.id || plan.name}-${index}`}
-        className="h-[390px] sm:h-[410px] rounded-2xl bg-[#121319] border border-white/10 hover:border-[#D4FF32]/50 p-5 sm:p-6 flex flex-col justify-between transition-all duration-300 shadow-xl hover:shadow-[0_0_25px_rgba(212,255,50,0.08)] group"
+        className="h-[400px] sm:h-[420px] rounded-2xl bg-[#121319] border border-white/10 hover:border-[#D4FF32]/50 p-5 sm:p-6 flex flex-col justify-between transition-all duration-300 shadow-xl hover:shadow-[0_0_25px_rgba(212,255,50,0.08)] group"
       >
-        <div className="flex items-center justify-between gap-2 pb-2 shrink-0 border-b border-white/[0.06]">
-          <h4 className="text-xl sm:text-2xl font-bold text-white group-hover:text-[#D4FF32] transition-colors truncate">
-            {plan.name}
-          </h4>
-          <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0">
+        <div className="flex items-start justify-between gap-2 pb-3 shrink-0 border-b border-white/[0.06]">
+          <div className="min-w-0 flex-1">
+            <h4 className="text-xl sm:text-2xl font-bold text-white group-hover:text-[#D4FF32] transition-colors truncate">
+              {plan.name}
+            </h4>
+            {hasPrice && (
+              <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
+                <span className="text-2xl sm:text-3xl font-black text-[#D4FF32] tracking-tight">
+                  ₹{formattedPrice}
+                </span>
+                <span className="text-[11px] sm:text-xs text-[#94A3B8] font-medium">
+                  + GST (0%)
+                </span>
+                <span className="text-xs text-[#64748B] font-normal">/ month</span>
+              </div>
+            )}
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0 mt-0.5">
             <Icon size={20} weight="fill" className={visual.iconColor} />
           </div>
         </div>
@@ -72,7 +88,7 @@ export default function LandingRolePlans() {
         <div className="pt-4 border-t border-white/[0.08] shrink-0">
           {category === "Customer" ? (
             <Link
-              href={`/choose-account?from=plan${plan.id && !plan.id.startsWith("default-") ? `&planId=${encodeURIComponent(plan.id)}` : ""}&planName=${encodeURIComponent(plan.name)}`}
+              href={`/signup?type=individual${plan.id && !plan.id.startsWith("default-") ? `&planId=${encodeURIComponent(plan.id)}` : ""}&planName=${encodeURIComponent(plan.name)}${hasPrice ? `&price=${encodeURIComponent(String(plan.price))}` : ""}`}
               className="w-full h-11 rounded-xl bg-[#D4FF32] hover:bg-[#C2EF2B] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(212,255,50,0.18)] active:scale-[0.98] cursor-pointer"
             >
               Sign Up

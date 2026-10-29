@@ -8,12 +8,14 @@ export interface CreateRazorpayOrderActionParams {
   planId: string;
   customerId?: string;
   gymId?: string;
+  amount?: number;
 }
 
 export async function createRazorpayOrder({
   planId,
   customerId,
   gymId,
+  amount,
 }: CreateRazorpayOrderActionParams) {
   const supabase = await createClient();
   const {
@@ -30,7 +32,7 @@ export async function createRazorpayOrder({
     .eq("userId", user.id)
     .maybeSingle();
 
-  const isIndividual = userRec?.role === "individual";
+  const isIndividual = userRec?.role === "individual" || !gymId;
 
   let resolvedCustomerId = customerId;
   let resolvedGymId = gymId;
@@ -138,6 +140,62 @@ export async function createRazorpayOrder({
         price: Number(subPlan.price) || 0,
       };
       effectivePrice = planInfo.price;
+
+      const { data: existingIndivPlan } = await supabase
+        .from("individual_customer_plans")
+        .select("*, subscription:subscriptions!subscriptionPlanId(subscriptionPlanId, planName, price)")
+        .eq("userId", user.id)
+        .is("deletedAt", null)
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingIndivPlan) {
+        const isExistingActive =
+          Boolean(existingIndivPlan.isActive) &&
+          existingIndivPlan.status !== "pending" &&
+          Boolean(existingIndivPlan.transactionId) &&
+          Boolean(existingIndivPlan.endDate);
+
+        if (isExistingActive && existingIndivPlan.subscriptionPlanId !== subPlan.subscriptionPlanId) {
+          try {
+            const currentPrice = Number(existingIndivPlan.subscription?.price ?? existingIndivPlan.customAmount ?? 0);
+            const proration = determinePlanActionAndProration({
+              newPlan: {
+                planId: subPlan.subscriptionPlanId,
+                planName: subPlan.planName,
+                price: planInfo.price,
+                durationMonths: 1,
+              },
+              existingCustomerPlan: {
+                planId: existingIndivPlan.subscriptionPlanId,
+                startDate: existingIndivPlan.startDate,
+                endDate: existingIndivPlan.endDate,
+                isActive: true,
+                is_Active: true,
+                customAmount: existingIndivPlan.customAmount,
+                plan: {
+                  planId: existingIndivPlan.subscriptionPlanId,
+                  planName: existingIndivPlan.subscription?.planName || "Subscription Plan",
+                  price: currentPrice,
+                  durationMonths: 1,
+                },
+              },
+            });
+
+            effectivePrice = proration.payableAmount;
+            actionType = proration.actionType;
+          } catch (prorationErr: any) {
+            return { success: false, error: prorationErr.message || "Plan downgrade is not permitted" };
+          }
+        } else if (existingIndivPlan.subscriptionPlanId === planId && existingIndivPlan.customAmount && Number(existingIndivPlan.customAmount) > 0) {
+          effectivePrice = Number(existingIndivPlan.customAmount);
+        }
+      }
+
+      if (typeof amount === "number" && amount > 0 && amount <= effectivePrice) {
+        effectivePrice = amount;
+      }
     }
   }
 
