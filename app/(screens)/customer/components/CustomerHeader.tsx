@@ -35,9 +35,9 @@ export default function CustomerHeader() {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      await logoutUser().catch(() => {});
+      await logoutUser().catch(() => { });
       const supabase = createClient();
-      await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => { });
       toast.success("Logged out successfully");
       window.location.href = "/login";
     } catch (error) {
@@ -49,6 +49,32 @@ export default function CustomerHeader() {
   const displayName = profile?.name || user?.user_metadata?.fullName || user?.email?.split("@")[0] || "Customer";
   const displayEmail = profile?.email || user?.email || "";
   const initial = displayName.charAt(0).toUpperCase();
+
+  const normalizedRole = (profile?.role || user?.user_metadata?.role || "customer")
+    .toLowerCase()
+    .trim()
+    .replace(/[-_]/g, "");
+
+  const roleLabel = (() => {
+    switch (normalizedRole) {
+      case "individual":
+        return "Individual";
+      case "customer":
+        return "Customer";
+      case "superadmin":
+        return "Superadmin";
+      case "owner":
+      case "gymowner":
+        return "Owner";
+      case "globaltrainer":
+        return "Global Trainer";
+      case "trainer":
+      case "gymtrainer":
+        return "Trainer";
+      default:
+        return "Customer";
+    }
+  })();
 
   return (
     <>
@@ -66,7 +92,7 @@ export default function CustomerHeader() {
               {displayName}
             </span>
             <span className="text-[#8E8E93] text-[10px] font-medium tracking-wide uppercase">
-              GK Customer
+              {roleLabel}
             </span>
           </div>
         </div>
@@ -77,19 +103,16 @@ export default function CustomerHeader() {
           className="relative w-10 h-10 rounded-2xl bg-[#141414] border border-[#222222] flex flex-col items-center justify-center gap-[5px] hover:bg-[#1A1A1A] hover:border-[#333333] active:scale-95 transition-all duration-300 group focus:outline-none cursor-pointer"
         >
           <span
-            className={`w-5 h-[2px] bg-white rounded-full transition-all duration-300 ease-in-out ${
-              isOpen ? "rotate-45 translate-y-[7px] bg-[#D7FF00]" : ""
-            }`}
+            className={`w-5 h-[2px] bg-white rounded-full transition-all duration-300 ease-in-out ${isOpen ? "rotate-45 translate-y-[7px] bg-[#D7FF00]" : ""
+              }`}
           />
           <span
-            className={`w-5 h-[2px] bg-white rounded-full transition-all duration-300 ease-in-out ${
-              isOpen ? "opacity-0 scale-x-0" : ""
-            }`}
+            className={`w-5 h-[2px] bg-white rounded-full transition-all duration-300 ease-in-out ${isOpen ? "opacity-0 scale-x-0" : ""
+              }`}
           />
           <span
-            className={`w-5 h-[2px] bg-white rounded-full transition-all duration-300 ease-in-out ${
-              isOpen ? "-rotate-45 -translate-y-[7px] bg-[#D7FF00]" : ""
-            }`}
+            className={`w-5 h-[2px] bg-white rounded-full transition-all duration-300 ease-in-out ${isOpen ? "-rotate-45 -translate-y-[7px] bg-[#D7FF00]" : ""
+              }`}
           />
         </button>
       </header>
@@ -102,9 +125,8 @@ export default function CustomerHeader() {
       )}
 
       <aside
-        className={`fixed top-0 right-0 bottom-0 z-50 w-full sm:w-80 bg-[#121214] border-l border-[#222226] shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed top-0 right-0 bottom-0 z-50 w-full sm:w-80 bg-[#121214] border-l border-[#222226] shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         <div className="p-5 border-b border-[#222226] flex items-center justify-between bg-[#0A0A0A]/50">
           <div className="flex items-center gap-3">

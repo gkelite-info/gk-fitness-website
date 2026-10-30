@@ -38,6 +38,7 @@ export async function loginWithRoleAction(params: LoginRoleParams): Promise<Logi
 
   let preIsOwner = false;
   let preIsCustomer = false;
+  let preIsIndividual = false;
   let preIsTrainer = false;
   let preIsGlobalTrainer = false;
   let preIsSuperAdmin = false;
@@ -53,6 +54,7 @@ export async function loginWithRoleAction(params: LoginRoleParams): Promise<Logi
     preUserFound = true;
     if (uRec.role === "owner") preIsOwner = true;
     if (uRec.role === "customer") preIsCustomer = true;
+    if (uRec.role === "individual") preIsIndividual = true;
     if (uRec.role === "trainer") preIsTrainer = true;
     if (uRec.role === "global_trainer" || uRec.role === "globaltrainer") preIsGlobalTrainer = true;
     if (uRec.role === "superadmin") preIsSuperAdmin = true;
@@ -71,50 +73,39 @@ export async function loginWithRoleAction(params: LoginRoleParams): Promise<Logi
   if (gtRes.data && gtRes.data.is_deleted !== true) preIsGlobalTrainer = true;
 
   if (typeId) {
-    if (preUserFound || preIsOwner || preIsCustomer || preIsTrainer || preIsGlobalTrainer || preIsSuperAdmin) {
-      let preRoleValid = false;
-      if (typeId === "individual" || typeId === "customer" || typeId === "gym-customer") {
-        if (preIsCustomer || preIsSuperAdmin || (!preIsOwner && !preIsTrainer && !preIsGlobalTrainer)) {
-          preRoleValid = true;
-        }
-      } else if (typeId === "owner" || typeId === "gym-owner") {
-        if (preIsOwner) preRoleValid = true;
-      } else if (typeId === "gym_trainer" || typeId === "gym-trainer" || typeId === "trainer") {
-        if (preIsTrainer) preRoleValid = true;
-      } else if (typeId === "global_trainer" || typeId === "global-trainer" || typeId === "globaltrainer") {
-        if (preIsGlobalTrainer) preRoleValid = true;
-      } else {
-        preRoleValid = true;
-      }
+    const normalizedType = typeId.toLowerCase().trim().replace(/[-_]/g, "");
 
-      if (!preRoleValid) {
+    if (normalizedType === "individual") {
+      if (preUserFound && !preIsIndividual && !preIsSuperAdmin) {
         return { success: false, error: "Invalid credentials or check role" };
       }
-    }
-
-    if (gymId) {
-      let isAuthorizedForGym = false;
-      let hasGymBoundRole = false;
-
-      if (oRes.data && oRes.data.is_deleted !== true) {
-        hasGymBoundRole = true;
-        if (oRes.data.gymId === gymId) isAuthorizedForGym = true;
+    } else if (normalizedType === "owner" || normalizedType === "gymowner") {
+      if (preUserFound && !preIsOwner) {
+        return { success: false, error: "Invalid credentials or check role" };
       }
-      if (cRes.data && cRes.data.is_deleted !== true) {
-        hasGymBoundRole = true;
-        if (cRes.data.gymId === gymId) isAuthorizedForGym = true;
+    } else if (normalizedType === "customer" || normalizedType === "gymcustomer") {
+      if (preUserFound && !preIsCustomer) {
+        return { success: false, error: "Invalid credentials or check role" };
       }
-      if (tRes.data && tRes.data.is_deleted !== true) {
-        hasGymBoundRole = true;
-        if (tRes.data.gymId === gymId) isAuthorizedForGym = true;
+      if (gymId) {
+        const belongsToGym = cRes.data && cRes.data.gymId === gymId && cRes.data.is_deleted !== true;
+        if (!belongsToGym) {
+          return { success: false, error: "You do not belong to the selected gym. Please select your registered gym." };
+        }
       }
-
-      if (!hasGymBoundRole) {
-        isAuthorizedForGym = true;
+    } else if (normalizedType === "gymtrainer" || normalizedType === "trainer") {
+      if (preUserFound && !preIsTrainer) {
+        return { success: false, error: "Invalid credentials or check role" };
       }
-
-      if (!isAuthorizedForGym) {
-        return { success: false, error: "Invalid credentials or check gym" };
+      if (gymId) {
+        const belongsToGym = tRes.data && tRes.data.gymId === gymId && tRes.data.is_deleted !== true;
+        if (!belongsToGym) {
+          return { success: false, error: "You do not belong to the selected gym as a trainer." };
+        }
+      }
+    } else if (normalizedType === "globaltrainer") {
+      if (preUserFound && !preIsGlobalTrainer) {
+        return { success: false, error: "Invalid credentials or check role" };
       }
     }
   }
