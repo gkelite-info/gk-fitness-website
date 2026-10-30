@@ -56,7 +56,7 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
         email: cleanEmail,
         password: data.password,
         email_confirm: false,
-        user_metadata: { name: cleanName, phone: cleanPhone, role: "customer" },
+        user_metadata: { name: cleanName, phone: cleanPhone, role: "individual" },
       });
       if (authError) return { success: false, error: authError.message };
       authUserId = authData?.user?.id || null;
@@ -64,7 +64,7 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
       const { data: authData, error: authError } = await serverClient.auth.signUp({
         email: cleanEmail,
         password: data.password,
-        options: { data: { name: cleanName, phone: cleanPhone, role: "customer" } },
+        options: { data: { name: cleanName, phone: cleanPhone, role: "individual" } },
       });
       if (authError) return { success: false, error: authError.message };
       authUserId = authData?.user?.id || null;
@@ -79,7 +79,7 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
       email: cleanEmail,
       phone: cleanPhone,
       address: data.address?.trim() || null,
-      role: "customer",
+      role: "individual",
       status: "active",
       isEmailVerified: false,
       isPhoneVerified: false,

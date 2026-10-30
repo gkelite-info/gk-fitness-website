@@ -4,6 +4,13 @@ import { createClient } from "@/app/api/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
+function getAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://swzhxokkrolnxvhekrmj.supabase.co";
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) return null;
+  return createSupabaseClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+}
+
 async function clearAuthCookies() {
   try {
     const cookieStore = await cookies();
@@ -19,9 +26,22 @@ async function clearAuthCookies() {
   }
 }
 
-export async function loginUser(email: string, password: string, selectedType?: string | null) {
+export async function loginUser(
+  email: string,
+  password: string,
+  selectedType?: string | null,
+  gymId?: string | null
+) {
   const supabase = await createClient();
   const cleanEmail = email.trim().toLowerCase();
+
+  const rejectAuth = async (message: string) => {
+    try {
+      await supabase.auth.signOut();
+    } catch { }
+    await clearAuthCookies();
+    return { error: message };
+  };
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email: cleanEmail,
@@ -35,159 +55,228 @@ export async function loginUser(email: string, password: string, selectedType?: 
     return { error: error.message };
   }
 
-  // Fetch the user's role and verification status
-  const { data: userData } = await supabase
+  const adminClient = getAdminClient();
+  const db = adminClient || supabase;
+
+  let userRecord: { role?: string; isEmailVerified?: boolean; email?: string } | null = null;
+  const { data: userData } = await db
     .from("users")
     .select("role, isEmailVerified, email")
     .eq("userId", data.user.id)
     .maybeSingle();
 
-  let userRecord = userData;
-  if (!userRecord && data.user.email) {
-    const { data: emailUser } = await supabase
-      .from("users")
-      .select("role, isEmailVerified, email")
-      .eq("email", data.user.email.toLowerCase().trim())
+    userRecord = userData;
+    if (!userRecord && cleanEmail) {
+      const { data: emailUser } = await db
+        .from("users")
+        .select("role, isEmailVerified, email")
+        .eq("email", cleanEmail)
+        .maybeSingle();
+      userRecord = emailUser;
+    }
+
+    let isGymOwner = false;
+    const { data: ownerRow } = await db
+      .from("gym_owners")
+      .select("gymOwnerId, gymId, is_deleted")
+      .or(`ownerEmail.eq.${cleanEmail},userId.eq.${data.user.id}`)
+      .eq("is_deleted", false)
       .maybeSingle();
-    userRecord = emailUser;
-  }
+    if (ownerRow) isGymOwner = true;
 
-  const rawRole = (userRecord?.role || data.user.user_metadata?.role || "").toLowerCase().trim();
-  const cleanRole = rawRole.replace(/[-_]/g, "");
-
-  if (userRecord && userRecord.role === "individual") {
-    userRecord.role = "customer";
-    await supabase
-      .from("users")
-      .update({ role: "customer" })
-      .eq("userId", data.user.id);
-  }
-
-  if (userRecord && userRecord.role === "global_trainer") {
-    userRecord.role = "globaltrainer";
-    await supabase
-      .from("users")
-      .update({ role: "globaltrainer" })
-      .eq("userId", data.user.id);
-  }
-
-  if (cleanRole === "globaltrainer" && userRecord && userRecord.isEmailVerified === false) {
-    userRecord.isEmailVerified = true;
-    await supabase
-      .from("users")
-      .update({ isEmailVerified: true })
-      .eq("userId", data.user.id);
-  }
-
-  if (data?.user?.email_confirmed_at && userRecord && userRecord.isEmailVerified === false) {
-    userRecord.isEmailVerified = true;
-    await supabase
-      .from("users")
-      .update({ isEmailVerified: true })
-      .eq("userId", data.user.id);
-  }
-
-  if (userRecord && userRecord.isEmailVerified === false && !data?.user?.email_confirmed_at && cleanRole !== "globaltrainer") {
-    await clearAuthCookies();
-    return { error: "Please check your email and click the confirmation link to activate your account before logging in." };
-  }
-
-  if (selectedType) {
-    const normalizedType = selectedType.toLowerCase().trim().replace(/[-_]/g, "");
-    let roleMatches = false;
-
-    if (normalizedType === "globaltrainer") {
-      roleMatches = cleanRole === "globaltrainer" || cleanRole === "trainer";
-    } else if (normalizedType === "owner" || normalizedType === "gymowner") {
-      roleMatches = cleanRole === "owner";
-    } else if (normalizedType === "individual" || normalizedType === "customer") {
-      roleMatches = cleanRole === "customer" || cleanRole === "individual" || cleanRole === "superadmin";
-    } else if (normalizedType === "trainer") {
-      roleMatches = cleanRole === "trainer" || cleanRole === "globaltrainer";
-    } else {
-      roleMatches = true;
-    }
-
-    if (!roleMatches) {
-      await clearAuthCookies();
-      return { error: "Invalid credentials or check role" };
-    }
-  }
-
-  if (userRecord?.role && data.user.user_metadata?.role !== userRecord.role) {
-    try {
-      await supabase.auth.updateUser({
-        data: { role: userRecord.role },
-      });
-    } catch {
-      // Best-effort metadata update
-    }
-  }
-
-  return { success: true, role: userRecord?.role || data.user.user_metadata?.role };
-}
-
-export async function logoutUser() {
-  await clearAuthCookies();
-  return { success: true };
-}
-
-export async function rollbackAuthUser(userId: string) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    console.error("Missing SUPABASE_SERVICE_ROLE_KEY. Cannot delete user from Auth.");
-    return { error: 'Missing service role key' };
-  }
-
-  const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey);
-  const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-
-  if (error) {
-    console.error(`Failed to delete user ${userId} from Auth:`, error.message);
-    return { error: error.message };
-  }
-
-  return { success: true };
-}
-
-export async function getCurrentUserRole() {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return { success: false, error: "Not authenticated" };
-    }
-
-    const { data: userData } = await supabase
-      .from("users")
-      .select("role, name, email, isEmailVerified")
-      .eq("userId", user.id)
+    let isGymTrainer = false;
+    const { data: trainerRow } = await db
+      .from("gym_trainers")
+      .select("gymTrainerId, gymId, is_deleted")
+      .or(`email.eq.${cleanEmail},userId.eq.${data.user.id}`)
+      .eq("is_deleted", false)
       .maybeSingle();
+    if (trainerRow) isGymTrainer = true;
 
-    if (userData && userData.isEmailVerified === false) {
-      return { success: false, error: "Email not verified" };
-    }
+    let isGlobalTrainer = false;
+    const { data: globalTrainerRow } = await db
+      .from("global_trainers")
+      .select("globalTrainerId, is_deleted")
+      .eq("email", cleanEmail)
+      .eq("is_deleted", false)
+      .maybeSingle();
+    if (globalTrainerRow) isGlobalTrainer = true;
 
-    return {
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: userData?.name || user.user_metadata?.name || "",
-        role: userData?.role || user.user_metadata?.role || "customer",
-        isEmailVerified: userData?.isEmailVerified === true,
-      },
-    };
-  } catch (err: any) {
-    return {
-      success: false,
-      error: err?.message || "Failed to fetch user role",
-    };
-  }
-}
+      let userRole = (userRecord?.role || data.user.user_metadata?.role || "").toLowerCase().trim().replace(/[-_]/g, "");
+      if (isGymOwner && userRole !== "superadmin") {
+        userRole = "owner";
+      } else if (isGlobalTrainer && userRole !== "superadmin") {
+        userRole = "globaltrainer";
+      } else if (isGymTrainer && userRole !== "superadmin" && userRole !== "owner") {
+        userRole = "trainer";
+      }
 
+        const effectiveType = (selectedType || "individual").toLowerCase().trim().replace(/[-_]/g, "");
+
+            if (effectiveType === "individual") {
+              if (userRole !== "individual" && userRole !== "superadmin") {
+                return rejectAuth("Invalid credentials or check role");
+              }
+            } else if (effectiveType === "owner" || effectiveType === "gymowner") {
+              if (userRole !== "owner" && !isGymOwner) {
+                return rejectAuth("Invalid credentials or check role");
+              }
+            } else if (effectiveType === "customer" || effectiveType === "gymcustomer") {
+              if (userRole !== "customer") {
+                return rejectAuth("Invalid credentials or check role");
+              }
+              if (gymId) {
+                const orCust = [`userId.eq.${data.user.id}`, `customerId.eq.${data.user.id}`];
+                if (cleanEmail) orCust.push(`email.eq.${cleanEmail}`);
+                const { data: custRows } = await db
+                  .from("gym_customers")
+                  .select("customerId, gymId, is_deleted")
+                  .or(orCust.join(","))
+                  .eq("is_deleted", false);
+                const belongs = custRows && custRows.some((c: any) => c.gymId === gymId);
+                if (!belongs) {
+                  return rejectAuth("You do not belong to the selected gym. Please select your registered gym.");
+                }
+                }
+              } else if (effectiveType === "gymtrainer" || effectiveType === "trainer") {
+                if (userRole !== "trainer" && !isGymTrainer) {
+                  return rejectAuth("Invalid credentials or check role");
+                }
+                if (gymId) {
+                  const orTrn = [`userId.eq.${data.user.id}`];
+                  if (cleanEmail) orTrn.push(`email.eq.${cleanEmail}`);
+                  const { data: trainerRows } = await db
+                    .from("gym_trainers")
+                    .select("gymTrainerId, gymId, is_deleted")
+                    .or(orTrn.join(","))
+                    .eq("is_deleted", false);
+                  const belongs = trainerRows && trainerRows.some((t: any) => t.gymId === gymId);
+                  if (!belongs) {
+                    return rejectAuth("You do not belong to the selected gym as a trainer.");
+                  }
+                }
+              } else if (effectiveType === "globaltrainer") {
+                if (userRole !== "globaltrainer" && !isGlobalTrainer) {
+                  return rejectAuth("Invalid credentials or check role");
+                }
+              } else {
+                return rejectAuth("Invalid credentials or check role");
+              }
+
+              if (gymId) {
+                const { data: gymDetails } = await db
+                  .from("gyms")
+                  .select("isActive")
+                  .eq("gymId", gymId)
+                  .maybeSingle();
+                if (gymDetails && gymDetails.isActive === false) {
+                  return rejectAuth("The selected gym is currently inactive. Please contact support.");
+                }
+              }
+
+                if (userRole === "globaltrainer" && userRecord && userRecord.isEmailVerified === false) {
+                  userRecord.isEmailVerified = true;
+                  await db.from("users").update({ isEmailVerified: true }).eq("userId", data.user.id);
+                }
+
+                if (data?.user?.email_confirmed_at && userRecord && userRecord.isEmailVerified === false) {
+                  userRecord.isEmailVerified = true;
+                  await db.from("users").update({ isEmailVerified: true }).eq("userId", data.user.id);
+                }
+
+                if (userRecord && userRecord.isEmailVerified === false && !data?.user?.email_confirmed_at && userRole !== "globaltrainer" && userRole !== "superadmin") {
+                  return rejectAuth("Please check your email and click the confirmation link to activate your account before logging in.");
+                }
+
+                if (userRole && data.user.user_metadata?.role !== userRole) {
+                  try {
+                  await supabase.auth.updateUser({ data: { role: userRole } });
+                } catch { }
+              }
+
+              return { success: true, role: userRole };
+            }
+
+            export async function logoutUser() {
+              try {
+                const supabase = await createClient();
+                await supabase.auth.signOut();
+              } catch { }
+              await clearAuthCookies();
+              return { success: true };
+            }
+
+            export async function rollbackAuthUser(userId: string) {
+              const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+              const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+              if (!supabaseUrl || !supabaseServiceKey) {
+                console.error("Missing SUPABASE_SERVICE_ROLE_KEY. Cannot delete user from Auth.");
+                return { error: 'Missing service role key' };
+              }
+
+              const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey);
+              const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+              if (error) {
+                console.error(`Failed to delete user ${userId} from Auth:`, error.message);
+                return { error: error.message };
+              }
+
+              return { success: true };
+            }
+
+            export async function getCurrentUserRole() {
+              try {
+                const supabase = await createClient();
+                const {
+                  data: { user },
+                } = await supabase.auth.getUser();
+
+                if (!user) {
+                  return { success: false, error: "Not authenticated" };
+                }
+
+                const adminClient = getAdminClient();
+                const db = adminClient || supabase;
+
+                const { data: userData } = await db
+                  .from("users")
+                  .select("role, name, email, isEmailVerified")
+                  .eq("userId", user.id)
+                  .maybeSingle();
+
+                if (userData && userData.isEmailVerified === false) {
+                  return { success: false, error: "Email not verified" };
+                }
+
+                let role = userData?.role || user.user_metadata?.role || "customer";
+
+                const { data: ownerRow } = await db
+                  .from("gym_owners")
+                  .select("gymOwnerId")
+                  .or(`ownerEmail.eq.${user.email},userId.eq.${user.id}`)
+                  .eq("is_deleted", false)
+                  .maybeSingle();
+
+                if (ownerRow && role !== "superadmin") {
+                  role = "owner";
+                }
+
+                return {
+                  success: true,
+                  user: {
+                    id: user.id,
+                    email: user.email,
+                    name: userData?.name || user.user_metadata?.name || "",
+                    role: role,
+                    isEmailVerified: userData?.isEmailVerified === true,
+                  },
+                };
+              } catch (err: any) {
+                return {
+                  success: false,
+                  error: err?.message || "Failed to fetch user role",
+                };
+              }
+            }

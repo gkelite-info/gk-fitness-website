@@ -5,9 +5,9 @@ import { EnvelopeSimple, LockKey, CircleNotch, ArrowRight, Eye, EyeSlash, CaretL
 import { loginUser } from "@/app/api/auth/actions";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import LoginHeroPanel from "./_components/LoginHeroPanel";
 
 function LoginContent() {
   const [email, setEmail] = useState("");
@@ -19,9 +19,15 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type");
-  const isOwner = typeParam === "owner";
+  const titleParam = searchParams.get("title");
+  const gymId = searchParams.get("gymId");
+  const gymName = searchParams.get("gymName");
+  const effectiveType = typeParam || "individual";
+  const isIndividual = effectiveType === "individual";
   const planId = searchParams.get("planId"), planName = searchParams.get("planName");
   const signupUrl = `/signup?type=individual${planId ? `&planId=${encodeURIComponent(planId)}&planName=${encodeURIComponent(planName || "")}` : ""}`;
+  const backHref = gymId ? `/find-organization?type=${typeParam || "customer"}` : "/choose-account";
+
   useEffect(() => {
     if (searchParams.get("verified") === "true") {
       toast.success("Email verified successfully! Please sign in to continue.", { id: "email-verified-toast" });
@@ -71,17 +77,18 @@ function LoginContent() {
     }
 
     setLoading(true);
-    const { error: authError, role } = await loginUser(email, password, typeParam);
+    const { error: authError, role } = await loginUser(email, password, effectiveType, gymId);
 
     if (authError) {
       toast.error(authError, { id: "login-auth-error" });
       setLoading(false);
       return;
     }
+
     toast.success("Successfully logged in!", { id: "login-success" });
-    const normalizedRole = (role || "").toLowerCase().trim();
-    const searchParams = new URLSearchParams(window.location.search);
-    const returnTo = searchParams.get("returnTo");
+    const normalizedRole = (role || "").toLowerCase().trim().replace(/[-_]/g, "");
+    const sp = new URLSearchParams(window.location.search);
+    const returnTo = sp.get("returnTo");
     if (returnTo && returnTo.startsWith("/") && returnTo !== "/login") {
       if (normalizedRole === "superadmin" && !returnTo.startsWith("/superadmin")) {
         window.location.href = "/superadmin";
@@ -93,15 +100,16 @@ function LoginContent() {
       window.location.href = targetReturn;
       return;
     }
+
     if (normalizedRole === "superadmin") {
       window.location.href = "/superadmin";
     } else if (normalizedRole === "owner") {
       window.location.href = "/owner";
-    } else if (normalizedRole === "globaltrainer" || normalizedRole === "global_trainer" || typeParam === "globaltrainer") {
+    } else if (normalizedRole === "globaltrainer") {
       window.location.href = "/globaltrainer";
-    } else if (normalizedRole === "trainer") {
+    } else if (normalizedRole === "trainer" || normalizedRole === "gymtrainer") {
       window.location.href = "/trainer";
-    } else if (normalizedRole === "customer" || normalizedRole === "individual" || typeParam === "individual" || role === "customer" || role === "individual") {
+    } else if (normalizedRole === "customer" || normalizedRole === "individual") {
       window.location.href = "/customer";
     } else {
       window.location.href = "/";
@@ -130,67 +138,51 @@ function LoginContent() {
         transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
         initial={false}
       >
-        <div className="w-[100vw] lg:w-1/2 h-full relative flex flex-col justify-end p-8 sm:p-12">
-          <Image
-            src="/images/gk-gym-life-edited.jpg"
-            alt="GK - Gym Life Interior"
-            fill
-            priority
-            className="object-cover object-[20%_center] lg:object-center absolute inset-0 z-0"
-          />
-          <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0C0D10] via-[#0C0D10]/40 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 z-10 bg-black/20 pointer-events-none" />
-
-          <div className="relative z-20 flex flex-col gap-4">
-            <div className="w-16 h-1 bg-[#D4FF32] rounded-full mb-2" />
-            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-              GK - <span className="text-[#D4FF32]">Gym Life.</span>
-            </h1>
-            <p className="text-[#94A3B8] max-w-md font-medium text-sm sm:text-base">
-              The premium management portal for GK - Gym Life. Streamline your operations, track your athletes, and conquer your goals.
-            </p>
-
-            <button
-              type="button"
-              onClick={openMobileForm}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                openMobileForm(e);
-              }}
-              className="cursor-pointer lg:hidden mt-8 w-full h-14 bg-[#D4FF32] hover:bg-[#c2ef2b] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-[0_10px_20px_-10px_rgba(212,255,50,0.5)] touch-manipulation z-30"
-            >
-              Access Portal <ArrowRight size={20} weight="bold" />
-            </button>
-          </div>
-        </div>
+        <LoginHeroPanel onOpenMobileForm={openMobileForm} />
 
         <div className="w-[100vw] lg:w-1/2 h-full flex items-center justify-center p-4 sm:p-8 relative bg-[#0C0D10]">
           <div className="hidden lg:block absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-[#D4FF32]/10 rounded-full blur-[120px] pointer-events-none" />
 
           <div className="w-full max-w-sm sm:max-w-md relative z-10">
-            <button
-              type="button"
-              onClick={closeMobileForm}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                closeMobileForm(e);
-              }}
-              className="cursor-pointer lg:hidden flex items-center gap-2 text-[#94A3B8] hover:text-white mb-4 sm:mb-8 transition-colors font-semibold text-sm touch-manipulation"
-            >
-              <CaretLeft size={20} weight="bold" /> Back to Home
-            </button>
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <Link
+                href={backHref}
+                className="inline-flex items-center gap-1.5 text-xs text-[#94A3B8] hover:text-white transition-colors font-medium cursor-pointer"
+              >
+                <CaretLeft size={16} weight="bold" /> {gymId ? "Change Gym" : "Change Account Type"}
+              </Link>
 
-            <div className="flex flex-col items-center text-center mb-6 sm:mb-10">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#1D2218] border border-[#D4FF32]/30 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-[0_0_20px_rgba(212,255,50,0.15)]">
+              <button
+                type="button"
+                onClick={closeMobileForm}
+                className="cursor-pointer lg:hidden text-xs text-[#94A3B8] hover:text-white transition-colors font-medium"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#1D2218] border border-[#D4FF32]/30 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-[0_0_20px_rgba(212,255,50,0.15)]">
                 <Barbell size={28} weight="duotone" className="text-[#D4FF32]" />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white mb-2">Welcome Back</h2>
+
+              {gymName ? (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#D4FF32]/10 text-[#D4FF32] border border-[#D4FF32]/30 mb-2">
+                  {gymName}
+                </span>
+              ) : titleParam ? (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold bg-white/5 text-[#CBD5E1] border border-white/10 mb-2">
+                  {titleParam}
+                </span>
+              ) : null}
+
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white mb-1.5">Welcome Back</h2>
               <p className="text-xs sm:text-sm font-medium text-[#94A3B8] max-w-[280px] sm:max-w-full">
-                Sign in to access your portal and manage your gym operations.
+                Sign in to access your portal and continue your journey.
               </p>
             </div>
 
-            <form onSubmit={handleLogin} className="flex flex-col gap-4 sm:gap-6">
+            <form onSubmit={handleLogin} className="flex flex-col gap-4 sm:gap-5">
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wide ml-1">
                   Email Address
@@ -249,11 +241,11 @@ function LoginContent() {
               <button
                 type="submit"
                 disabled={loading}
-                className="cursor-pointer w-full h-12 sm:h-14 mt-2 sm:mt-4 bg-[#D4FF32] hover:bg-[#c2ef2b] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-[0_10px_20px_-10px_rgba(212,255,50,0.5)] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+                className="cursor-pointer w-full h-12 sm:h-14 mt-2 bg-[#D4FF32] hover:bg-[#c2ef2b] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-[0_10px_20px_-10px_rgba(212,255,50,0.5)] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
               >
                 {loading ? (
                   <>
-                    <CircleNotch size={20} weight="bold" className="animate-spin" /> Logging..
+                    <CircleNotch size={20} weight="bold" className="animate-spin" /> Logging in...
                   </>
                 ) : (
                   <>
@@ -262,8 +254,8 @@ function LoginContent() {
                 )}
               </button>
 
-              {!isOwner && (
-                <div className="flex flex-col items-center text-center gap-1.5 mt-2 sm:mt-3">
+              {isIndividual && (
+                <div className="flex flex-col items-center text-center gap-1.5 mt-2">
                   <p className="text-xs sm:text-sm text-[#94A3B8]">
                     Don&apos;t have an account?{" "}
                     <Link
