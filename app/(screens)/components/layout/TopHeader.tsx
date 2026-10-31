@@ -1,6 +1,6 @@
 "use client";
 
-import { MagnifyingGlass, UsersThree, Bell, SignOut, List } from "@phosphor-icons/react";
+import { UsersThree, Bell, SignOut, List } from "@phosphor-icons/react";
 import { useUser } from "@/app/context/UserContext";
 import Avatar from "../reusable/Avatar";
 import { useRouter, usePathname } from "next/navigation";
@@ -9,6 +9,7 @@ import AnnouncementsModal from "@/app/(screens)/owner/(dashboard)/_components/An
 import ConfirmationModal from "../reusable/ConfirmationModal";
 import toast from "react-hot-toast";
 import { logoutUser as logoutUserServer } from "@/app/api/auth/actions";
+import { clearFallbackAuthUser } from "@/lib/helpers/auth/fallbackAuthHelper";
 import { logoutUser as logoutUserClient } from "@/app/api/supabase/helpers";
 
 interface TopHeaderProps {
@@ -16,7 +17,7 @@ interface TopHeaderProps {
 }
 
 export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
-  const { profile, roleData, loading } = useUser();
+  const { profile, roleData, user, loading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
   const [isAnnouncementsModalOpen, setIsAnnouncementsModalOpen] = useState(false);
@@ -28,6 +29,7 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
     try {
       setIsLoggingOut(true);
       await logoutUserServer();
+      await clearFallbackAuthUser().catch(() => { });
       await logoutUserClient();
       toast.success("Logged out successfully");
       setIsLogoutModalOpen(false);
@@ -46,13 +48,40 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
     ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
     : "Gym Owner";
 
-  const displayName = profile?.name || formattedRole;
+  const roleName =
+    roleData?.[0]?.ownerFullname ||
+    roleData?.[0]?.fullName ||
+    roleData?.[0]?.name ||
+    user?.user_metadata?.ownerFullname ||
+    user?.user_metadata?.fullName ||
+    user?.user_metadata?.name;
+
+  const rawName = profile?.name;
+  const isNameClean = rawName && !rawName.includes("@") && rawName.trim().length > 0;
+
+  let displayName = roleName || (isNameClean ? rawName.trim() : null);
+
+  if (!displayName) {
+    if (rawName && rawName.includes("@")) {
+      const emailUser = rawName.split("@")[0].replace(/[._-]/g, " ");
+      displayName = emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
+    } else if (profile?.email) {
+      const emailUser = profile.email.split("@")[0].replace(/[._-]/g, " ");
+      displayName = emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
+    } else if (user?.email) {
+      const emailUser = user.email.split("@")[0].replace(/[._-]/g, " ");
+      displayName = emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
+    } else {
+      displayName = formattedRole;
+    }
+  }
+
   const gender = roleData && roleData.length > 0 ? roleData[0].gender : null;
 
-  const formattedDate = new Intl.DateTimeFormat('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long'
+  const formattedDate = new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
   }).format(new Date());
 
   const currentHour = new Date().getHours();
@@ -83,26 +112,25 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
           />
         )}
         <div className="flex flex-col">
-          <span className="font-['Nimbus_Sans'] font-semibold text-[12px] leading-4 tracking-[0.6px] uppercase text-[#94A3B8]">
+          <span className="font-semibold text-xs leading-4 tracking-wider uppercase text-[#94A3B8]">
             WELCOME BACK
           </span>
           {loading ? (
             <div className="h-6 w-40 sm:w-56 bg-[#232631] animate-pulse rounded my-0.5" />
           ) : (
-            <h1 className="font-['Nimbus_Sans'] font-bold text-[18px] leading-[28px] text-white m-0">
+            <h1 className="font-bold text-lg leading-7 text-white m-0">
               {greeting}, {displayName}
             </h1>
           )}
-          <span className="font-['Nimbus_Sans'] font-medium text-[12px] leading-4 text-[#94A3B8]">
+          <span className="font-medium text-xs leading-4 text-[#94A3B8]">
             {formattedDate}
           </span>
         </div>
       </div>
 
       <div className="flex items-center gap-4 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
-
         <div className="flex items-center gap-2 flex-shrink-0">
-          <button 
+          <button
             onClick={() => router.push(communityRoute)}
             className={`cursor-pointer w-10 h-10 flex items-center justify-center rounded-xl transition-all ${
               pathname.startsWith(communityRoute)
@@ -110,10 +138,10 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
                 : "bg-[#15161C] border border-[#232631] hover:bg-[#1f212a]"
             }`}
           >
-            <UsersThree 
-              size={16} 
-              className={pathname.startsWith(communityRoute) ? "text-[#D4FF32]" : "text-[#CBD5E1]"} 
-              weight={pathname.startsWith(communityRoute) ? "fill" : "regular"} 
+            <UsersThree
+              size={16}
+              className={pathname.startsWith(communityRoute) ? "text-[#D4FF32]" : "text-[#CBD5E1]"}
+              weight={pathname.startsWith(communityRoute) ? "fill" : "regular"}
             />
           </button>
           <button
@@ -128,7 +156,7 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
               <div className="absolute right-[9px] top-[9px] w-2 h-2 bg-[#F43F5E] rounded-full shadow-[0_0_0_2px_#15161C]" />
             )}
           </button>
-          <button 
+          <button
             type="button"
             onClick={() => setIsLogoutModalOpen(true)}
             title="Log Out"

@@ -11,10 +11,12 @@ export interface UserProfile {
   state?: string | null;
   city?: string | null;
   pincode?: number | null;
+  dob?: string | null;
+  gender?: string | null;
   role: string | null;
   profilePhoto?: string | null;
+  password?: string | null;
 
-  // Role-specific IDs
   gymOwnerId?: string | null;
   gymId?: string | null;
   customerId?: string | null;
@@ -39,16 +41,16 @@ export async function fetchUserAndRoleProfile(
   };
 
   try {
-    let { data: userRecord, error } = await supabase
+    let { data: userRecord } = await supabase
       .from('users')
-      .select('userId, name, email, phone, address, country, state, city, pincode, role, profilePhoto')
+      .select('userId, name, email, phone, address, country, state, city, pincode, dob, gender, role, profilePhoto')
       .eq('userId', authUserId)
       .maybeSingle();
 
     if (!userRecord && authEmail) {
       const emailRes = await supabase
         .from('users')
-        .select('userId, name, email, phone, address, country, state, city, pincode, role, profilePhoto')
+        .select('userId, name, email, phone, address, country, state, city, pincode, dob, gender, role, profilePhoto')
         .eq('email', authEmail)
         .maybeSingle();
       userRecord = emailRes.data;
@@ -89,7 +91,6 @@ export async function fetchUserAndRoleProfile(
     };
 
     if (userRecord && userRecord.userId) {
-      // Auto-create community profile if missing
       const { data: commProfile } = await supabase
         .from('gym_community_profiles')
         .select('gymCommunityProfileId')
@@ -139,26 +140,16 @@ export async function fetchUserAndRoleProfile(
           break;
         }
         case 'trainer': {
-          // TODO: Implement trainer table fetch when available
-          // const { data } = await supabase.from('trainers').select('trainerId').eq('userId', profile.userId).maybeSingle();
-          // profile.trainerId = data?.trainerId || null;
           break;
         }
         case 'doctor': {
-          // TODO: Implement doctor table fetch when available
-          // const { data } = await supabase.from('doctors').select('doctorId').eq('userId', profile.userId).maybeSingle();
-          // profile.doctorId = data?.doctorId || null;
           break;
         }
         case 'dietician': {
-          // TODO: Implement dietician table fetch when available
-          // const { data } = await supabase.from('dieticians').select('dieticianId').eq('userId', profile.userId).maybeSingle();
-          // profile.dieticianId = data?.dieticianId || null;
           break;
         }
         case 'superadmin':
         default:
-          // Superadmins do not have a specific dependent table ID attached yet
           break;
       }
     }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useUser } from "@/app/context/UserContext";
 import { logoutUser } from "@/app/api/auth/actions";
+import { clearFallbackAuthUser } from "@/lib/helpers/auth/fallbackAuthHelper";
 import { createClient } from "@/app/api/supabase/client";
 import {
   SignOut,
@@ -36,6 +37,7 @@ export default function CustomerHeader() {
     try {
       setIsLoggingOut(true);
       await logoutUser().catch(() => { });
+      await clearFallbackAuthUser().catch(() => { });
       const supabase = createClient();
       await supabase.auth.signOut({ scope: 'local' }).catch(() => { });
       toast.success("Logged out successfully");

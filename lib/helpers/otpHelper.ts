@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
 import { randomUUID } from '@/lib/helpers/uuid';
+import { hashPassword } from '@/lib/helpers/user/userHelper';
 
 export type OtpType = 'email' | 'sms';
 export type OtpPurpose = 'login' | 'register' | 'reset_password';
@@ -42,6 +43,7 @@ export interface CreateUserParams {
   pincode?: number | null;
   role?: string;
   dob?: string | null;
+  password?: string | null;
 }
 
 export async function createUser(userData: CreateUserParams) {
@@ -56,6 +58,7 @@ export async function createUser(userData: CreateUserParams) {
     pincode: userData.pincode || null,
     role: userData.role || 'customer',
     dob: userData.dob || null,
+    password: userData.password ? await hashPassword(userData.password) : null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -91,6 +94,7 @@ export async function updateUser(userId: string, userData: Partial<CreateUserPar
   if (userData.state !== undefined) updateData.state = userData.state;
   if (userData.city !== undefined) updateData.city = userData.city;
   if (userData.pincode !== undefined) updateData.pincode = userData.pincode;
+  if (userData.password) updateData.password = await hashPassword(userData.password);
 
   const { data, error } = await supabase
     .from('users')

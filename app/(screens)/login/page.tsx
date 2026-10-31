@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, Suspense } from "react";
 import { EnvelopeSimple, LockKey, CircleNotch, ArrowRight, Eye, EyeSlash, CaretLeft, Barbell } from "@phosphor-icons/react";
 import { loginUser } from "@/app/api/auth/actions";
+import { saveFallbackAuthUser } from "@/lib/helpers/auth/fallbackAuthHelper";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import Link from "next/link";
@@ -77,7 +78,7 @@ function LoginContent() {
     }
 
     setLoading(true);
-    const { error: authError, role } = await loginUser(email, password, effectiveType, gymId);
+    const { error: authError, role, fallbackUser } = await loginUser(email, password, effectiveType, gymId);
 
     if (authError) {
       toast.error(authError, { id: "login-auth-error" });
@@ -85,6 +86,7 @@ function LoginContent() {
       return;
     }
 
+    if (fallbackUser) await saveFallbackAuthUser(fallbackUser);
     toast.success("Successfully logged in!", { id: "login-success" });
     const normalizedRole = (role || "").toLowerCase().trim().replace(/[-_]/g, "");
     const sp = new URLSearchParams(window.location.search);
