@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { SignupFormValues, validateSignupForm } from "@/lib/validations/signupValidation";
 import { capitalizeWords } from "@/lib/validations/demoValidation";
 import { sendUserRegistrationEmails } from "@/lib/helpers/registrationEmailService";
+import { hashPassword } from "@/lib/helpers/user/userHelper";
 
 export interface SignupResponse {
   success: boolean;
@@ -73,6 +74,7 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
     if (!authUserId) authUserId = crypto.randomUUID();
 
     const now = new Date().toISOString();
+    const hashedPassword = data.password ? await hashPassword(data.password) : null;
     const userPayload = {
       userId: authUserId,
       name: cleanName,
@@ -92,6 +94,7 @@ export async function signupCustomerAction(data: SignupFormValues): Promise<Sign
       pincode: data.pincode && !isNaN(Number(data.pincode)) ? Number(data.pincode) : null,
       dob: data.dob ? data.dob : null,
       gender: data.gender || "male",
+      password: hashedPassword,
     };
 
     const { error: dbError } = await checkClient.from("users").insert(userPayload);

@@ -1,6 +1,8 @@
 import { createClient } from '@/app/api/supabase/client';
 import { rollbackRegistrationData } from '@/lib/helpers/registrationRollbackHelper';
 import { sendUserRegistrationEmails } from '@/lib/helpers/registrationEmailService';
+import { hashPassword } from '@/lib/helpers/user/userHelper';
+export { saveGymCustomerWeb, type SaveGymCustomerWebParams } from './saveGymCustomerWeb';
 
 export type CustomerGender = 'male' | 'female' | 'other';
 
@@ -215,6 +217,7 @@ export async function saveGymCustomer(params: SaveGymCustomerParams) {
           status: 'active',
           isEmailVerified: false,
           isPhoneVerified: false,
+          password: await hashPassword(temporaryPassword),
           createdAt: now,
           updatedAt: now,
         }]);

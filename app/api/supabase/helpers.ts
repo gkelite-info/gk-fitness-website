@@ -2,21 +2,38 @@ import { createClient } from "@/app/api/supabase/client";
 import { User } from "@supabase/supabase-js";
 
 async function fetchRoleData(supabase: any, role: string, userId: string, email: string) {
+  const cleanEmail = email ? email.trim().toLowerCase() : "";
   switch (role) {
     case 'owner': {
-      const { data } = await supabase.from('gym_owners').select('*').eq('userId', userId);
+      let query = supabase.from('gym_owners').select('*');
+      if (userId && cleanEmail) {
+        query = query.or(`userId.eq.${userId},ownerEmail.ilike.${cleanEmail}`);
+      } else if (userId) {
+        query = query.eq('userId', userId);
+      } else if (cleanEmail) {
+        query = query.ilike('ownerEmail', cleanEmail);
+      }
+      const { data } = await query;
       return data || [];
     }
     case 'trainer': {
-      const { data } = await supabase.from('gym_trainers').select('*').eq('userId', userId);
+      let query = supabase.from('gym_trainers').select('*');
+      if (userId && cleanEmail) {
+        query = query.or(`userId.eq.${userId},email.ilike.${cleanEmail}`);
+      } else if (userId) {
+        query = query.eq('userId', userId);
+      } else if (cleanEmail) {
+        query = query.ilike('email', cleanEmail);
+      }
+      const { data } = await query;
       return data || [];
     }
     case 'globaltrainer': {
-      const { data } = await supabase.from('global_trainers').select('*').eq('email', email);
+      const { data } = await supabase.from('global_trainers').select('*').ilike('email', cleanEmail);
       return data || [];
     }
     case 'customer': {
-      const { data } = await supabase.from('gym_customers').select('*').eq('email', email);
+      const { data } = await supabase.from('gym_customers').select('*').ilike('email', cleanEmail);
       if (data && data.length > 0) return data;
       const { data: indivData } = await supabase.from('individual_customer_plans').select('*').eq('userId', userId);
       return indivData || [];
@@ -37,15 +54,33 @@ export async function fetchUserProfile() {
   } = await supabase.auth.getSession();
 
   if (session?.user) {
-    const { data: userProfile, error } = await supabase
+    let { data: userProfile } = await supabase
       .from("users")
       .select("*")
       .eq("userId", session.user.id)
-      .single();
+      .maybeSingle();
 
-    if (error || !userProfile) return { user: session.user, profile: null, roleData: [] };
+    if (!userProfile && session.user.email) {
+      const { data: emailProfile } = await supabase
+        .from("users")
+        .select("*")
+        .ilike("email", session.user.email.toLowerCase().trim())
+        .maybeSingle();
+      if (emailProfile) {
+        userProfile = emailProfile;
+      }
+    }
+
+    if (!userProfile) return { user: session.user, profile: null, roleData: [] };
 
     const roleData = await fetchRoleData(supabase, userProfile.role, session.user.id, userProfile.email);
+
+    if ((!userProfile.name || userProfile.name.includes("@")) && roleData && roleData.length > 0) {
+      const realName = roleData[0].ownerFullname || roleData[0].fullName || roleData[0].name;
+      if (realName) {
+        userProfile.name = realName;
+      }
+    }
 
     return { user: session.user, profile: userProfile, roleData };
   }
@@ -81,14 +116,31 @@ export function subscribeToAuthChanges(
         currentUserId = session.user.id;
         if (onLoading) onLoading();
 
-        const { data: userProfile } = await supabase
+        let { data: userProfile } = await supabase
           .from("users")
           .select("*")
           .eq("userId", session.user.id)
-          .single();
+          .maybeSingle();
+
+        if (!userProfile && session.user.email) {
+          const { data: emailProfile } = await supabase
+            .from("users")
+            .select("*")
+            .ilike("email", session.user.email.toLowerCase().trim())
+            .maybeSingle();
+          if (emailProfile) {
+            userProfile = emailProfile;
+          }
+        }
 
         if (userProfile) {
           const roleData = await fetchRoleData(supabase, userProfile.role, session.user.id, userProfile.email);
+          if ((!userProfile.name || userProfile.name.includes("@")) && roleData && roleData.length > 0) {
+            const realName = roleData[0].ownerFullname || roleData[0].fullName || roleData[0].name;
+            if (realName) {
+              userProfile.name = realName;
+            }
+          }
           callback(session.user, userProfile, roleData);
         } else {
           callback(session.user, null, []);

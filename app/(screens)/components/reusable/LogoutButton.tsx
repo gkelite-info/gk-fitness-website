@@ -5,6 +5,7 @@ import { SignOut } from "@phosphor-icons/react";
 import ConfirmationModal from "./ConfirmationModal";
 import { logoutUser as logoutUserClient } from "@/app/api/supabase/helpers";
 import { logoutUser as logoutUserServer } from "@/app/api/auth/actions";
+import { clearFallbackAuthUser } from "@/lib/helpers/auth/fallbackAuthHelper";
 
 export default function LogoutButton() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -15,6 +16,7 @@ export default function LogoutButton() {
     
     try {
       await logoutUserServer();
+      await clearFallbackAuthUser().catch(() => {});
       await logoutUserClient();
       window.location.href = "/login";
     } catch (error) {

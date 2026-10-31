@@ -2,6 +2,7 @@ import { createUser } from '@/lib/helpers/otpHelper';
 import { rollbackRegistrationData } from '@/lib/helpers/registrationRollbackHelper';
 import { createClient } from '@/app/api/supabase/client';
 import { sendUserRegistrationEmails } from '@/lib/helpers/registrationEmailService';
+export { saveGymTrainerWeb, type SaveGymTrainerWebParams } from './saveGymTrainerWeb';
 
 
 export type TrainerGender = 'male' | 'female' | 'other';
@@ -354,6 +355,7 @@ export async function saveGymTrainer(params: SaveGymTrainerParams) {
         phone: cleanPhone,
         dob: formatToPgDate(params.dateOfBirth),
         role: 'trainer',
+        password: temporaryPassword,
       });
       if (!createdUser || !createdUser.userId) {
         throw new Error('Table 1 (users) insertion failed.');
