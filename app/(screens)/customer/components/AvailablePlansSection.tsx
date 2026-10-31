@@ -16,6 +16,9 @@ interface AvailablePlansSectionProps {
   isLoading: boolean;
   onRenew: (planId: string, planName: string, amount?: number) => void;
   renewingPlanId: string | null;
+  isCurrentActive?: boolean;
+  isPendingActivation?: boolean;
+  remainingDays?: number;
 }
 
 export default function AvailablePlansSection({
@@ -24,15 +27,21 @@ export default function AvailablePlansSection({
   isLoading,
   onRenew,
   renewingPlanId,
+  isCurrentActive = false,
+  isPendingActivation = false,
+  remainingDays = 0,
 }: AvailablePlansSectionProps) {
   if (currentPlan?.pendingPlanId || (plans.length === 0 && !isLoading)) {
     return null;
   }
 
+  const isOtherPlanDisabled = Boolean(isCurrentActive || isPendingActivation);
+  const sectionTitle = isPendingActivation || !currentPlan ? "AVAILABLE MEMBERSHIP PLANS" : "OTHER AVAILABLE PLANS";
+
   return (
     <div>
       <span className="text-[#8E8E93] text-[10px] font-bold tracking-widest uppercase block mb-3">
-        OTHER AVAILABLE PLANS
+        {sectionTitle}
       </span>
 
       {isLoading ? (
@@ -42,7 +51,7 @@ export default function AvailablePlansSection({
       ) : plans.length === 0 ? (
         <div className="bg-[#1C1C1E] rounded-3xl p-5 mb-4 border border-[#27272A] text-center">
           <p className="text-[#8E8E93] text-xs">
-            No other gym plans are currently available. You can renew your current plan above.
+            No membership plans are currently available.
           </p>
         </div>
       ) : (
@@ -55,6 +64,7 @@ export default function AvailablePlansSection({
             const calc = computeUpgradeCalculation(currentPlan, plan);
             const isUpgradeWithCredit = Boolean(calc?.isUpgrade && calc.unusedCredit > 0);
             const payableAmount = calc?.payableAmount ?? plan.price;
+            const isActionDisabled = isOtherPlanDisabled || isRenewingThis;
 
             return (
               <div
@@ -119,16 +129,33 @@ export default function AvailablePlansSection({
                 )}
 
                 <button
-                  onClick={() => onRenew(plan.planId, plan.planName, isUpgradeWithCredit ? payableAmount : undefined)}
-                  disabled={isRenewingThis}
-                  className="w-full bg-[#D7FF00] hover:bg-[#cbf200] py-3.5 px-5 rounded-2xl flex items-center justify-center transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+                  onClick={() => {
+                    if (isOtherPlanDisabled) return;
+                    onRenew(plan.planId, plan.planName, isUpgradeWithCredit ? payableAmount : undefined);
+                  }}
+                  disabled={isActionDisabled}
+                  className={`w-full py-3.5 px-5 rounded-2xl flex items-center justify-center transition-all ${
+                    isOtherPlanDisabled
+                      ? "bg-[#27272A] text-[#8E8E93] cursor-not-allowed opacity-60"
+                      : "bg-[#D7FF00] hover:bg-[#cbf200] text-black active:scale-[0.99] cursor-pointer"
+                  }`}
                 >
                   {isRenewingThis ? (
-                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : isPendingActivation ? (
+                    <span className="text-xs font-bold tracking-wider uppercase">
+                      Activate Assigned Plan First
+                    </span>
+                  ) : isCurrentActive ? (
+                    <span className="text-xs font-bold tracking-wider uppercase">
+                      Plan Active {remainingDays > 0 ? `(${remainingDays} Days Left)` : ""}
+                    </span>
                   ) : (
                     <>
-                      <span className="text-black text-xs font-bold tracking-wider mr-1 uppercase">
-                        {isUpgradeWithCredit ? `UPGRADE PLAN (₹${payableAmount})` : "UPGRADE PLAN"}
+                      <span className="text-xs font-bold tracking-wider mr-1 uppercase">
+                        {isUpgradeWithCredit
+                          ? `Upgrade Plan (₹${payableAmount})`
+                          : `Choose Plan (₹${payableAmount})`}
                       </span>
                       <CaretRight size={15} color="#000000" weight="bold" />
                     </>
@@ -138,8 +165,7 @@ export default function AvailablePlansSection({
             );
           })}
         </div>
-      )
-      }
+      )}
     </div>
   );
 }
