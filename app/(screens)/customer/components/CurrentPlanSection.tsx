@@ -79,7 +79,7 @@ export default function CurrentPlanSection({
   const isPendingActivation =
     !currentPlan.startDate ||
     !currentPlan.endDate ||
-  (!Boolean(currentPlan.is_Active ?? currentPlan.isActive) && !currentPlan.endDate) ||
+    (!Boolean(currentPlan.is_Active ?? currentPlan.isActive) && !currentPlan.endDate) ||
     (currentPlan as any).status === "pending";
   const isExpired = !isPendingActivation && (stats.isExpired || remainingDays === 0);
   const isActive = !isPendingActivation && stats.isPlanActive && (currentPlan as any).status !== "pending";
@@ -180,7 +180,16 @@ export default function CurrentPlanSection({
           </div>
         )}
 
-        {(!isActive || isExpired || isPendingActivation) && (
+        {isActive && !isExpired && !isPendingActivation ? (
+          <button
+            disabled={true}
+            className="w-full bg-[#27272A] text-[#8E8E93] py-3.5 px-5 rounded-2xl flex items-center justify-center mt-4 opacity-60 cursor-not-allowed"
+          >
+            <span className="text-xs font-bold tracking-wider uppercase">
+              Plan Active {remainingDays > 0 ? `(${remainingDays} Days Left)` : ""}
+            </span>
+          </button>
+        ) : (
           <button
             onClick={() => onRenew(targetPlanId!, planName)}
             disabled={isRenewingThis || !targetPlanId}
