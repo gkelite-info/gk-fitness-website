@@ -3,10 +3,12 @@
 import { X, Info } from "@phosphor-icons/react";
 import { useMemo, useCallback, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useUser } from "@/app/context/UserContext";
 import { useGymCustomerMembershipPlans } from "@/lib/hooks/gymCustomerMembershipPlans/useGymCustomerMembershipPlans";
 import { useIndividualCustomerPlans } from "@/lib/hooks/individual/membership/individualCustomerPlan";
 import { useSubscriptions } from "@/lib/hooks/superadmin/subscriptions/subscriptions";
+import { getAvailablePlans } from "@/app/actions/customer/getAvailablePlans";
 import CurrentPlanSection from "./CurrentPlanSection";
 import AvailablePlansSection from "./AvailablePlansSection";
 import PaymentRecoveryBanner from "./PaymentRecoveryBanner";
@@ -20,6 +22,7 @@ interface UpgradePlanModalProps {
   customerId?: string;
   planId?: string;
   isActivation?: boolean;
+  isIndividual?: boolean;
   onClose: () => void;
 }
 
@@ -35,6 +38,7 @@ export default function UpgradePlanModal({
   customerId,
   planId,
   isActivation,
+  isIndividual: isIndividualProp,
   onClose,
 }: UpgradePlanModalProps) {
   const router = useRouter();
@@ -43,8 +47,9 @@ export default function UpgradePlanModal({
   const { user, profile, roleData, role } = useUser();
   const { data: indivCustomerPlans, refetch: refetchIndivPlans } = useIndividualCustomerPlans(user?.id);
 
+  const isCustomerRole = role === "customer" || profile?.role === "customer" || isIndividualProp === false;
   const hasIndivPlans = Boolean(indivCustomerPlans && indivCustomerPlans.length > 0);
-  const isIndividual = role === "individual" || profile?.role === "individual" || hasIndivPlans || !gymId;
+  const isIndividual = !isCustomerRole && (isIndividualProp === true || role === "individual" || profile?.role === "individual" || hasIndivPlans || !gymId);
 
   const resolvedCustomerId = isIndividual ? user?.id : (customerId || roleData?.[0]?.customerId || user?.id);
   const resolvedGymId = isIndividual ? undefined : (gymId || roleData?.[0]?.gymId);
@@ -52,7 +57,17 @@ export default function UpgradePlanModal({
   const { data: customerPlans, isLoading: isLoadingCustomerPlans, refetch: refetchCustomerPlans } =
     useGymCustomerMembershipPlans(resolvedGymId, resolvedCustomerId);
 
-  const { data: subscriptionsData, isLoading: isLoadingSubscriptions } = useSubscriptions(undefined, "customer");
+  const { data: subscriptionsData, isLoading: isLoadingSubscriptions } = useSubscriptions(
+    undefined,
+    "customer",
+    { enabled: isIndividual }
+  );
+
+  const { data: gymPlansData, isLoading: isLoadingGymPlans } = useQuery({
+    queryKey: ["gymAvailablePlans", resolvedGymId],
+    queryFn: () => getAvailablePlans(resolvedGymId),
+    enabled: Boolean(!isIndividual && resolvedGymId),
+  });
 
   const handleRenewSuccess = useCallback(async () => {
     if (isIndividual) await refetchIndivPlans();
@@ -76,21 +91,31 @@ export default function UpgradePlanModal({
   });
 
   const allPlans: Plan[] = useMemo(() => {
-    if (!subscriptionsData) return [];
-    return subscriptionsData
-      .filter(
-        (sub: any) =>
-          !sub.is_deleted &&
-          sub.isActive !== false &&
-          (sub.planFor === "customer" || sub.planFor === "customers" || sub.planFor === "individual_customer")
-      )
-      .map((sub: any) => ({
-        planId: sub.subscriptionPlanId,
-        planName: sub.planName,
-        durationMonths: sub.durationMonths || 1,
-        price: Number(sub.price) || 0,
-      }));
-  }, [subscriptionsData]);
+    if (isIndividual) {
+      if (!subscriptionsData) return [];
+      return subscriptionsData
+        .filter(
+          (sub: any) =>
+            !sub.is_deleted &&
+            sub.isActive !== false &&
+            (sub.planFor === "customer" || sub.planFor === "customers" || sub.planFor === "individual_customer")
+        )
+        .map((sub: any) => ({
+          planId: sub.subscriptionPlanId,
+          planName: sub.planName,
+          durationMonths: sub.durationMonths || 1,
+          price: Number(sub.price) || 0,
+        }));
+    }
+
+    if (!gymPlansData) return [];
+    return gymPlansData.map((p: any) => ({
+      planId: p.planId,
+      planName: p.planName,
+      durationMonths: p.durationMonths || 1,
+      price: Number(p.price) || 0,
+    }));
+  }, [isIndividual, subscriptionsData, gymPlansData]);
 
   const currentPlan = useMemo(() => {
     if (isIndividual) {
@@ -234,7 +259,7 @@ export default function UpgradePlanModal({
           {effectiveCurrentPlan && (
             <CurrentPlanSection
               currentPlan={effectiveCurrentPlan}
-              isLoading={isLoadingSubscriptions || (isLoadingCustomerPlans && !effectiveCurrentPlan)}
+              isLoading={isIndividual ? isLoadingSubscriptions : (isLoadingCustomerPlans && !effectiveCurrentPlan)}
               onRenew={handleRenew}
               renewingPlanId={renewingPlanId}
               isAutoPay={isAutoPay}
@@ -243,7 +268,7 @@ export default function UpgradePlanModal({
           <AvailablePlansSection
             currentPlan={effectiveCurrentPlan}
             plans={otherAvailablePlans}
-            isLoading={isLoadingSubscriptions}
+            isLoading={isIndividual ? isLoadingSubscriptions : isLoadingGymPlans}
             onRenew={handleRenew}
             renewingPlanId={renewingPlanId}
             isCurrentActive={isCurrentActive}

@@ -20,6 +20,8 @@ export async function getMembership() {
     .eq("userId", user.id)
     .maybeSingle();
 
+  const isCustomer = userRec?.role === "customer";
+
   const { data: indivPlans } = await supabase
     .from("individual_customer_plans")
     .select("*, subscription:subscriptions(subscriptionPlanId, planName, price, label)")
@@ -28,7 +30,7 @@ export async function getMembership() {
     .order("createdAt", { ascending: false });
 
   const hasIndivPlans = Boolean(indivPlans && indivPlans.length > 0);
-  const isIndividual = userRec?.role === "individual" || hasIndivPlans;
+  const isIndividual = !isCustomer && (userRec?.role === "individual" || hasIndivPlans);
 
   if (isIndividual) {
     if (!indivPlans || indivPlans.length === 0) {

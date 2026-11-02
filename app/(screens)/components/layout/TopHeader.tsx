@@ -2,6 +2,7 @@
 
 import { UsersThree, Bell, SignOut, List } from "@phosphor-icons/react";
 import { useUser } from "@/app/context/UserContext";
+import { useUserById } from "@/lib/hooks/users/useUsers";
 import Avatar from "../reusable/Avatar";
 import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
@@ -18,6 +19,10 @@ interface TopHeaderProps {
 
 export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
   const { profile, roleData, user, loading } = useUser();
+  const effectiveUserId = user?.id || profile?.userId;
+  const effectiveEmail = user?.email || profile?.email;
+  const { data: dbUser } = useUserById(effectiveUserId, effectiveEmail);
+  const avatarSrc = dbUser?.profilePic || dbUser?.profilePhoto || profile?.profilePic || profile?.profilePhoto || null;
   const router = useRouter();
   const pathname = usePathname();
   const [isAnnouncementsModalOpen, setIsAnnouncementsModalOpen] = useState(false);
@@ -106,7 +111,8 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
           <div className="w-12 h-12 rounded-full bg-[#232631] animate-pulse flex-shrink-0 shadow-[0_0_0_2px_#222530]" />
         ) : (
           <Avatar
-            src={profile?.profilePhoto}
+            src={avatarSrc}
+            userId={effectiveUserId}
             gender={gender}
             className="w-12 h-12 shadow-[0_0_0_2px_#222530]"
           />
@@ -118,7 +124,7 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
           {loading ? (
             <div className="h-6 w-40 sm:w-56 bg-[#232631] animate-pulse rounded my-0.5" />
           ) : (
-            <h1 className="font-bold text-lg leading-7 text-white m-0">
+            <h1 className="font-semibold text-lg leading-7 text-white m-0">
               {greeting}, {displayName}
             </h1>
           )}
@@ -132,11 +138,10 @@ export default function TopHeader({ onOpenSidebar }: TopHeaderProps) {
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={() => router.push(communityRoute)}
-            className={`cursor-pointer w-10 h-10 flex items-center justify-center rounded-xl transition-all ${
-              pathname.startsWith(communityRoute)
-                ? "bg-[rgba(212,255,50,0.1)] border border-[#D4FF32] shadow-[0_0_16px_rgba(212,255,50,0.2),inset_0_0_8px_rgba(212,255,50,0.2)]"
-                : "bg-[#15161C] border border-[#232631] hover:bg-[#1f212a]"
-            }`}
+            className={`cursor-pointer w-10 h-10 flex items-center justify-center rounded-xl transition-all ${pathname.startsWith(communityRoute)
+              ? "bg-[rgba(212,255,50,0.1)] border border-[#D4FF32] shadow-[0_0_16px_rgba(212,255,50,0.2),inset_0_0_8px_rgba(212,255,50,0.2)]"
+              : "bg-[#15161C] border border-[#232631] hover:bg-[#1f212a]"
+              }`}
           >
             <UsersThree
               size={16}

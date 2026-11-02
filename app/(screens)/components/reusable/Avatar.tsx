@@ -1,7 +1,12 @@
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
 import { User } from "@phosphor-icons/react";
+import { resolveUserProfilePicUrl } from "@/lib/helpers/user/userHelper";
 
 interface AvatarProps {
   src?: string | null;
+  userId?: string | null;
   gender?: "male" | "female" | "other" | null;
   className?: string;
   alt?: string;
@@ -10,11 +15,22 @@ interface AvatarProps {
 
 export default function Avatar({
   src,
+  userId,
   gender,
   className = "",
   alt = "User Avatar",
   shape = "circle",
 }: AvatarProps) {
+  const [hasError, setHasError] = useState(false);
+
+  const resolvedSrc = useMemo(() => {
+    return resolveUserProfilePicUrl(src, userId);
+  }, [src, userId]);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [resolvedSrc]);
+
   const roundedClass =
     shape === "square"
       ? ""
@@ -22,11 +38,21 @@ export default function Avatar({
       ? "rounded-2xl"
       : "rounded-full";
 
-  if (src) {
+  const isValidSrc = Boolean(
+    resolvedSrc &&
+    typeof resolvedSrc === "string" &&
+    resolvedSrc.trim().length > 0 &&
+    resolvedSrc.trim().toLowerCase() !== "null" &&
+    resolvedSrc.trim().toLowerCase() !== "undefined" &&
+    !hasError
+  );
+
+  if (isValidSrc) {
     return (
       <img
-        src={src}
-        alt={alt}
+        src={resolvedSrc!}
+        alt=""
+        onError={() => setHasError(true)}
         className={`object-cover ${roundedClass} flex-shrink-0 ${className}`}
       />
     );
