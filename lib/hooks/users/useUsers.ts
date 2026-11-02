@@ -4,8 +4,11 @@ import {
   fetchUserById,
   fetchUserByEmail,
   fetchUserByCredentials,
+  resolveUserProfilePicUrl,
   UserRole,
 } from '@/lib/helpers/user/userHelper';
+
+export { resolveUserProfilePicUrl };
 
 export function useUsers(role?: UserRole) {
   return useQuery({
@@ -17,14 +20,14 @@ export function useUsers(role?: UserRole) {
   });
 }
 
-export function useUserById(userId?: string) {
+export function useUserById(userId?: string, email?: string) {
   return useQuery({
-    queryKey: ['user', userId],
+    queryKey: ['user', userId, email],
     queryFn: async () => {
-      if (!userId) return null;
-      return await fetchUserById(userId);
+      if (!userId && !email) return null;
+      return await fetchUserById(userId, email);
     },
-    enabled: !!userId,
+    enabled: !!userId || !!email,
   });
 }
 

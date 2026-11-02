@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useUser } from "@/app/context/UserContext";
+import { useUserById, resolveUserProfilePicUrl } from "@/lib/hooks/users/useUsers";
 import { logoutUser } from "@/app/api/auth/actions";
 import { clearFallbackAuthUser } from "@/lib/helpers/auth/fallbackAuthHelper";
 import { createClient } from "@/app/api/supabase/client";
@@ -14,13 +15,48 @@ import {
   ChartLineUp,
   DeviceMobile,
   X,
+  User,
 } from "@phosphor-icons/react";
 import toast from "react-hot-toast";
 
 export default function CustomerHeader() {
   const { profile, user } = useUser();
+  const effectiveUserId = user?.id || profile?.userId;
+  const effectiveEmail = user?.email || profile?.email;
+  const { data: dbUser } = useUserById(effectiveUserId, effectiveEmail);
+
+  const rawPic =
+    dbUser?.resolvedProfilePicUrl ||
+    dbUser?.profilePic ||
+    dbUser?.profilePhoto ||
+    profile?.profilePic ||
+    profile?.profilePhoto ||
+    (user?.user_metadata as any)?.profilePic ||
+    (user?.user_metadata as any)?.profilePhoto ||
+    (user?.user_metadata as any)?.avatar_url ||
+    null;
+
+  const targetUserId = dbUser?.userId || effectiveUserId;
+  const profilePic = useMemo(() => {
+    return resolveUserProfilePicUrl(rawPic, targetUserId);
+  }, [rawPic, targetUserId]);
+
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [profilePic]);
+
+  const isValidProfilePic = Boolean(
+    profilePic &&
+    typeof profilePic === "string" &&
+    profilePic.trim().length > 0 &&
+    profilePic.trim().toLowerCase() !== "null" &&
+    profilePic.trim().toLowerCase() !== "undefined" &&
+    !imageError
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -48,9 +84,8 @@ export default function CustomerHeader() {
     }
   };
 
-  const displayName = profile?.name || user?.user_metadata?.fullName || user?.email?.split("@")[0] || "Customer";
-  const displayEmail = profile?.email || user?.email || "";
-  const initial = displayName.charAt(0).toUpperCase();
+  const displayName = dbUser?.name || profile?.name || user?.user_metadata?.fullName || user?.email?.split("@")[0] || "Customer";
+  const displayEmail = dbUser?.email || profile?.email || user?.email || "";
 
   const normalizedRole = (profile?.role || user?.user_metadata?.role || "customer")
     .toLowerCase()
@@ -82,11 +117,16 @@ export default function CustomerHeader() {
     <>
       <header className="sticky top-0 z-40 w-full bg-[#0A0A0A]/90 backdrop-blur-md border-b border-[#1A1A1A] px-5 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#1E2029] to-[#2D3142] border border-[#2A2E3D] flex items-center justify-center text-[#D7FF00] font-bold text-sm shadow-inner overflow-hidden">
-            {profile?.profilePhoto ? (
-              <img src={profile.profilePhoto} alt={displayName} className="w-full h-full object-cover" />
+          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#1E2029] to-[#2D3142] border border-[#2A2E3D] flex items-center justify-center text-[#D7FF00] font-semibold text-sm shadow-inner overflow-hidden">
+            {isValidProfilePic ? (
+              <img
+                src={profilePic!}
+                alt=""
+                onError={() => setImageError(true)}
+                className="w-full h-full object-cover"
+              />
             ) : (
-              initial
+              <User size={18} weight="bold" className="text-[#D7FF00]" />
             )}
           </div>
           <div className="flex flex-col">
@@ -132,15 +172,20 @@ export default function CustomerHeader() {
       >
         <div className="p-5 border-b border-[#222226] flex items-center justify-between bg-[#0A0A0A]/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#D7FF00]/10 border border-[#D7FF00]/20 flex items-center justify-center text-[#D7FF00] font-bold text-base overflow-hidden">
-              {profile?.profilePhoto ? (
-                <img src={profile.profilePhoto} alt={displayName} className="w-full h-full object-cover" />
+            <div className="w-10 h-10 rounded-full bg-[#D7FF00]/10 border border-[#D7FF00]/20 flex items-center justify-center text-[#D7FF00] font-semibold text-base overflow-hidden">
+              {isValidProfilePic ? (
+                <img
+                  src={profilePic!}
+                  alt=""
+                  onError={() => setImageError(true)}
+                  className="w-full h-full object-cover"
+                />
               ) : (
-                initial
+                <User size={20} weight="bold" className="text-[#D7FF00]" />
               )}
             </div>
             <div className="flex flex-col overflow-hidden">
-              <span className="text-white text-sm font-bold truncate">
+              <span className="text-white text-sm font-semibold truncate">
                 {displayName}
               </span>
               <span className="text-[#8E8E93] text-xs truncate">

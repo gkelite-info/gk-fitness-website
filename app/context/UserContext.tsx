@@ -11,6 +11,7 @@ interface UserProfile {
   role: string;
   status: string;
   profilePhoto: string | null;
+  profilePic?: string | null;
   gender?: "male" | "female" | "other" | null;
 }
 

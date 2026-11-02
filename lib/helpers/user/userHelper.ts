@@ -1,4 +1,6 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/app/api/supabase/client';
+
+const getSupabase = () => createClient();
 
 export type UserRole =
   | 'customer'
@@ -56,7 +58,36 @@ export interface SaveUserParams {
 export { hashPassword, verifyPassword } from '@/lib/helpers/auth/passwordHelper';
 import { hashPassword } from '@/lib/helpers/auth/passwordHelper';
 
+export function resolveUserProfilePicUrl(pic: string | null | undefined, userId?: string | null): string | null {
+  if (!pic || typeof pic !== 'string') return null;
+  let clean = pic.trim();
+  if (!clean || clean.toLowerCase() === 'null' || clean.toLowerCase() === 'undefined') return null;
+
+  const targetUserId = userId ? String(userId).trim() : null;
+
+  if (clean.startsWith('http://') || clean.startsWith('https://')) {
+    if (targetUserId && clean.includes('/profile_photos/profile_') && !clean.includes(`/profile_photos/${targetUserId}/`)) {
+      return clean.replace('/profile_photos/profile_', `/profile_photos/${targetUserId}/profile_`);
+    }
+    return clean;
+  }
+
+  if (clean.startsWith('data:') || clean.startsWith('file:')) {
+    return clean;
+  }
+
+  clean = clean.replace(/^\/+/, '');
+  const pathInBucket = clean.includes('/')
+    ? clean
+    : (targetUserId ? `${targetUserId}/${clean}` : clean);
+
+  const supabase = getSupabase();
+  const { data } = supabase.storage.from('profile_photos').getPublicUrl(pathInBucket);
+  return data?.publicUrl || null;
+}
+
 export async function fetchUsers(role?: UserRole, retryCount = 0): Promise<any[]> {
+  const supabase = getSupabase();
   let query = supabase.from('users').select('*').order('createdAt', { ascending: false });
   if (role) query = query.eq('role', role);
   const { data, error } = await query;
@@ -72,21 +103,53 @@ export async function fetchUsers(role?: UserRole, retryCount = 0): Promise<any[]
   return data ?? [];
 }
 
-export async function fetchUserById(userId: string, retryCount = 0): Promise<any> {
-  const { data, error } = await supabase.from('users').select('*').eq('userId', userId).maybeSingle();
+export async function fetchUserById(userId?: string, email?: string, retryCount = 0): Promise<any> {
+  if (!userId && !email) return null;
+  const supabase = getSupabase();
+  let data: any = null;
+  let error: any = null;
+
+  if (userId) {
+    const res = await supabase.from('users').select('*').eq('userId', userId).maybeSingle();
+    data = res.data;
+    error = res.error;
+  }
+
+  if (!data && email) {
+    const cleanEmail = email.trim().toLowerCase();
+    const res = await supabase.from('users').select('*').ilike('email', cleanEmail).maybeSingle();
+    if (res.data) {
+      data = res.data;
+      error = null;
+    }
+  }
+
   if (error) {
     if (error.code === 'PGRST303' && retryCount < 3) {
       console.warn(`[userHelper] fetchUserById PGRST303 error, retrying (${retryCount + 1}/3) in 1s...`);
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      return fetchUserById(userId, retryCount + 1);
+      return fetchUserById(userId, email, retryCount + 1);
     }
     console.error('[userHelper] fetchUserById Error:', error);
     throw error;
   }
+
+  if (data) {
+    const rawPhoto = data.profilePic || data.profilePhoto || null;
+    const resolvedUrl = resolveUserProfilePicUrl(rawPhoto, data.userId);
+    return {
+      ...data,
+      profilePic: resolvedUrl || rawPhoto,
+      profilePhoto: resolvedUrl || data.profilePhoto,
+      resolvedProfilePicUrl: resolvedUrl,
+    };
+  }
+
   return data;
 }
 
 export async function fetchUserByEmail(email: string, retryCount = 0): Promise<any> {
+  const supabase = getSupabase();
   const cleanEmail = email.trim().toLowerCase();
   const { data, error } = await supabase.from('users').select('*').eq('email', cleanEmail).maybeSingle();
   if (error) {
@@ -102,6 +165,7 @@ export async function fetchUserByEmail(email: string, retryCount = 0): Promise<a
 }
 
 export async function fetchUserByCredentials(email: string, password: string, retryCount = 0): Promise<any> {
+  const supabase = getSupabase();
   const hashedPassword = await hashPassword(password);
   const cleanEmail = email.trim().toLowerCase();
   const { data, error } = await supabase
@@ -124,6 +188,7 @@ export async function fetchUserByCredentials(email: string, password: string, re
 }
 
 export async function saveUser(userData: SaveUserParams) {
+  const supabase = getSupabase();
   const now = new Date().toISOString();
   let hashedPassword: string | null = null;
   if (userData.password) hashedPassword = await hashPassword(userData.password);
@@ -189,6 +254,7 @@ export async function saveUser(userData: SaveUserParams) {
 }
 
 export async function updateUserPassword(userId: string, newPassword: string) {
+  const supabase = getSupabase();
   const hashedPassword = await hashPassword(newPassword);
   const now = new Date().toISOString();
   const { data, error } = await supabase
@@ -204,6 +270,7 @@ export async function updateUserPassword(userId: string, newPassword: string) {
 }
 
 export async function toggleUserStatus(userId: string, currentStatus: UserStatus) {
+  const supabase = getSupabase();
   const now = new Date().toISOString();
   const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
   const { data, error } = await supabase

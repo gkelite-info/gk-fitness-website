@@ -21,6 +21,7 @@ interface MembershipCardProps {
   pendingPlanName?: string;
   pendingAmount?: number;
   canCheckIn?: boolean;
+  isIndividual?: boolean;
 }
 
 export default function MembershipCard({
@@ -35,22 +36,26 @@ export default function MembershipCard({
   pendingPlanName,
   pendingAmount,
   canCheckIn,
+  isIndividual: isIndividualProp,
 }: MembershipCardProps) {
   const searchParams = useSearchParams();
   const actionParam = searchParams.get("action");
   const planIdParam = searchParams.get("planId");
 
-  const { user } = useUser();
+  const { user, role, profile } = useUser();
+  const isCustomerRole = role === "customer" || profile?.role === "customer" || isIndividualProp === false;
+  const isIndividual = !isCustomerRole && (isIndividualProp === true || role === "individual" || profile?.role === "individual");
+
   const { data: indivPlans } = useIndividualCustomerPlans(user?.id, undefined, {
-    enabled: Boolean(user?.id && !gymId),
+    enabled: Boolean(user?.id && !gymId && isIndividual),
   });
   const { data: subsData } = useSubscriptions(undefined, "customer", {
-    enabled: Boolean(!gymId),
+    enabled: Boolean(!gymId && isIndividual),
   });
 
   const hasClientIndivData = Boolean(indivPlans && indivPlans.length > 0);
   const clientCanCheckIn = useMemo(() => {
-    if (!hasClientIndivData || !subsData) return undefined;
+    if (!isIndividual || !hasClientIndivData || !subsData) return undefined;
 
     const activeIndiv = indivPlans?.find(
       (p) =>
@@ -259,6 +264,7 @@ const handleCloseModal = () => {
         customerId={customerId}
         planId={planId || planIdParam || undefined}
         isActivation={status === "pending_activation" || actionParam === "activate"}
+        isIndividual={isIndividual}
         onClose={handleCloseModal}
       />
     )}
