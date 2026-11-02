@@ -27,8 +27,9 @@ export interface CurrentCustomerPlan {
 interface CurrentPlanSectionProps {
   currentPlan: CurrentCustomerPlan | null | undefined;
   isLoading: boolean;
-  onRenew: (planId: string, planName: string, amount?: number) => void;
+  onRenew: (planId: string, planName: string, amount?: number, isAutoPay?: boolean) => void;
   renewingPlanId: string | null;
+  isAutoPay?: boolean;
 }
 
 export default function CurrentPlanSection({
@@ -36,6 +37,7 @@ export default function CurrentPlanSection({
   isLoading,
   onRenew,
   renewingPlanId,
+  isAutoPay = true,
 }: CurrentPlanSectionProps) {
   if (isLoading) {
     return (
@@ -168,12 +170,12 @@ export default function CurrentPlanSection({
               Your gym owner initiated an upgrade. Complete payment below to activate your new tier!
             </p>
             <button
-              onClick={() => onRenew(currentPlan.pendingPlanId!, currentPlan.pendingPlan?.planName || "Upgraded Plan")}
+              onClick={() => onRenew(currentPlan.pendingPlanId!, currentPlan.pendingPlan?.planName || "Upgraded Plan", undefined, isAutoPay)}
               disabled={isRenewingThis}
               className="w-full bg-[#D7FF00] hover:bg-[#cbf200] text-black font-bold text-xs py-3 px-4 rounded-xl mt-3 flex items-center justify-center transition-all active:scale-[0.99] cursor-pointer"
             >
               <span className="mr-1 uppercase tracking-wider">
-                COMPLETE UPGRADE PAYMENT {currentPlan.pendingAmount !== undefined && currentPlan.pendingAmount !== null ? `(₹${Number(currentPlan.pendingAmount)})` : ""}
+                COMPLETE UPGRADE PAYMENT {currentPlan.pendingAmount !== undefined && currentPlan.pendingAmount !== null ? `(₹${Number(currentPlan.pendingAmount)})` : ""} {isAutoPay ? "• AUTOPAY" : ""}
               </span>
               <CaretRight size={14} color="#000000" weight="bold" />
             </button>
@@ -191,7 +193,7 @@ export default function CurrentPlanSection({
           </button>
         ) : (
           <button
-            onClick={() => onRenew(targetPlanId!, planName)}
+            onClick={() => onRenew(targetPlanId!, planName, undefined, isAutoPay)}
             disabled={isRenewingThis || !targetPlanId}
             className="w-full bg-[#D7FF00] hover:bg-[#cbf200] py-3.5 px-5 rounded-2xl flex items-center justify-center mt-4 transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
           >
@@ -200,7 +202,9 @@ export default function CurrentPlanSection({
             ) : (
               <>
                 <span className="text-black text-xs font-bold tracking-wider mr-1 uppercase">
-                  {isPendingActivation ? "ACTIVATE MEMBERSHIP NOW" : "RENEW PLAN"}
+                  {isPendingActivation
+                    ? (isAutoPay ? "ACTIVATE WITH AUTOPAY" : "ACTIVATE MEMBERSHIP (ONE-TIME)")
+                    : (isAutoPay ? "RENEW WITH AUTOPAY" : "RENEW PLAN (ONE-TIME)")}
                 </span>
                 <CaretRight size={15} color="#000000" weight="bold" />
               </>

@@ -35,6 +35,7 @@ export default async function CustomerDashboard() {
                   pendingPlanId={membership?.pendingPlanId || undefined}
                   pendingPlanName={membership?.pendingPlanName || undefined}
                   pendingAmount={membership?.pendingAmount ?? undefined}
+                  canCheckIn={membership?.canCheckIn}
                 />
               </Suspense>
 

@@ -3,7 +3,11 @@
 import { createClient } from "@/app/api/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
-import { verifyRazorpaySignature, getRazorpayClient } from "@/lib/helpers/razorpay/razorpayServer";
+import {
+  verifyRazorpaySignature,
+  verifyRazorpaySubscriptionSignature,
+  getRazorpayClient,
+} from "@/lib/helpers/razorpay/razorpayServer";
 import { executeMembershipPaymentSuccess } from "@/lib/helpers/gymCustomerMembershipPlans/membershipPaymentLogic";
 import { normalizeIndividualPaymentMode } from "@/lib/helpers/individual/individualCustomerPayments";
 import { processIndividualPlanPayment } from "@/lib/helpers/individual/membership/individualPlanPaymentProcessor";
@@ -12,6 +16,8 @@ export interface VerifyPaymentAndRenewParams {
   orderId?: string | null;
   paymentId: string;
   signature?: string | null;
+  subscriptionId?: string | null;
+  isAutoPay?: boolean;
   planId: string;
   customerId?: string;
   gymId?: string;
@@ -38,6 +44,8 @@ export async function verifyPaymentAndRenewPlan({
   orderId,
   paymentId,
   signature,
+  subscriptionId,
+  isAutoPay,
   planId,
   customerId,
   gymId,
@@ -49,7 +57,12 @@ export async function verifyPaymentAndRenewPlan({
   let detectedPaymentMethod: string | null = null;
   let rzpPayment: RazorpayPaymentInfo | null = null;
 
-  if (orderId && signature) {
+  if (subscriptionId && signature) {
+    isVerified = verifyRazorpaySubscriptionSignature({ subscriptionId, paymentId, signature });
+    if (!isVerified) {
+      console.warn("[verifyPaymentAndRenewPlan] Subscription signature mismatch, checking direct paymentId:", paymentId);
+    }
+  } else if (orderId && signature) {
     isVerified = verifyRazorpaySignature({ orderId, paymentId, signature });
     if (!isVerified) {
       console.warn("[verifyPaymentAndRenewPlan] Signature mismatch, checking direct paymentId:", paymentId);
@@ -133,11 +146,13 @@ export async function verifyPaymentAndRenewPlan({
       const result = await processIndividualPlanPayment({
         dbClient,
         userId: user.id,
-      planId,
-      paymentId,
-      rzpPaymentAmount: rzpPayment?.amount,
-      normalizedMode,
-    });
+        planId,
+        paymentId,
+        rzpPaymentAmount: rzpPayment?.amount,
+        normalizedMode,
+        subscriptionId,
+        isAutoPay,
+      });
 
     if (!result.success) return result;
 
@@ -168,8 +183,10 @@ export async function verifyPaymentAndRenewPlan({
       planId,
       customerUserId: user.id,
       gatewayPaymentId: paymentId,
-      gatewayOrderId: orderId,
-      paymentMethod: paymentMethod || detectedPaymentMethod || (rzpPayment?.bank ? "netbanking" : rzpPayment?.method) || "netbanking",
+      gatewayOrderId: subscriptionId || orderId,
+      paymentMethod: isAutoPay
+        ? `${paymentMethod || detectedPaymentMethod || rzpPayment?.method || "upi"} (AutoPay)`
+        : (paymentMethod || detectedPaymentMethod || (rzpPayment?.bank ? "netbanking" : rzpPayment?.method) || "netbanking"),
       upiId: rzpPayment?.vpa || null,
       amountPaidOverride: rzpPayment?.amount ? Number(rzpPayment.amount) / 100 : undefined,
     });
