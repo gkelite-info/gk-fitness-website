@@ -9,6 +9,8 @@ export interface ProcessIndividualPlanPaymentParams {
   paymentId: string;
   rzpPaymentAmount?: number;
   normalizedMode: IndividualCustomerPaymentMode;
+  subscriptionId?: string | null;
+  isAutoPay?: boolean;
 }
 
 export async function processIndividualPlanPayment({
@@ -18,6 +20,8 @@ export async function processIndividualPlanPayment({
   paymentId,
   rzpPaymentAmount,
   normalizedMode,
+  subscriptionId,
+  isAutoPay = false,
 }: ProcessIndividualPlanPaymentParams) {
   const { data: subPlan } = await dbClient
     .from("subscriptions")
@@ -114,7 +118,7 @@ export async function processIndividualPlanPayment({
         endDate: finalEndDate,
         isActive: true,
         status: "successful",
-        transactionId: paymentId,
+        transactionId: subscriptionId || paymentId,
         updatedAt: nowIso,
       })
       .eq("individualCustomerPlanId", planRecordId);
@@ -131,7 +135,7 @@ export async function processIndividualPlanPayment({
         endDate: finalEndDate,
         isActive: true,
         status: "successful",
-        transactionId: paymentId,
+        transactionId: subscriptionId || paymentId,
         createdAt: nowIso,
         updatedAt: nowIso,
       }]);
@@ -144,7 +148,7 @@ export async function processIndividualPlanPayment({
       userId,
       subscriptionPlanId: subPlan.subscriptionPlanId,
       paymentType: "membership",
-      paymentMode: normalizedMode,
+      paymentMode: isAutoPay ? "AutoPay" : normalizedMode,
       amountPaid: actualPaidAmount,
       createdAt: nowIso,
       updatedAt: nowIso,
@@ -168,9 +172,11 @@ export async function processIndividualPlanPayment({
     startDate: finalStartDate,
     endDate: finalEndDate,
     paymentStatus: "paid",
-    transactionId: paymentId,
-    paymentMethod: normalizedMode,
-    notes: isUpgrade ? "Plan upgraded with credit applied" : "Payment verified and plan activated",
+    transactionId: subscriptionId || paymentId,
+    paymentMethod: isAutoPay ? "AutoPay" : normalizedMode,
+    notes: isAutoPay
+      ? `AutoPay Activated: ${subscriptionId || paymentId}`
+      : (isUpgrade ? "Plan upgraded with credit applied" : "Payment verified and plan activated"),
     createdBy: userId,
     isActive: true,
     is_deleted: false,

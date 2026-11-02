@@ -153,3 +153,80 @@ export async function captureRazorpayPayment(paymentId: string, amount: number, 
   const client = getRazorpayClient();
   return await client.payments.capture(paymentId, amount, currency);
 }
+
+export interface CreateSubscriptionParams {
+  planName: string;
+  amount: number;
+  period?: "monthly" | "yearly" | "weekly" | "daily";
+  interval?: number;
+  totalCount?: number;
+  notes?: Record<string, string>;
+}
+
+export async function createRazorpaySubscriptionInstance({
+  planName,
+  amount,
+  period = "monthly",
+  interval = 1,
+  totalCount = 12,
+  notes,
+}: CreateSubscriptionParams) {
+  const client = getRazorpayClient();
+  const plan = await client.plans.create({
+    period,
+    interval,
+    item: {
+      name: planName,
+      amount: Math.round(amount * 100),
+      currency: "INR",
+      description: `AutoPay membership plan: ${planName}`,
+    },
+    notes,
+  });
+
+  const subscription = await client.subscriptions.create({
+    plan_id: plan.id,
+    total_count: totalCount,
+    customer_notify: 1,
+    notes,
+  });
+
+  return { plan, subscription };
+}
+
+export interface VerifySubscriptionSignatureParams {
+  subscriptionId: string;
+  paymentId: string;
+  signature?: string | null;
+}
+
+export function verifyRazorpaySubscriptionSignature({
+  subscriptionId,
+  paymentId,
+  signature,
+}: VerifySubscriptionSignatureParams): boolean {
+  if (!subscriptionId || !paymentId || !signature) return false;
+  const { key_secret } = getRazorpayCredentials();
+  if (!key_secret) return false;
+
+  try {
+    const generatedSignature = crypto
+      .createHmac("sha256", key_secret)
+      .update(`${paymentId}|${subscriptionId}`)
+      .digest("hex");
+    return generatedSignature === signature;
+  } catch (err) {
+    console.error("[verifyRazorpaySubscriptionSignature] Error:", err);
+    return false;
+  }
+}
+
+export async function fetchRazorpaySubscription(subscriptionId: string) {
+  const client = getRazorpayClient();
+  return await client.subscriptions.fetch(subscriptionId);
+}
+
+export async function cancelRazorpaySubscription(subscriptionId: string) {
+  const client = getRazorpayClient();
+  return await client.subscriptions.cancel(subscriptionId);
+}

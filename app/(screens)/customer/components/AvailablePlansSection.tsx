@@ -14,11 +14,12 @@ interface AvailablePlansSectionProps {
   currentPlan?: any;
   plans: Plan[];
   isLoading: boolean;
-  onRenew: (planId: string, planName: string, amount?: number) => void;
+  onRenew: (planId: string, planName: string, amount?: number, isAutoPay?: boolean) => void;
   renewingPlanId: string | null;
   isCurrentActive?: boolean;
   isPendingActivation?: boolean;
   remainingDays?: number;
+  isAutoPay?: boolean;
 }
 
 export default function AvailablePlansSection({
@@ -30,6 +31,7 @@ export default function AvailablePlansSection({
   isCurrentActive = false,
   isPendingActivation = false,
   remainingDays = 0,
+  isAutoPay = true,
 }: AvailablePlansSectionProps) {
   if (currentPlan?.pendingPlanId || (plans.length === 0 && !isLoading)) {
     return null;
@@ -131,7 +133,7 @@ export default function AvailablePlansSection({
                 <button
                   onClick={() => {
                     if (isOtherPlanDisabled) return;
-                    onRenew(plan.planId, plan.planName, isUpgradeWithCredit ? payableAmount : undefined);
+                    onRenew(plan.planId, plan.planName, isUpgradeWithCredit ? payableAmount : undefined, isAutoPay);
                   }}
                   disabled={isActionDisabled}
                   className={`w-full py-3.5 px-5 rounded-2xl flex items-center justify-center transition-all ${
@@ -154,8 +156,8 @@ export default function AvailablePlansSection({
                     <>
                       <span className="text-xs font-bold tracking-wider mr-1 uppercase">
                         {isUpgradeWithCredit
-                          ? `Upgrade Plan (₹${payableAmount})`
-                          : `Choose Plan (₹${payableAmount})`}
+                          ? `Upgrade Plan (₹${payableAmount}) ${isAutoPay ? "• AutoPay" : ""}`
+                          : `Choose Plan (₹${payableAmount}) ${isAutoPay ? "• AutoPay" : ""}`}
                       </span>
                       <CaretRight size={15} color="#000000" weight="bold" />
                     </>

@@ -1,0 +1,212 @@
+"use server";
+
+import { createClient } from "@/app/api/supabase/server";
+import {
+  createRazorpaySubscriptionInstance,
+  getRazorpayCredentials,
+} from "@/lib/helpers/razorpay/razorpayServer";
+import { determinePlanActionAndProration } from "@/lib/helpers/gymCustomerMembershipPlans/membershipPaymentLogic";
+
+export interface CreateRazorpaySubscriptionParams {
+  planId: string;
+  customerId?: string;
+  gymId?: string;
+  amount?: number;
+}
+
+export async function createRazorpaySubscription({
+  planId,
+  customerId,
+  gymId,
+  amount,
+}: CreateRazorpaySubscriptionParams) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Authentication required" };
+  }
+
+  const { data: userRec } = await supabase
+    .from("users")
+    .select("userId, role, name, phone, email")
+    .eq("userId", user.id)
+    .maybeSingle();
+
+  const isIndividual = userRec?.role === "individual" || !gymId;
+
+  let resolvedCustomerId = customerId;
+  let resolvedGymId = gymId;
+  let customerName = userRec?.name || user.user_metadata?.fullName || user.email?.split("@")[0] || "Customer";
+  let customerPhone = userRec?.phone || user.phone || "";
+
+  if (isIndividual) {
+    resolvedCustomerId = user.id;
+    resolvedGymId = "";
+  } else {
+    const { data: customer } = await supabase
+      .from("gym_customers")
+      .select("customerId, gymId, fullName, phone, email")
+      .or(`userId.eq.${user.id},email.eq.${user.email}`)
+      .maybeSingle();
+
+    if (customer) {
+      resolvedCustomerId = resolvedCustomerId || customer.customerId;
+      resolvedGymId = resolvedGymId || customer.gymId;
+      customerName = customer.fullName || customerName;
+      customerPhone = customer.phone || customerPhone;
+    } else {
+      resolvedCustomerId = resolvedCustomerId || user.id;
+    }
+  }
+
+  if (!resolvedCustomerId) {
+    return { success: false, error: "Customer profile not found" };
+  }
+
+  let planInfo: { planId: string; planName: string; price: number } | null = null;
+  let effectivePrice = 0;
+  let actionType = "ASSIGNED";
+
+  const { data: gymPlan } = await supabase
+    .from("gym_membership_plans")
+    .select("planId, planName, price, durationMonths")
+    .eq("planId", planId)
+    .maybeSingle();
+
+  if (gymPlan) {
+    planInfo = {
+      planId: gymPlan.planId,
+      planName: gymPlan.planName,
+      price: Number(gymPlan.price) || 0,
+    };
+
+    const { data: existingPlans } = await supabase
+      .from("gym_customer_membership_plans")
+      .select("*, plan:gym_membership_plans!gym_customer_membership_plans_planId_fkey(planId, planName, durationMonths, price), pendingPlan:gym_membership_plans!gym_customer_membership_plans_pendingPlanId_fkey(planId, planName, durationMonths, price)")
+      .eq("customerId", resolvedCustomerId)
+      .eq("is_deleted", false)
+      .order("createdAt", { ascending: false });
+
+    const { data: latestPaidHistory } = await supabase
+      .from("gym_customer_membership_histories")
+      .select("*, plan:gym_membership_plans!planId(planId, planName, durationMonths, price)")
+      .eq("customerId", resolvedCustomerId)
+      .eq("paymentStatus", "paid")
+      .eq("is_deleted", false)
+      .order("createdAt", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const targetCustomerPlan = existingPlans?.[0] || null;
+
+    if (
+      targetCustomerPlan &&
+      targetCustomerPlan.pendingPlanId === planId &&
+      targetCustomerPlan.pendingAmount !== undefined &&
+      targetCustomerPlan.pendingAmount !== null &&
+      Number(targetCustomerPlan.pendingAmount) >= 0
+    ) {
+      effectivePrice = Number(targetCustomerPlan.pendingAmount);
+      actionType = "UPGRADED";
+    } else {
+      try {
+        const proration = determinePlanActionAndProration({
+          newPlan: {
+            planId: gymPlan.planId,
+            planName: gymPlan.planName,
+            price: Number(gymPlan.price) || 0,
+            durationMonths: gymPlan.durationMonths,
+          },
+          existingCustomerPlan: targetCustomerPlan,
+          previousHistory: latestPaidHistory,
+        });
+
+        effectivePrice = proration.payableAmount;
+        actionType = proration.actionType;
+      } catch (prorationErr: any) {
+        return { success: false, error: prorationErr.message || "Plan downgrade is not permitted" };
+      }
+    }
+  } else {
+    const { data: subPlan } = await supabase
+      .from("subscriptions")
+      .select("subscriptionPlanId, planName, price")
+      .eq("subscriptionPlanId", planId)
+      .maybeSingle();
+
+    if (subPlan) {
+      planInfo = {
+        planId: subPlan.subscriptionPlanId,
+        planName: subPlan.planName,
+        price: Number(subPlan.price) || 0,
+      };
+      effectivePrice = planInfo.price;
+    }
+  }
+
+  if (amount !== undefined && amount !== null && Number(amount) > 0) {
+    effectivePrice = Number(amount);
+  }
+
+  if (!planInfo) {
+    return { success: false, error: "Membership plan not found" };
+  }
+
+  if (effectivePrice <= 0) {
+    return { success: false, error: "Invalid plan pricing" };
+  }
+
+  try {
+    const { key_id: keyId } = getRazorpayCredentials();
+    if (!keyId) {
+      return { success: false, error: "Razorpay Key ID is not configured" };
+    }
+
+    const { subscription } = await createRazorpaySubscriptionInstance({
+      planName: planInfo.planName,
+      amount: effectivePrice,
+      period: "monthly",
+      interval: 1,
+      totalCount: 12,
+      notes: {
+        planId: planInfo.planId,
+        planName: planInfo.planName,
+        customerId: resolvedCustomerId,
+        gymId: resolvedGymId || "",
+        actionType,
+        isAutoPay: "true",
+      },
+    });
+
+    return {
+      success: true,
+      subscriptionId: subscription.id,
+      amount: Math.round(effectivePrice * 100),
+      currency: "INR",
+      keyId,
+      planName: planInfo.planName,
+      planId: planInfo.planId,
+      customerId: resolvedCustomerId,
+      gymId: resolvedGymId,
+      customerName,
+      customerEmail: user.email || userRec?.email || "",
+      customerPhone,
+      isAutoPay: true,
+    };
+  } catch (err: any) {
+    console.error("[createRazorpaySubscription] Error:", err);
+    const msg =
+      err?.error?.description ||
+      err?.description ||
+      err?.message ||
+      "Failed to initiate AutoPay subscription on gateway";
+    return {
+      success: false,
+      error: msg,
+    };
+  }
+}
+

@@ -1,7 +1,7 @@
 "use client";
 
 import { X, Info } from "@phosphor-icons/react";
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/app/context/UserContext";
 import { useGymCustomerMembershipPlans } from "@/lib/hooks/gymCustomerMembershipPlans/useGymCustomerMembershipPlans";
@@ -10,6 +10,7 @@ import { useSubscriptions } from "@/lib/hooks/superadmin/subscriptions/subscript
 import CurrentPlanSection from "./CurrentPlanSection";
 import AvailablePlansSection from "./AvailablePlansSection";
 import PaymentRecoveryBanner from "./PaymentRecoveryBanner";
+import AutoPayToggle from "@/app/(screens)/components/reusable/AutoPayToggle";
 import { usePaymentSession } from "./usePaymentSession";
 import { usePlanCheckout } from "./usePlanCheckout";
 import { calculateRemainingDays } from "@/lib/helpers/gymCustomerMembershipPlans/membershipPaymentLogic";
@@ -38,6 +39,7 @@ export default function UpgradePlanModal({
 }: UpgradePlanModalProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isAutoPay, setIsAutoPay] = useState<boolean>(true);
   const { user, profile, roleData, role } = useUser();
   const { data: indivCustomerPlans, refetch: refetchIndivPlans } = useIndividualCustomerPlans(user?.id);
 
@@ -226,12 +228,16 @@ export default function UpgradePlanModal({
               </p>
             </div>
           </div>
+
+          <AutoPayToggle enabled={isAutoPay} onChange={setIsAutoPay} />
+
           {effectiveCurrentPlan && (
             <CurrentPlanSection
               currentPlan={effectiveCurrentPlan}
               isLoading={isLoadingSubscriptions || (isLoadingCustomerPlans && !effectiveCurrentPlan)}
               onRenew={handleRenew}
               renewingPlanId={renewingPlanId}
+              isAutoPay={isAutoPay}
             />
           )}
           <AvailablePlansSection
@@ -243,6 +249,7 @@ export default function UpgradePlanModal({
             isCurrentActive={isCurrentActive}
             isPendingActivation={isPendingActivation}
             remainingDays={remainingDays}
+            isAutoPay={isAutoPay}
           />
         </div>
         <div className="p-5 border-t border-[#222222] bg-[#141414]">

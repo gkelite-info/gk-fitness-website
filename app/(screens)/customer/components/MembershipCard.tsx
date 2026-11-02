@@ -1,8 +1,12 @@
 "use client";
 
 import { Star, QrCode, ArrowRight } from "@phosphor-icons/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSubscriptions } from "@/lib/hooks/superadmin/subscriptions/subscriptions";
+import { useIndividualCustomerPlans } from "@/lib/hooks/individual/membership/individualCustomerPlan";
+import { useUser } from "@/app/context/UserContext";
+import { getCalendarDaysDifference } from "@/lib/planCalculations";
 import UpgradePlanModal from "./UpgradePlanModal";
 
 interface MembershipCardProps {
@@ -16,6 +20,7 @@ interface MembershipCardProps {
   pendingPlanId?: string;
   pendingPlanName?: string;
   pendingAmount?: number;
+  canCheckIn?: boolean;
 }
 
 export default function MembershipCard({
@@ -29,13 +34,58 @@ export default function MembershipCard({
   pendingPlanId,
   pendingPlanName,
   pendingAmount,
+  canCheckIn,
 }: MembershipCardProps) {
   const searchParams = useSearchParams();
   const actionParam = searchParams.get("action");
   const planIdParam = searchParams.get("planId");
 
+  const { user } = useUser();
+  const { data: indivPlans } = useIndividualCustomerPlans(user?.id, undefined, {
+    enabled: Boolean(user?.id && !gymId),
+  });
+  const { data: subsData } = useSubscriptions(undefined, "customer", {
+    enabled: Boolean(!gymId),
+  });
+
+  const hasClientIndivData = Boolean(indivPlans && indivPlans.length > 0);
+  const clientCanCheckIn = useMemo(() => {
+    if (!hasClientIndivData || !subsData) return undefined;
+
+    const activeIndiv = indivPlans?.find(
+      (p) =>
+        Boolean(p.isActive) &&
+        p.status !== "pending" &&
+        p.endDate &&
+        getCalendarDaysDifference(p.endDate) > 0
+    );
+    if (!activeIndiv) return false;
+
+    const custSubs = subsData.filter(
+      (s: any) =>
+        !s.is_deleted &&
+        s.isActive !== false &&
+        (s.planFor === "customer" || s.planFor === "customers" || s.planFor === "individual_customer")
+    );
+    const prices = custSubs.map((s: any) => Number(s.price) || 0);
+    const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+    const goldPlan = custSubs.find((s: any) => s.planName?.toLowerCase().includes("gold"));
+    const goldPrice = goldPlan ? Number(goldPlan.price) || 0 : maxPrice;
+
+    const userSubPrice = Number(activeIndiv.subscription?.price) || Number(activeIndiv.customAmount) || 0;
+    const userSubName = (activeIndiv.subscription?.planName || "").toLowerCase();
+
+    const isGoldId = Boolean(goldPlan && activeIndiv.subscriptionPlanId === goldPlan.subscriptionPlanId);
+    const isGoldName = userSubName.includes("gold");
+    const isGoldPrice = (userSubPrice >= goldPrice && goldPrice > 0) || (userSubPrice >= maxPrice && maxPrice > 0);
+
+    return isGoldId || isGoldName || isGoldPrice;
+  }, [hasClientIndivData, subsData, indivPlans]);
+
+  const effectiveCanCheckIn = clientCanCheckIn !== undefined ? clientCanCheckIn : (canCheckIn ?? true);
+
   const hasUrlAction = Boolean(
-  actionParam === "renew" || actionParam === "subscribe" || actionParam === "activate" || planIdParam
+    actionParam === "renew" || actionParam === "subscribe" || actionParam === "activate" || planIdParam
   );
 
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(hasUrlAction);
@@ -85,15 +135,21 @@ const handleCloseModal = () => {
                 </div>
 
                 {status === "active" ? (
-                  <a
-                    href="gk-fitness://checkin"
-                    className="flex items-center gap-1.5 bg-[#1C1C1E] hover:bg-[#252528] active:scale-95 border border-[#2A2A2A] hover:border-[#D7FF00]/40 px-2.5 py-1 rounded-xl transition-all shrink-0 cursor-pointer"
-                    title="Scan QR to Check In"
-                  >
-                    <QrCode size={16} color="#D7FF00" weight="bold" />
-                    <span className="text-white text-[11px] font-semibold">Check-in</span>
-                    <span className="text-[#8E8E93] text-[10px] hidden sm:inline">(QR)</span>
-                  </a>
+                  effectiveCanCheckIn ? (
+                    <a
+                      href="gk-fitness://checkin"
+                      className="flex items-center gap-1.5 bg-[#1C1C1E] hover:bg-[#252528] active:scale-95 border border-[#2A2A2A] hover:border-[#D7FF00]/40 px-2.5 py-1 rounded-xl transition-all shrink-0 cursor-pointer"
+                      title="Scan QR to Check In"
+                    >
+                      <QrCode size={16} color="#D7FF00" weight="bold" />
+                      <span className="text-white text-[11px] font-semibold">Check-in</span>
+                      <span className="text-[#8E8E93] text-[10px] hidden sm:inline">(QR)</span>
+                    </a>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border shrink-0 bg-[#D7FF00]/15 border-[#D7FF00]/30 text-[#D7FF00]">
+                      Active
+                    </span>
+                  )
                 ) : (
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border shrink-0 ${status === "pending_activation"
                     ? "bg-[#FF9F0A]/15 border-[#FF9F0A]/30 text-[#FF9F0A]"

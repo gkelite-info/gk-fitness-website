@@ -2,6 +2,7 @@
 
 import { createClient } from "@/app/api/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { getCalendarDaysDifference } from "@/lib/planCalculations";
 
 export interface TrainerMembershipData {
   hasTrainer: boolean;
@@ -109,22 +110,20 @@ export async function getTrainerMembership(): Promise<TrainerMembershipData> {
 
   const latestPayment = paymentRecords?.[0] || null;
 
-  const now = new Date();
-  const expiryDate = latest.expiryOn ? new Date(latest.expiryOn) : null;
-  const isExpired = expiryDate ? expiryDate.getTime() <= now.getTime() : false;
+  const diffDays = latest.expiryOn ? getCalendarDaysDifference(latest.expiryOn) : 0;
+  const isExpired = diffDays <= 0;
 
   let daysLeft = 0;
   let progressPercentage = 0;
 
-  if (expiryDate) {
-    const diffTime = expiryDate.getTime() - now.getTime();
-    daysLeft = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+  if (latest.expiryOn) {
+    daysLeft = diffDays > 0 ? diffDays : 0;
 
     if (latest.assignedOn) {
-      const startDate = new Date(latest.assignedOn);
-      const totalSpan = expiryDate.getTime() - startDate.getTime();
-      const totalDays = Math.max(1, Math.ceil(totalSpan / (1000 * 60 * 60 * 24)));
-      progressPercentage = Math.min(100, Math.max(0, (daysLeft / totalDays) * 100));
+      const totalDays = getCalendarDaysDifference(latest.expiryOn, latest.assignedOn);
+      if (totalDays > 0) {
+        progressPercentage = Math.min(100, Math.max(0, (daysLeft / totalDays) * 100));
+      }
     }
   }
 
