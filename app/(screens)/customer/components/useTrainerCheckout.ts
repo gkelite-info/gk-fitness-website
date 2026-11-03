@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { loadRazorpayScript } from "@/lib/helpers/razorpay/loadRazorpayScript";
 import { createTrainerRazorpayOrder } from "@/app/actions/customer/createTrainerRazorpayOrder";
@@ -33,6 +34,7 @@ export function useTrainerCheckout({
   onClose,
 }: UseTrainerCheckoutParams) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handlePayTrainer = async ({
@@ -87,15 +89,19 @@ export function useTrainerCheckout({
             try {
               toast.loading("Verifying AutoPay authorization...", { id: "trainer-pay" });
               const verifyRes = await verifyTrainerPaymentAndAssign({
-                subscriptionId: response.razorpay_subscription_id,
+                subscriptionId: response.razorpay_subscription_id || subResult.subscriptionId,
                 paymentId: response.razorpay_payment_id,
                 signature: response.razorpay_signature,
                 trainerId,
                 amount,
                 isAutoPay: true,
+                userId,
               });
 
               if (verifyRes.success) {
+                queryClient.invalidateQueries({ queryKey: ["individualCustomerPayments"] });
+                queryClient.invalidateQueries({ queryKey: ["individualCustomerTrainers"] });
+                queryClient.invalidateQueries({ queryKey: ["individualCustomerTrainerPayments"] });
                 toast.success(`AutoPay active with ${trainerName}!`, { id: "trainer-pay" });
                 onSuccess?.();
                 onClose();
@@ -161,9 +167,13 @@ export function useTrainerCheckout({
               trainerId,
               amount,
               isAutoPay: false,
+              userId,
             });
 
             if (verifyRes.success) {
+              queryClient.invalidateQueries({ queryKey: ["individualCustomerPayments"] });
+              queryClient.invalidateQueries({ queryKey: ["individualCustomerTrainers"] });
+              queryClient.invalidateQueries({ queryKey: ["individualCustomerTrainerPayments"] });
               toast.success(`Booking confirmed with ${trainerName}!`, { id: "trainer-pay" });
               onSuccess?.();
               onClose();
@@ -204,4 +214,3 @@ export function useTrainerCheckout({
 
   return { isProcessing, handlePayTrainer };
 }
-
