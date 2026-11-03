@@ -8,6 +8,7 @@ import {
   verifyRazorpaySubscriptionSignature,
   getRazorpayClient,
 } from "@/lib/helpers/razorpay/razorpayServer";
+import { normalizeIndividualPaymentMode } from "@/lib/helpers/individual/individualCustomerPayments";
 
 export interface VerifyTrainerPaymentParams {
   orderId?: string | null;
@@ -17,6 +18,7 @@ export interface VerifyTrainerPaymentParams {
   amount?: number;
   subscriptionId?: string | null;
   isAutoPay?: boolean;
+  userId?: string;
 }
 
 export async function verifyTrainerPaymentAndAssign({
@@ -27,6 +29,7 @@ export async function verifyTrainerPaymentAndAssign({
   amount,
   subscriptionId,
   isAutoPay = false,
+  userId,
 }: VerifyTrainerPaymentParams) {
   const isTestTxn =
     paymentId?.startsWith("pay_test_") ||
@@ -34,35 +37,33 @@ export async function verifyTrainerPaymentAndAssign({
     orderId?.startsWith("order_test_");
 
   let isVerified = Boolean(isTestTxn);
-  let detectedPaymentMode = isAutoPay ? "AutoPay" : "online";
+  let detectedPaymentMode: string | null = null;
   let rzpPayment: any = null;
   let verificationError = "Invalid payment signature verification";
 
-  if (!isVerified && isAutoPay && subscriptionId && signature) {
-    const isSubSignatureValid = verifyRazorpaySubscriptionSignature({
-      subscriptionId,
-      paymentId,
-      signature,
-    });
-    if (isSubSignatureValid) {
-      isVerified = true;
-      detectedPaymentMode = "AutoPay";
-    } else {
-      console.warn("[verifyTrainerPayment] Subscription signature mismatch, trying direct lookup for:", paymentId);
+  if (!isVerified && isAutoPay && (subscriptionId || orderId) && signature) {
+    if (subscriptionId) {
+      isVerified = verifyRazorpaySubscriptionSignature({
+        subscriptionId,
+        paymentId,
+        signature,
+      });
+    }
+    if (!isVerified && orderId) {
+      isVerified = verifyRazorpaySignature({
+        orderId,
+        paymentId,
+        signature,
+      });
     }
   }
 
   if (!isVerified && orderId && signature) {
-    const isSignatureValid = verifyRazorpaySignature({
+    isVerified = verifyRazorpaySignature({
       orderId,
       paymentId,
       signature,
     });
-    if (isSignatureValid) {
-      isVerified = true;
-    } else {
-      console.warn("[verifyTrainerPayment] Signature verification failed, attempting direct API lookup for paymentId:", paymentId);
-    }
   }
 
   if (paymentId && !paymentId.startsWith("pay_web_")) {
@@ -70,7 +71,7 @@ export async function verifyTrainerPaymentAndAssign({
       const rzpClient = getRazorpayClient();
       rzpPayment = await rzpClient.payments.fetch(paymentId);
       if (rzpPayment) {
-        if (rzpPayment.method && !isAutoPay) {
+        if (rzpPayment.method) {
           detectedPaymentMode = String(rzpPayment.method).toLowerCase();
         }
 
@@ -95,7 +96,7 @@ export async function verifyTrainerPaymentAndAssign({
       const errMsg = fetchErr?.error?.description || fetchErr?.message || "";
       if (fetchErr?.statusCode === 401 || errMsg.includes("Authentication failed")) {
         verificationError = "Razorpay authentication failed on server. Please update RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Vercel environment variables.";
-      } else if (errMsg) {
+      } else if (errMsg && !isVerified) {
         verificationError = `Payment verification error: ${errMsg}`;
       }
     }
@@ -116,7 +117,8 @@ export async function verifyTrainerPaymentAndAssign({
     data: { user },
   } = await serverClient.auth.getUser();
 
-  if (!user) {
+  const targetUserId = user?.id || userId;
+  if (!targetUserId) {
     return { success: false, error: "User session expired" };
   }
 
@@ -126,7 +128,12 @@ export async function verifyTrainerPaymentAndAssign({
     .eq("globalTrainerId", trainerId)
     .maybeSingle();
 
-  const finalAmount = Number(amount) > 0 ? Number(amount) : Number(trainer?.price) || 0;
+  const finalAmount = rzpPayment?.amount
+    ? Number(rzpPayment.amount) / 100
+    : Number(amount) > 0
+    ? Number(amount)
+    : Number(trainer?.price) || 0;
+
   const now = new Date();
   const nowIso = now.toISOString();
 
@@ -134,28 +141,51 @@ export async function verifyTrainerPaymentAndAssign({
   oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
   const expiryIso = oneMonthLater.toISOString();
 
-  try {
-    await db
-      .from("individual_customer_trainer_payments")
-      .insert([{
-        individualCustomerPaymentId: crypto.randomUUID(),
-        userId: user.id,
-        globalTrainerId: trainerId,
-        paymentMode: isAutoPay ? "AutoPay" : detectedPaymentMode,
-        amountPaid: finalAmount,
-        transactionId: subscriptionId || paymentId,
-        status: "successful",
-        createdAt: nowIso,
-        updatedAt: nowIso,
-      }]);
-  } catch (payErr) {
-    console.error("[verifyTrainerPayment] Error logging payment:", payErr);
+  const normalizedPaymentMode = normalizeIndividualPaymentMode(
+    detectedPaymentMode || rzpPayment?.method,
+    {
+      method: rzpPayment?.method,
+      bank: rzpPayment?.bank || rzpPayment?.acquirer_data?.bank_transaction_id,
+      vpa: rzpPayment?.vpa,
+      card_id: rzpPayment?.card_id,
+      wallet: rzpPayment?.wallet,
+    }
+  );
+
+  const paymentRecord: Record<string, any> = {
+    individualCustomerPaymentId: crypto.randomUUID(),
+    userId: targetUserId,
+    globalTrainerId: trainerId,
+    paymentMode: normalizedPaymentMode,
+    amountPaid: finalAmount,
+    transactionId: subscriptionId || paymentId,
+    status: "successful",
+    deletedAt: null,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  };
+
+  const { error: insertPayErr } = await db
+    .from("individual_customer_trainer_payments")
+    .insert([paymentRecord]);
+
+  if (insertPayErr) {
+    console.error("[verifyTrainerPayment] Error inserting individual_customer_trainer_payments:", insertPayErr.message);
+    if (insertPayErr.message?.includes("enum") || insertPayErr.message?.includes("check")) {
+      paymentRecord.paymentMode = "upi";
+      const { error: fallbackPayErr } = await db
+        .from("individual_customer_trainer_payments")
+        .insert([paymentRecord]);
+      if (fallbackPayErr) {
+        console.error("[verifyTrainerPayment] Fallback insert with upi failed:", fallbackPayErr.message);
+      }
+    }
   }
 
   const { data: existingAssignment } = await db
     .from("individual_customer_trainers")
     .select("individualCustomerTrainerId, weekDays, timings")
-    .eq("userId", user.id)
+    .eq("userId", targetUserId)
     .eq("globalTrainerId", trainerId)
     .eq("is_deleted", false)
     .maybeSingle();
@@ -182,7 +212,7 @@ export async function verifyTrainerPaymentAndAssign({
       .from("individual_customer_trainers")
       .insert([{
         individualCustomerTrainerId: crypto.randomUUID(),
-        userId: user.id,
+        userId: targetUserId,
         globalTrainerId: trainerId,
         assignedOn: nowIso,
         renewalOn: expiryIso,

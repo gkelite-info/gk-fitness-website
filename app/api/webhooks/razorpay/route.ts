@@ -81,19 +81,24 @@ export async function POST(req: NextRequest) {
             ? paymentEntity.amount / 100
             : Number(notes?.price || 0);
 
-          await supabase
+          const { error: webhookPayErr } = await supabase
             .from("individual_customer_trainer_payments")
             .insert([{
               individualCustomerPaymentId: crypto.randomUUID(),
               userId: customerId,
               globalTrainerId: trainerId,
-              paymentMode: "AutoPay",
+              paymentMode: "upi",
               amountPaid: amountPaid,
               transactionId: paymentId || subscriptionId,
               status: "successful",
+              deletedAt: null,
               createdAt: nowIso,
               updatedAt: nowIso,
             }]);
+
+          if (webhookPayErr) {
+            console.error("[Razorpay Webhook] Error recording trainer payment:", webhookPayErr.message);
+          }
 
           return NextResponse.json({ status: "ok", type: "trainer_subscription_renewed" });
         }

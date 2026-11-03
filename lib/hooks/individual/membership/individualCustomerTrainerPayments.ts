@@ -21,6 +21,8 @@ export function useIndividualCustomerPayments(
   });
 }
 
+export const useIndividualCustomerTrainerPayments = useIndividualCustomerPayments;
+
 export function useIndividualCustomerPaymentById(
   individualCustomerPaymentId?: string,
   options?: { enabled?: boolean }
