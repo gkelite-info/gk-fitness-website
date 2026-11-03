@@ -1,6 +1,6 @@
 "use client";
 
-import { Barbell, ArrowRight, Clock, CalendarBlank, ShieldCheck, User } from "@phosphor-icons/react";
+import { Barbell, ArrowRight, Clock } from "@phosphor-icons/react";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import TrainerPaymentModal from "./TrainerPaymentModal";
@@ -75,7 +75,7 @@ export default function TrainerPlanCard({ initialData }: TrainerPlanCardProps) {
           )}
           {status === "pending" && (
             <span className="px-2.5 py-0.5 rounded-full bg-[#FF9F0A]/15 border border-[#FF9F0A]/30 text-[#FF9F0A] text-[10px] font-semibold">
-              Pending Review
+              Pending
             </span>
           )}
           {status === "expired" && (
@@ -122,7 +122,7 @@ export default function TrainerPlanCard({ initialData }: TrainerPlanCardProps) {
         ) : status === "pending" ? (
           <div className="mb-1">
             <h3 className="text-[#FF9F0A] text-lg font-semibold mb-1">
-              Request Under Review: {initialData.trainerName}
+              Pending: {initialData.trainerName}
             </h3>
             <p className="text-[#8E8E93] text-xs font-medium mb-3">
               Your trainer request has been submitted. Complete the monthly fee payment to confirm your booking.

@@ -2,13 +2,10 @@
 
 import { X, ShieldCheck, CheckCircle, Barbell, CalendarCheck, CaretDown } from "@phosphor-icons/react";
 import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 import { useUser } from "@/app/context/UserContext";
 import { useGlobalTrainers } from "@/lib/hooks/globalTrainers/useGlobalTrainers";
-import { loadRazorpayScript } from "@/lib/helpers/razorpay/loadRazorpayScript";
-import { createTrainerRazorpayOrder } from "@/app/actions/customer/createTrainerRazorpayOrder";
-import { verifyTrainerPaymentAndAssign } from "@/app/actions/customer/verifyTrainerPaymentAndAssign";
+import AutoPayToggle from "@/app/(screens)/components/reusable/AutoPayToggle";
+import { useTrainerCheckout } from "./useTrainerCheckout";
 
 interface TrainerPaymentModalProps {
   trainerId?: string;
@@ -27,10 +24,8 @@ export default function TrainerPaymentModal({
   onClose,
   onSuccess,
 }: TrainerPaymentModalProps) {
-  const router = useRouter();
   const { user, profile } = useUser();
-  const [isProcessing, setIsProcessing] = useState(false);
-
+  const [isAutoPay, setIsAutoPay] = useState<boolean>(true);
   const { data: globalTrainers, isLoading: loadingTrainers } = useGlobalTrainers(true);
 
   const [selectedTrainerId, setSelectedTrainerId] = useState<string>(trainerId || "");
@@ -57,90 +52,22 @@ export default function TrainerPaymentModal({
       : Number(trainerPrice) || 499;
   const activeSpecialization = selectedTrainer?.specialization || specialization || "Fitness";
 
-  const handlePayNow = async () => {
-    if (!selectedTrainerId) return toast.error("Please select a trainer to continue.");
-    if (!user?.id) return toast.error("User session expired. Please log in again.");
+  const { isProcessing, handlePayTrainer } = useTrainerCheckout({
+    userId: user?.id,
+    userName: profile?.name || user?.user_metadata?.fullName,
+    userEmail: user?.email,
+    userPhone: user?.phone || (profile as any)?.phone,
+    onSuccess,
+    onClose,
+  });
 
-    try {
-      setIsProcessing(true);
-      const isScriptLoaded = await loadRazorpayScript();
-      if (!isScriptLoaded) {
-        setIsProcessing(false);
-        return toast.error("Failed to load Razorpay payment gateway SDK.");
-      }
-
-      const orderResult: any = await createTrainerRazorpayOrder({
-        trainerId: selectedTrainerId,
-        amount: activeTrainerPrice,
-        trainerName: activeTrainerName,
-      });
-
-      if (!orderResult.success) {
-        setIsProcessing(false);
-        return toast.error(orderResult.error || "Failed to initiate payment gateway.");
-      }
-
-      const options: any = {
-        key: orderResult.keyId,
-        amount: orderResult.amount,
-        currency: orderResult.currency || "INR",
-        name: "GK-Gym Life",
-        description: `Personal Trainer Plan: ${activeTrainerName}`,
-        prefill: {
-          name: orderResult.customerName || profile?.name || "",
-          email: orderResult.customerEmail || user?.email || "",
-          contact: orderResult.customerPhone || "",
-        },
-        theme: { color: "#D7FF00" },
-        handler: async function (response: any) {
-          try {
-            toast.loading("Verifying payment...", { id: "trainer-pay" });
-            const verifyRes = await verifyTrainerPaymentAndAssign({
-              orderId: response?.razorpay_order_id || orderResult?.orderId || "",
-              paymentId: response.razorpay_payment_id,
-              signature: response?.razorpay_signature || "",
-              trainerId: selectedTrainerId,
-              amount: activeTrainerPrice,
-            });
-
-            if (verifyRes.success) {
-              toast.success(`Booking confirmed with ${activeTrainerName}!`, { id: "trainer-pay" });
-              onSuccess?.();
-              onClose();
-              if (typeof window !== "undefined") {
-                window.location.href = "/customer";
-              } else {
-                router.refresh();
-              }
-            } else {
-              toast.error(verifyRes.error || "Payment verification failed.", { id: "trainer-pay" });
-            }
-          } catch {
-            toast.error("Payment confirmation failed on server.", { id: "trainer-pay" });
-          } finally {
-            setIsProcessing(false);
-          }
-        },
-        modal: {
-          ondismiss: () => setIsProcessing(false),
-        },
-      };
-
-      if (orderResult.orderId) {
-        options.order_id = orderResult.orderId;
-      }
-
-      const razorpayInstance = new (window as any).Razorpay(options);
-      razorpayInstance.on("payment.failed", function (response: any) {
-        console.error("Payment failed:", response.error);
-        toast.error(response.error?.description || "Payment failed or was cancelled.");
-        setIsProcessing(false);
-      });
-      razorpayInstance.open();
-    } catch {
-      toast.error("An error occurred while connecting to Razorpay.");
-      setIsProcessing(false);
-    }
+  const onPayClick = () => {
+    handlePayTrainer({
+      trainerId: selectedTrainerId,
+      trainerName: activeTrainerName,
+      amount: activeTrainerPrice,
+      isAutoPay,
+    });
   };
 
   return (
@@ -195,6 +122,8 @@ export default function TrainerPaymentModal({
             </div>
           </div>
 
+          <AutoPayToggle enabled={isAutoPay} onChange={setIsAutoPay} disabled={isProcessing} />
+
           <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-3 sm:p-4">
             <div className="flex items-center justify-between mb-2.5">
               <div>
@@ -203,7 +132,9 @@ export default function TrainerPaymentModal({
                 <span className="text-[#D7FF00] text-xs font-medium capitalize">{activeSpecialization} Coach</span>
               </div>
               <div className="text-right">
-                <span className="text-[#8E8E93] text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Monthly Fee</span>
+                <span className="text-[#8E8E93] text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">
+                  {isAutoPay ? "Monthly AutoPay" : "One-Time Fee"}
+                </span>
                 <div className="text-[#D7FF00] text-xl sm:text-2xl font-bold">₹{activeTrainerPrice}</div>
               </div>
             </div>
@@ -228,21 +159,27 @@ export default function TrainerPaymentModal({
             <ShieldCheck size={18} className="text-[#D7FF00] shrink-0" weight="fill" />
             <div className="flex-1">
               <p className="text-white text-xs font-semibold">Verified Razorpay Gateway</p>
-              <p className="text-[#8E8E93] text-[10px] sm:text-[11px]">Instant activation upon successful payment.</p>
+              <p className="text-[#8E8E93] text-[10px] sm:text-[11px]">
+                {isAutoPay
+                  ? "Recurring AutoPay mandate. Cancel anytime from your account."
+                  : "One-time payment for 1 month access."}
+              </p>
             </div>
           </div>
         </div>
 
         <div className="p-3 sm:p-4 border-t border-[#222222] bg-[#141414] flex flex-col gap-2 shrink-0">
           <button
-            onClick={handlePayNow}
+            onClick={onPayClick}
             disabled={isProcessing || !selectedTrainerId}
             className="w-full bg-[#D7FF00] hover:bg-[#bce000] text-black font-bold py-2.5 sm:py-3.5 rounded-xl transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 text-xs sm:text-sm"
           >
             {isProcessing ? (
               <span>Processing Booking...</span>
+            ) : isAutoPay ? (
+              <span>Pay ₹{activeTrainerPrice} & Enable AutoPay</span>
             ) : (
-              <span>Pay ₹{activeTrainerPrice} & Assign Trainer</span>
+              <span>Pay ₹{activeTrainerPrice} (One-Time)</span>
             )}
           </button>
           <button

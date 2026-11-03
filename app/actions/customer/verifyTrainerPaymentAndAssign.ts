@@ -3,7 +3,11 @@
 import { createClient } from "@/app/api/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
-import { verifyRazorpaySignature, getRazorpayClient } from "@/lib/helpers/razorpay/razorpayServer";
+import {
+  verifyRazorpaySignature,
+  verifyRazorpaySubscriptionSignature,
+  getRazorpayClient,
+} from "@/lib/helpers/razorpay/razorpayServer";
 
 export interface VerifyTrainerPaymentParams {
   orderId?: string | null;
@@ -11,6 +15,8 @@ export interface VerifyTrainerPaymentParams {
   signature?: string | null;
   trainerId: string;
   amount?: number;
+  subscriptionId?: string | null;
+  isAutoPay?: boolean;
 }
 
 export async function verifyTrainerPaymentAndAssign({
@@ -19,6 +25,8 @@ export async function verifyTrainerPaymentAndAssign({
   signature,
   trainerId,
   amount,
+  subscriptionId,
+  isAutoPay = false,
 }: VerifyTrainerPaymentParams) {
   const isTestTxn =
     paymentId?.startsWith("pay_test_") ||
@@ -26,11 +34,24 @@ export async function verifyTrainerPaymentAndAssign({
     orderId?.startsWith("order_test_");
 
   let isVerified = Boolean(isTestTxn);
-  let detectedPaymentMode = "online";
+  let detectedPaymentMode = isAutoPay ? "AutoPay" : "online";
   let rzpPayment: any = null;
   let verificationError = "Invalid payment signature verification";
 
-  // 1. Signature-based verification (standard order-linked flow)
+  if (!isVerified && isAutoPay && subscriptionId && signature) {
+    const isSubSignatureValid = verifyRazorpaySubscriptionSignature({
+      subscriptionId,
+      paymentId,
+      signature,
+    });
+    if (isSubSignatureValid) {
+      isVerified = true;
+      detectedPaymentMode = "AutoPay";
+    } else {
+      console.warn("[verifyTrainerPayment] Subscription signature mismatch, trying direct lookup for:", paymentId);
+    }
+  }
+
   if (!isVerified && orderId && signature) {
     const isSignatureValid = verifyRazorpaySignature({
       orderId,
@@ -44,13 +65,12 @@ export async function verifyTrainerPaymentAndAssign({
     }
   }
 
-  // 2. Direct Razorpay API verification & auto-capture fallback
   if (paymentId && !paymentId.startsWith("pay_web_")) {
     try {
       const rzpClient = getRazorpayClient();
       rzpPayment = await rzpClient.payments.fetch(paymentId);
       if (rzpPayment) {
-        if (rzpPayment.method) {
+        if (rzpPayment.method && !isAutoPay) {
           detectedPaymentMode = String(rzpPayment.method).toLowerCase();
         }
 
@@ -121,9 +141,9 @@ export async function verifyTrainerPaymentAndAssign({
         individualCustomerPaymentId: crypto.randomUUID(),
         userId: user.id,
         globalTrainerId: trainerId,
-        paymentMode: detectedPaymentMode,
+        paymentMode: isAutoPay ? "AutoPay" : detectedPaymentMode,
         amountPaid: finalAmount,
-        transactionId: paymentId,
+        transactionId: subscriptionId || paymentId,
         status: "successful",
         createdAt: nowIso,
         updatedAt: nowIso,
