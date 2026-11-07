@@ -36,7 +36,14 @@ export async function updateSession(request: NextRequest) {
   );
 
   const accessToken = request.nextUrl.searchParams.get('access_token');
-  if (accessToken && !request.nextUrl.pathname.startsWith('/api/auth/sso')) {
+  const hasSSOParams = !!accessToken || 
+    (request.nextUrl.searchParams.has('userId') && (
+      request.nextUrl.searchParams.has('action') || 
+      request.nextUrl.searchParams.has('planId') ||
+      request.nextUrl.searchParams.has('trainerId')
+    ));
+
+  if (hasSSOParams && !request.nextUrl.pathname.startsWith('/api/auth/sso')) {
     const ssoUrl = request.nextUrl.clone();
     ssoUrl.pathname = '/api/auth/sso';
     return NextResponse.redirect(ssoUrl);
