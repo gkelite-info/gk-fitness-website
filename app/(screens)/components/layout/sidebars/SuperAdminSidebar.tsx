@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   SquaresFour,
   Barbell,
+  Buildings,
   Users,
   MagnifyingGlass,
   Star,
@@ -29,11 +30,12 @@ interface NavItem {
 
 const navLinks: NavItem[] = [
   { name: "Dashboard", href: "/superadmin", icon: SquaresFour },
+  { name: "Workouts", href: "/superadmin/workouts", icon: Barbell },
   { name: "Recipes", href: "/superadmin/recipes", icon: CookingPot },
   { name: "Gym Pass", href: "/superadmin/gym-pass", icon: Ticket },
   { name: "Gym Locations", href: "/superadmin/gym-locations", icon: MapPin },
   { name: "Finance", href: "/superadmin/finance", icon: CurrencyCircleDollar },
-  { name: "Gyms", href: "/superadmin/gyms", icon: Barbell, badge: 120 },
+  { name: "Gyms", href: "/superadmin/gyms", icon: Buildings, badge: 120 },
   { name: "Demo Requests", href: "/superadmin/demo-requests", icon: EnvelopeSimple },
   { name: "Website Videos", href: "/superadmin/website-videos", icon: PlayCircle },
   { name: "Website Reviews", href: "/superadmin/reviews", icon: ChatCircleDots },
