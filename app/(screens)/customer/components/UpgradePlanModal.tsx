@@ -43,6 +43,7 @@ export default function UpgradePlanModal({
 }: UpgradePlanModalProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const targetedPlanId = planId || searchParams.get("planId");
   const [isAutoPay, setIsAutoPay] = useState<boolean>(true);
   const { user, profile, roleData, role } = useUser();
   const { data: indivCustomerPlans, refetch: refetchIndivPlans } = useIndividualCustomerPlans(user?.id);
@@ -205,16 +206,25 @@ export default function UpgradePlanModal({
 
   const otherAvailablePlans = useMemo(() => {
     if (!allPlans || allPlans.length === 0) return [];
-    if (!effectiveCurrentPlan) return allPlans;
-    return allPlans.filter((plan) => {
-      const isSameId = effectiveCurrentPlan.planId && plan.planId === effectiveCurrentPlan.planId;
-      const isSameName =
-        effectiveCurrentPlan.plan?.planName &&
-        plan.planName &&
-        effectiveCurrentPlan.plan.planName.trim().toLowerCase() === plan.planName.trim().toLowerCase();
-      return !isSameId && !isSameName;
+    const filtered = !effectiveCurrentPlan
+      ? allPlans
+      : allPlans.filter((plan) => {
+        const isSameId = effectiveCurrentPlan.planId && plan.planId === effectiveCurrentPlan.planId;
+        const isSameName =
+          effectiveCurrentPlan.plan?.planName &&
+          plan.planName &&
+          effectiveCurrentPlan.plan.planName.trim().toLowerCase() === plan.planName.trim().toLowerCase();
+        return !isSameId && !isSameName;
+      });
+
+    if (!targetedPlanId) return filtered;
+
+    return [...filtered].sort((a, b) => {
+      if (a.planId === targetedPlanId) return -1;
+      if (b.planId === targetedPlanId) return 1;
+      return 0;
     });
-  }, [allPlans, effectiveCurrentPlan]);
+  }, [allPlans, effectiveCurrentPlan, targetedPlanId]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">

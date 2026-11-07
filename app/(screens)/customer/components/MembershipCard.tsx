@@ -90,19 +90,23 @@ export default function MembershipCard({
   const effectiveCanCheckIn = clientCanCheckIn !== undefined ? clientCanCheckIn : (canCheckIn ?? true);
 
   const hasUrlAction = Boolean(
-    actionParam === "renew" || actionParam === "subscribe" || actionParam === "activate" || planIdParam
+    actionParam === "renew" ||
+    actionParam === "subscribe" ||
+    actionParam === "activate" ||
+    actionParam === "upgrade" ||
+    !!planIdParam
   );
 
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(hasUrlAction);
 
   useEffect(() => {
-  if (hasUrlAction) {
-    const timer = setTimeout(() => {
-      setIsUpgradeModalOpen(true);
-    }, 0);
-    return () => clearTimeout(timer);
-  }
-}, [hasUrlAction]);
+    if (hasUrlAction) {
+      const timer = setTimeout(() => {
+        setIsUpgradeModalOpen(true);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [hasUrlAction]);
 
 const handleOpenModal = () => {
   setIsUpgradeModalOpen(true);

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { useUser } from "@/app/context/UserContext";
 import { useGymCustomerMembershipPlans } from "@/lib/hooks/gymCustomerMembershipPlans/useGymCustomerMembershipPlans";
+import { useSubscriptions } from "@/lib/hooks/superadmin/subscriptions/subscriptions";
 import { getAvailablePlans } from "@/app/actions/customer/getAvailablePlans";
 import { createRazorpayOrder } from "@/app/actions/customer/createRazorpayOrder";
 import { verifyPaymentAndRenewPlan } from "@/app/actions/customer/verifyPaymentAndRenewPlan";
@@ -35,7 +36,8 @@ export default function PaymentClientView({
 }: PaymentClientViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, profile, roleData } = useUser();
+  const { user, profile, roleData, role } = useUser();
+  const isIndividual = role === "individual" || profile?.role === "individual";
 
   const [availablePlans, setAvailablePlans] = useState<Plan[]>([]);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
@@ -44,13 +46,18 @@ export default function PaymentClientView({
   );
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const resolvedCustomerId = customerId || roleData?.[0]?.customerId || user?.id;
-  const resolvedGymId = gymId || roleData?.[0]?.gymId;
+  const resolvedCustomerId = isIndividual ? user?.id : (customerId || roleData?.[0]?.customerId || user?.id);
+  const resolvedGymId = isIndividual ? undefined : (gymId || roleData?.[0]?.gymId);
 
   const {
     data: customerPlans,
     refetch: refetchCustomerPlans,
   } = useGymCustomerMembershipPlans(resolvedGymId, resolvedCustomerId);
+
+  const {
+    data: individualSubscriptions,
+    isLoading: isLoadingIndividualSubs,
+  } = useSubscriptions(undefined, "customer", { enabled: isIndividual });
 
   const handleRenewSuccess = useCallback(async () => {
     await refetchCustomerPlans();
@@ -72,7 +79,21 @@ export default function PaymentClientView({
 
   useEffect(() => {
     async function loadPlans() {
-      if (resolvedGymId) {
+      if (isIndividual && individualSubscriptions) {
+        const mapped: Plan[] = individualSubscriptions
+          .filter((sub: any) => !sub.is_deleted && sub.isActive !== false && (sub.planFor === "customer" || sub.planFor === "customers" || sub.planFor === "individual_customer"))
+          .map((sub: any) => ({
+            planId: sub.subscriptionPlanId,
+            planName: sub.planName,
+            durationMonths: 1,
+            price: Number(sub.price) || 0,
+          }));
+        setAvailablePlans(mapped);
+        if (!selectedPlanId && mapped.length > 0) {
+          setSelectedPlanId(mapped[0].planId);
+        }
+        setIsLoadingPlans(false);
+      } else if (resolvedGymId) {
         try {
           const plans = await getAvailablePlans(resolvedGymId);
           setAvailablePlans(plans);
@@ -81,12 +102,15 @@ export default function PaymentClientView({
           }
         } catch (error) {
           console.error("Failed to load plans:", error);
+        } finally {
+          setIsLoadingPlans(false);
         }
+      } else {
+        setIsLoadingPlans(false);
       }
-      setIsLoadingPlans(false);
     }
     loadPlans();
-  }, [resolvedGymId, selectedPlanId]);
+  }, [isIndividual, individualSubscriptions, resolvedGymId, selectedPlanId]);
 
   const handleStartPayment = async () => {
     if (!selectedPlanId) {

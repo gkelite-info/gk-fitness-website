@@ -202,7 +202,7 @@ export default function CurrentPlanSection({
             ) : (
               <>
                 <span className="text-black text-xs font-bold tracking-wider mr-1 uppercase">
-                  {isPendingActivation
+                  {isPendingActivation || (!isActive && !isExpired)
                     ? (isAutoPay ? "ACTIVATE WITH AUTOPAY" : "ACTIVATE MEMBERSHIP (ONE-TIME)")
                     : (isAutoPay ? "RENEW WITH AUTOPAY" : "RENEW PLAN (ONE-TIME)")}
                 </span>
