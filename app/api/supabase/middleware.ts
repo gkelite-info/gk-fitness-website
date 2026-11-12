@@ -56,19 +56,33 @@ export async function updateSession(request: NextRequest) {
   const isAuthPage = request.nextUrl.pathname.startsWith('/login');
 
   const createRedirectResponse = (targetPath: string) => {
-    const url = request.nextUrl.clone();
-    url.pathname = targetPath;
-    if (targetPath === '/login') {
-      const fullPath = request.nextUrl.pathname + request.nextUrl.search;
-      if (fullPath !== '/' && fullPath !== '/login') {
-        url.searchParams.set('returnTo', fullPath);
-      }
-    }
+    const url = targetPath === '/login'
+      ? (() => {
+          const nextUrl = request.nextUrl.clone();
+          nextUrl.pathname = '/login';
+          const fullPath = request.nextUrl.pathname + request.nextUrl.search;
+          if (fullPath !== '/' && !fullPath.startsWith('/login')) {
+            nextUrl.searchParams.set('returnTo', fullPath);
+          }
+          return nextUrl;
+        })()
+      : new URL(targetPath, request.url);
+
     const redirectResponse = NextResponse.redirect(url);
     supabaseResponse.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie);
     });
     return redirectResponse;
+  };
+
+  const normalizeRoleRoute = (rawRole?: string | null) => {
+    const cleaned = (rawRole || 'customer').toLowerCase().trim().replace(/[-_]/g, '');
+    if (cleaned === 'individual' || cleaned === 'customer') return 'customer';
+    if (cleaned === 'globaltrainer') return 'globaltrainer';
+    if (cleaned === 'gymtrainer' || cleaned === 'trainer') return 'trainer';
+    if (cleaned === 'gymowner' || cleaned === 'owner') return 'owner';
+    if (cleaned === 'superadmin') return 'superadmin';
+    return cleaned || 'customer';
   };
 
   if (!user && !isAuthPage) {
@@ -77,7 +91,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isAuthPage && !request.nextUrl.searchParams.has('role')) {
     const returnTo = request.nextUrl.searchParams.get('returnTo');
-    if (returnTo && returnTo.startsWith('/') && returnTo !== '/login') {
+    if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//') && !returnTo.startsWith('/login')) {
       const targetReturn = returnTo.startsWith('/individual')
         ? returnTo.replace(/^\/individual/, '/customer')
         : returnTo;
@@ -88,8 +102,7 @@ export async function updateSession(request: NextRequest) {
       .select('role')
       .eq('userId', user.id)
       .single();
-    const rawRole = userData?.role || 'customer';
-    const role = rawRole === 'individual' ? 'customer' : (rawRole === 'global_trainer' ? 'globaltrainer' : rawRole);
+    const role = normalizeRoleRoute(userData?.role);
     if (role === 'superadmin') return createRedirectResponse('/superadmin');
     else if (role === 'owner') return createRedirectResponse('/owner');
     else if (role === 'trainer') return createRedirectResponse('/trainer');
@@ -104,8 +117,7 @@ export async function updateSession(request: NextRequest) {
       .select('role, isEmailVerified')
       .eq('userId', user.id)
       .single();
-    const rawRole = userData?.role || 'customer';
-    const role = rawRole === 'individual' ? 'customer' : (rawRole === 'global_trainer' ? 'globaltrainer' : rawRole);
+    const role = normalizeRoleRoute(userData?.role);
     if (pathname.startsWith('/superadmin') && role !== 'superadmin') return createRedirectResponse('/' + role);
     if (pathname.startsWith('/owner') && role !== 'owner') return createRedirectResponse('/' + role);
     if (pathname.startsWith('/trainer') && role !== 'trainer') return createRedirectResponse('/' + role);

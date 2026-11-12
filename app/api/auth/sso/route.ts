@@ -10,17 +10,38 @@ export async function GET(request: NextRequest) {
   const userIdParam = requestUrl.searchParams.get('userId');
   const emailParam = requestUrl.searchParams.get('email');
   const rawReturnTo = requestUrl.searchParams.get('returnTo') || '/customer';
-  const returnTo = rawReturnTo.startsWith('/individual')
-    ? rawReturnTo.replace(/^\/individual/, '/customer')
-    : rawReturnTo;
+  const safeReturnTo =
+    rawReturnTo.startsWith('/') && !rawReturnTo.startsWith('//') && !rawReturnTo.startsWith('/login')
+      ? rawReturnTo
+      : '/customer';
+  const returnTo = safeReturnTo.startsWith('/individual')
+    ? safeReturnTo.replace(/^\/individual/, '/customer')
+    : safeReturnTo;
 
   const redirectUrl = new URL(returnTo, request.url);
 
+  // Strip SSO transport/identity params so destination routes never trigger SSO/auth middleware loops
+  const ssoInternalParams = new Set([
+    'access_token',
+    'refresh_token',
+    'returnTo',
+    'userId',
+    'role',
+    'email',
+    'phone',
+    'customerId',
+    'gymId',
+  ]);
   requestUrl.searchParams.forEach((value, key) => {
-    if (!['access_token', 'refresh_token', 'returnTo'].includes(key)) {
+    if (!ssoInternalParams.has(key)) {
       redirectUrl.searchParams.set(key, value);
     }
   });
+
+  if (!accessToken && !userIdParam && !emailParam) {
+    console.warn('[SSO] No access_token, userId, or email provided, redirecting to login');
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -114,35 +135,37 @@ export async function GET(request: NextRequest) {
   if (!resolvedEmail && adminClient && (userIdParam || emailParam)) {
     try {
       if (userIdParam) {
-        // 1. Look up Supabase auth user
-        const { data: authUserData, error: authUserErr } = await adminClient.auth.admin.getUserById(userIdParam);
-        if (!authUserErr && authUserData?.user?.email) {
-          resolvedEmail = authUserData.user.email;
-          console.log('[SSO] Strategy 2 resolved email from auth.users by userId:', resolvedEmail);
-        } else {
-          // 2. Look up public.users table
-          const { data: dbUser } = await adminClient
-            .from('users')
-            .select('userId, email')
-            .eq('userId', userIdParam)
-            .maybeSingle();
+        const { data: dbUser } = await adminClient
+          .from('users')
+          .select('userId, email, is_deleted')
+          .eq('userId', userIdParam)
+          .maybeSingle();
 
-          if (dbUser?.email) {
+        if (dbUser && dbUser.is_deleted !== true) {
+          const { data: authUserData, error: authUserErr } = await adminClient.auth.admin.getUserById(userIdParam);
+          if (!authUserErr && authUserData?.user) {
+            if (!authUserData.user.email_confirmed_at) {
+              await adminClient.auth.admin.updateUserById(authUserData.user.id, {
+                email_confirm: true,
+              });
+            }
+            resolvedEmail = authUserData.user.email || dbUser?.email || emailParam || null;
+            console.log('[SSO] Strategy 2 resolved email from auth.users by userId:', resolvedEmail);
+          } else if (dbUser?.email) {
             resolvedEmail = dbUser.email;
             console.log('[SSO] Strategy 2 resolved email from public.users by userId:', resolvedEmail);
           }
         }
       }
 
-      // 3. Look up by emailParam if still not found
       if (!resolvedEmail && emailParam) {
         const { data: dbUser } = await adminClient
           .from('users')
-          .select('userId, email')
+          .select('userId, email, is_deleted')
           .ilike('email', emailParam.trim().toLowerCase())
           .maybeSingle();
 
-        if (dbUser?.email) {
+        if (dbUser?.email && dbUser.is_deleted !== true) {
           resolvedEmail = dbUser.email;
           console.log('[SSO] Strategy 2 verified email from public.users:', resolvedEmail);
         }
@@ -181,7 +204,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Strategy 3: Fallback to setSession if refreshToken is provided
+  // Strategy 3: Fallback to setSession if refreshToken and accessToken are provided
   if (accessToken && refreshToken) {
     try {
       const supabaseSSR = createSSR();
