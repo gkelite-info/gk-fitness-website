@@ -131,43 +131,95 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Strategy 2: Resilient Identity Bridge using service role (handles expired token or fallback login)
+  // Strategy 2: Resilient Identity Bridge using service role (handles expired token or manual password-table login)
+  const ensureAuthEmailForDbUser = async (
+    dbUser: {
+      userId: string;
+      email?: string | null;
+      name?: string | null;
+      phone?: string | null;
+      role?: string | null;
+    },
+    fallbackEmail?: string | null
+  ): Promise<string | null> => {
+    const targetEmail = dbUser.email || fallbackEmail || null;
+    const { data: authUserData, error: authUserErr } = await adminClient.auth.admin.getUserById(dbUser.userId);
+
+    if (!authUserErr && authUserData?.user) {
+      if (!authUserData.user.email_confirmed_at) {
+        await adminClient.auth.admin.updateUserById(authUserData.user.id, {
+          email_confirm: true,
+        });
+      }
+      return authUserData.user.email || targetEmail;
+    }
+
+    // Provision a matching Supabase Auth user (same userId) for manual password-only accounts
+    if (targetEmail) {
+      const { error: createErr } = await adminClient.auth.admin.createUser({
+        id: dbUser.userId,
+        email: targetEmail,
+        email_confirm: true,
+        user_metadata: {
+          role: dbUser.role || 'customer',
+          name: dbUser.name || '',
+          phone: dbUser.phone || '',
+        },
+      });
+      if (createErr) {
+        console.warn('[SSO] Strategy 2 createUser notice:', createErr.message);
+      }
+      return targetEmail;
+    }
+
+    return null;
+  };
+
   if (!resolvedEmail && adminClient && (userIdParam || emailParam)) {
     try {
       if (userIdParam) {
-        const { data: dbUser } = await adminClient
+        const { data: dbUser, error: dbUserErr } = await adminClient
           .from('users')
-          .select('userId, email, is_deleted')
+          .select('userId, email, name, phone, role')
           .eq('userId', userIdParam)
           .maybeSingle();
 
-        if (dbUser && dbUser.is_deleted !== true) {
+        if (dbUserErr) {
+          console.warn('[SSO] Strategy 2 userId lookup warning:', dbUserErr.message);
+        }
+
+        if (dbUser) {
+          resolvedEmail = await ensureAuthEmailForDbUser(dbUser, emailParam);
+          console.log('[SSO] Strategy 2 resolved email by userId:', resolvedEmail);
+        } else {
+          // Fallback if account exists only in auth.users
           const { data: authUserData, error: authUserErr } = await adminClient.auth.admin.getUserById(userIdParam);
-          if (!authUserErr && authUserData?.user) {
+          if (!authUserErr && authUserData?.user?.email) {
             if (!authUserData.user.email_confirmed_at) {
               await adminClient.auth.admin.updateUserById(authUserData.user.id, {
                 email_confirm: true,
               });
             }
-            resolvedEmail = authUserData.user.email || dbUser?.email || emailParam || null;
-            console.log('[SSO] Strategy 2 resolved email from auth.users by userId:', resolvedEmail);
-          } else if (dbUser?.email) {
-            resolvedEmail = dbUser.email;
-            console.log('[SSO] Strategy 2 resolved email from public.users by userId:', resolvedEmail);
+            resolvedEmail = authUserData.user.email;
           }
         }
       }
 
       if (!resolvedEmail && emailParam) {
-        const { data: dbUser } = await adminClient
+        const cleanEmail = emailParam.trim().toLowerCase();
+        const { data: dbUser, error: dbEmailErr } = await adminClient
           .from('users')
-          .select('userId, email, is_deleted')
-          .ilike('email', emailParam.trim().toLowerCase())
+          .select('userId, email, name, phone, role')
+          .ilike('email', cleanEmail)
           .maybeSingle();
 
-        if (dbUser?.email && dbUser.is_deleted !== true) {
-          resolvedEmail = dbUser.email;
-          console.log('[SSO] Strategy 2 verified email from public.users:', resolvedEmail);
+        if (dbEmailErr) {
+          console.warn('[SSO] Strategy 2 email lookup warning:', dbEmailErr.message);
+        }
+
+        if (dbUser) {
+          resolvedEmail = await ensureAuthEmailForDbUser(dbUser, cleanEmail);
+          console.log('[SSO] Strategy 2 resolved email by emailParam:', resolvedEmail);
         }
       }
     } catch (e) {
