@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, Star, Diamond, CheckCircle, CaretRight } from "@phosphor-icons/react";
+import { Crown, Star, Diamond, CheckCircle, CaretRight, Lock } from "@phosphor-icons/react";
 import { computeUpgradeCalculation } from "@/lib/helpers/gymCustomerMembershipPlans/membershipPaymentLogic";
 
 interface Plan {
@@ -37,8 +37,12 @@ export default function AvailablePlansSection({
     return null;
   }
 
-  const isOtherPlanDisabled = Boolean(isCurrentActive || isPendingActivation);
-  const sectionTitle = isPendingActivation || !currentPlan ? "AVAILABLE MEMBERSHIP PLANS" : "OTHER AVAILABLE PLANS";
+  const currentPrice = Number(currentPlan?.plan?.price ?? currentPlan?.customAmount ?? currentPlan?.price ?? 0);
+  const sectionTitle = isPendingActivation || !currentPlan
+    ? "AVAILABLE MEMBERSHIP PLANS"
+    : isCurrentActive
+    ? "UPGRADE TO HIGHER TIER PLANS"
+    : "OTHER AVAILABLE PLANS";
 
   return (
     <div>
@@ -51,7 +55,7 @@ export default function AvailablePlansSection({
           <div className="w-8 h-8 border-2 border-[#D7FF00] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : plans.length === 0 ? (
-        <div className="bg-[#1C1C1E] rounded-3xl p-5 mb-4 border border-[#27272A] text-center">
+        <div className="bg-[#1C1C1E] rounded-2xl sm:rounded-3xl p-5 mb-4 border border-[#27272A] text-center">
           <p className="text-[#8E8E93] text-xs">
             No membership plans are currently available.
           </p>
@@ -63,31 +67,53 @@ export default function AvailablePlansSection({
             const isRenewingThis = renewingPlanId === plan.planId;
             const iconBg = isFirst ? "bg-[#374151]" : "bg-[#6D28D9]";
             const checkColor = isFirst ? "#D7FF00" : "#A78BFA";
+            const planPrice = Number(plan.price || 0);
             const calc = computeUpgradeCalculation(currentPlan, plan);
             const isUpgradeWithCredit = Boolean(calc?.isUpgrade && calc.unusedCredit > 0);
-            const payableAmount = calc?.payableAmount ?? plan.price;
-            const isActionDisabled = isOtherPlanDisabled || isRenewingThis;
+            const payableAmount = isUpgradeWithCredit && calc ? calc.payableAmount : planPrice;
+
+            const isHigherPrice = planPrice > currentPrice;
+            const isEligibleUpgrade = isCurrentActive && isHigherPrice;
+            const isDowngradeLocked = isCurrentActive && !isHigherPrice;
+
+            const isPlanDisabled = Boolean(
+              isPendingActivation ||
+              isDowngradeLocked ||
+              isRenewingThis
+            );
 
             return (
               <div
                 key={plan.planId}
-                className="bg-[#1C1C1E] rounded-3xl p-5 border border-[#27272A] hover:border-[#38383B] transition-colors"
+                className="bg-[#1C1C1E] rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-[#27272A] hover:border-[#38383B] transition-colors"
               >
                 <div className="flex items-center mb-4">
-                  <div className={`w-14 h-14 rounded-2xl ${iconBg} flex items-center justify-center mr-4 shrink-0`}>
-                    <Crown size={28} color="#FFFFFF" weight="regular" />
+                  <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${iconBg} flex items-center justify-center mr-3 sm:mr-4 shrink-0 shadow-md`}>
+                    <Crown size={24} color="#FFFFFF" weight="regular" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-white text-lg font-semibold truncate">{plan.planName}</span>
-                      {isFirst ? (
-                        <Star size={16} color="#EAB308" weight="fill" className="shrink-0" />
-                      ) : (
-                        <Diamond size={16} color="#A78BFA" weight="regular" className="shrink-0" />
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-white text-base sm:text-lg font-semibold truncate">{plan.planName}</span>
+                      {isEligibleUpgrade && (
+                        <span className="bg-[#D7FF00]/15 border border-[#D7FF00]/30 text-[#D7FF00] text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+                          Upgrade Tier
+                        </span>
+                      )}
+                      {isDowngradeLocked && (
+                        <span className="bg-[#27272A] border border-[#38383B] text-[#8E8E93] text-[9px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 flex items-center gap-1">
+                          <Lock size={10} /> Locked
+                        </span>
+                      )}
+                      {!isCurrentActive && (
+                        isFirst ? (
+                          <Star size={16} color="#EAB308" weight="fill" className="shrink-0" />
+                        ) : (
+                          <Diamond size={16} color="#A78BFA" weight="regular" className="shrink-0" />
+                        )
                       )}
                     </div>
                     <div className="flex items-baseline mt-0.5 gap-1.5 flex-wrap">
-                      <span className="text-white text-base font-semibold">₹{plan.price}</span>
+                      <span className="text-white text-sm sm:text-base font-semibold">₹{plan.price}</span>
                       <span className="text-[#8E8E93] text-[11px] font-medium">+ GST (0%)</span>
                       <span className="text-[#8E8E93] text-xs">
                         / {plan.durationMonths} Month{plan.durationMonths > 1 ? "s" : ""}
@@ -113,7 +139,7 @@ export default function AvailablePlansSection({
                   </div>
                 </div>
 
-                {isUpgradeWithCredit && calc && (
+                {isEligibleUpgrade && isUpgradeWithCredit && calc && (
                   <div className="bg-[#141414] border border-[#27272A] rounded-2xl p-3.5 mb-4 space-y-1.5">
                     <div className="flex justify-between text-xs text-[#8E8E93]">
                       <span>New Plan Price</span>
@@ -132,14 +158,19 @@ export default function AvailablePlansSection({
 
                 <button
                   onClick={() => {
-                    if (isOtherPlanDisabled) return;
-                    onRenew(plan.planId, plan.planName, isUpgradeWithCredit ? payableAmount : undefined, isAutoPay);
+                    if (isPlanDisabled) return;
+                    onRenew(
+                      plan.planId,
+                      plan.planName,
+                      isEligibleUpgrade && isUpgradeWithCredit ? payableAmount : planPrice,
+                      true
+                    );
                   }}
-                  disabled={isActionDisabled}
-                  className={`w-full py-3.5 px-5 rounded-2xl flex items-center justify-center transition-all ${
-                    isOtherPlanDisabled
+                  disabled={isPlanDisabled}
+                  className={`w-full py-3.5 px-4 sm:px-5 rounded-2xl flex items-center justify-center transition-all min-h-[46px] touch-manipulation ${
+                    isPlanDisabled
                       ? "bg-[#27272A] text-[#8E8E93] cursor-not-allowed opacity-60"
-                      : "bg-[#D7FF00] hover:bg-[#cbf200] text-black active:scale-[0.99] cursor-pointer"
+                      : "bg-[#D7FF00] hover:bg-[#cbf200] text-black active:scale-[0.99] active:opacity-90 cursor-pointer shadow-lg shadow-[#D7FF00]/10"
                   }`}
                 >
                   {isRenewingThis ? (
@@ -148,21 +179,31 @@ export default function AvailablePlansSection({
                     <span className="text-xs font-bold tracking-wider uppercase">
                       Activate Assigned Plan First
                     </span>
-                  ) : isCurrentActive ? (
-                    <span className="text-xs font-bold tracking-wider uppercase">
+                  ) : isDowngradeLocked ? (
+                    <span className="text-xs font-bold tracking-wider uppercase text-center">
                       Plan Active {remainingDays > 0 ? `(${remainingDays} Days Left)` : ""}
                     </span>
+                  ) : isEligibleUpgrade ? (
+                    <>
+                      <span className="text-xs font-bold tracking-wider mr-1 uppercase">
+                        Upgrade Plan (₹{payableAmount})
+                      </span>
+                      <CaretRight size={15} color="#000000" weight="bold" />
+                    </>
                   ) : (
                     <>
                       <span className="text-xs font-bold tracking-wider mr-1 uppercase">
-                        {isUpgradeWithCredit
-                          ? `Upgrade Plan (₹${payableAmount}) ${isAutoPay ? "• AutoPay" : ""}`
-                          : `Choose Plan (₹${payableAmount}) ${isAutoPay ? "• AutoPay" : ""}`}
+                        Choose Plan (₹{payableAmount})
                       </span>
                       <CaretRight size={15} color="#000000" weight="bold" />
                     </>
                   )}
                 </button>
+                {isDowngradeLocked && (
+                  <p className="text-[11px] text-[#8E8E93] text-center mt-2">
+                    Available after your current plan expires
+                  </p>
+                )}
               </div>
             );
           })}

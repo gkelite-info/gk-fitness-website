@@ -1,7 +1,7 @@
 "use client";
 
 import { X, Info } from "@phosphor-icons/react";
-import { useMemo, useCallback, useState } from "react";
+import { useMemo, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useUser } from "@/app/context/UserContext";
@@ -12,7 +12,6 @@ import { getAvailablePlans } from "@/app/actions/customer/getAvailablePlans";
 import CurrentPlanSection from "./CurrentPlanSection";
 import AvailablePlansSection from "./AvailablePlansSection";
 import PaymentRecoveryBanner from "./PaymentRecoveryBanner";
-import AutoPayToggle from "@/app/(screens)/components/reusable/AutoPayToggle";
 import { usePaymentSession } from "./usePaymentSession";
 import { usePlanCheckout } from "./usePlanCheckout";
 import { calculateRemainingDays } from "@/lib/helpers/gymCustomerMembershipPlans/membershipPaymentLogic";
@@ -44,7 +43,7 @@ export default function UpgradePlanModal({
   const router = useRouter();
   const searchParams = useSearchParams();
   const targetedPlanId = planId || searchParams.get("planId");
-  const [isAutoPay, setIsAutoPay] = useState<boolean>(true);
+  const isAutoPay = true;
   const { user, profile, roleData, role } = useUser();
   const { data: indivCustomerPlans, refetch: refetchIndivPlans } = useIndividualCustomerPlans(user?.id);
 
@@ -227,26 +226,26 @@ export default function UpgradePlanModal({
   }, [allPlans, effectiveCurrentPlan, targetedPlanId]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#141414] border border-[#222222] rounded-3xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between p-5 border-b border-[#222222]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-[#141414] border border-[#222222] rounded-2xl sm:rounded-3xl w-full max-w-lg max-h-[calc(100svh-48px)] sm:max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#222222]">
           <div>
-            <h2 className="text-white text-xl font-semibold">
+            <h2 className="text-white text-lg sm:text-xl font-semibold">
               {isPendingActivation ? "Activate Membership" : hasPendingUpgrade ? "Upgrade Membership" : "Gym Membership"}
             </h2>
             <p className="text-[#8E8E93] text-xs mt-0.5">
               {isPendingActivation ? "Complete payment for your assigned membership plan" : hasPendingUpgrade ? "Complete payment for your pending plan upgrade" : "Physical Gym Access & Companion Plan"}
             </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#1A1A1A] flex items-center justify-center text-[#8E8E93] hover:text-white transition-colors cursor-pointer">
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#1A1A1A] flex items-center justify-center text-[#8E8E93] hover:text-white transition-colors cursor-pointer shrink-0">
             <X size={16} weight="bold" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 custom-scrollbar">
           {activeSession && (
             <PaymentRecoveryBanner planName={activeSession.planName} amount={activeSession.amount} onResume={resumePayment} onCancel={clearSession} isChecking={isChecking} />
           )}
-          <div className="bg-[#1C1C1E] border border-[#D7FF00]/25 rounded-2xl p-4 mb-6 flex gap-3 items-start">
+          <div className="bg-[#1C1C1E] border border-[#D7FF00]/25 rounded-2xl p-3.5 sm:p-4 mb-5 flex gap-3 items-start">
             <Info size={22} className="text-[#D7FF00] shrink-0 mt-0.5" weight="fill" />
             <div className="flex-1">
               <h4 className="text-white text-xs font-semibold mb-1">
@@ -258,13 +257,11 @@ export default function UpgradePlanModal({
                   : hasPendingUpgrade
                   ? "Your membership upgrade is ready. Complete your payment below to activate your upgraded plan."
                   : isCurrentActive
-                  ? `Your current plan is active with ${remainingDays} days remaining. Plan selection will unlock once expired.`
+                  ? `Your current plan is active with ${remainingDays} days remaining. Higher-tier plans are available for upgrade below.`
                   : "Membership plans cover entry and physical equipment access. Choose a plan to pay and activate securely via Razorpay."}
               </p>
             </div>
           </div>
-
-          <AutoPayToggle enabled={isAutoPay} onChange={setIsAutoPay} />
 
           {effectiveCurrentPlan && (
             <CurrentPlanSection
@@ -287,8 +284,11 @@ export default function UpgradePlanModal({
             isAutoPay={isAutoPay}
           />
         </div>
-        <div className="p-5 border-t border-[#222222] bg-[#141414]">
-          <button onClick={onClose} className="w-full bg-[#2A2A2A] hover:bg-[#333333] text-white font-semibold py-3.5 rounded-xl transition-colors text-sm cursor-pointer">
+        <div className="p-4 sm:p-5 border-t border-[#222222] bg-[#141414]">
+          <button
+            onClick={onClose}
+            className="w-full bg-[#2A2A2A] hover:bg-[#333333] text-white font-semibold py-3 sm:py-3.5 rounded-xl transition-colors text-sm cursor-pointer min-h-[44px] touch-manipulation"
+          >
             Close
           </button>
         </div>

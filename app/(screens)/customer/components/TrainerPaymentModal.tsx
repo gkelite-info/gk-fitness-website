@@ -4,7 +4,6 @@ import { X, ShieldCheck, CheckCircle, Barbell, CalendarCheck, CaretDown } from "
 import { useState, useMemo, useEffect } from "react";
 import { useUser } from "@/app/context/UserContext";
 import { useGlobalTrainers } from "@/lib/hooks/globalTrainers/useGlobalTrainers";
-import AutoPayToggle from "@/app/(screens)/components/reusable/AutoPayToggle";
 import { useTrainerCheckout } from "./useTrainerCheckout";
 
 interface TrainerPaymentModalProps {
@@ -25,7 +24,7 @@ export default function TrainerPaymentModal({
   onSuccess,
 }: TrainerPaymentModalProps) {
   const { user, profile } = useUser();
-  const [isAutoPay, setIsAutoPay] = useState<boolean>(true);
+  const isAutoPay = true;
   const { data: globalTrainers, isLoading: loadingTrainers } = useGlobalTrainers(true);
 
   const [selectedTrainerId, setSelectedTrainerId] = useState<string>(trainerId || "");
@@ -122,8 +121,6 @@ export default function TrainerPaymentModal({
             </div>
           </div>
 
-          <AutoPayToggle enabled={isAutoPay} onChange={setIsAutoPay} disabled={isProcessing} />
-
           <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-3 sm:p-4">
             <div className="flex items-center justify-between mb-2.5">
               <div>
@@ -133,7 +130,7 @@ export default function TrainerPaymentModal({
               </div>
               <div className="text-right">
                 <span className="text-[#8E8E93] text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">
-                  {isAutoPay ? "Monthly AutoPay" : "One-Time Fee"}
+                  Monthly Fee
                 </span>
                 <div className="text-[#D7FF00] text-xl sm:text-2xl font-bold">₹{activeTrainerPrice}</div>
               </div>
@@ -160,9 +157,7 @@ export default function TrainerPaymentModal({
             <div className="flex-1">
               <p className="text-white text-xs font-semibold">Verified Razorpay Gateway</p>
               <p className="text-[#8E8E93] text-[10px] sm:text-[11px]">
-                {isAutoPay
-                  ? "Recurring AutoPay mandate. Cancel anytime from your account."
-                  : "One-time payment for 1 month access."}
+                Instant activation upon successful payment.
               </p>
             </div>
           </div>
@@ -172,20 +167,18 @@ export default function TrainerPaymentModal({
           <button
             onClick={onPayClick}
             disabled={isProcessing || !selectedTrainerId}
-            className="w-full bg-[#D7FF00] hover:bg-[#bce000] text-black font-bold py-2.5 sm:py-3.5 rounded-xl transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 text-xs sm:text-sm"
+            className="w-full bg-[#D7FF00] hover:bg-[#bce000] text-black font-bold py-2.5 sm:py-3.5 rounded-xl transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 text-xs sm:text-sm min-h-[44px] touch-manipulation"
           >
             {isProcessing ? (
               <span>Processing Booking...</span>
-            ) : isAutoPay ? (
-              <span>Pay ₹{activeTrainerPrice} & Enable AutoPay</span>
             ) : (
-              <span>Pay ₹{activeTrainerPrice} (One-Time)</span>
+              <span>Pay ₹{activeTrainerPrice} & Assign Trainer</span>
             )}
           </button>
           <button
             onClick={onClose}
             disabled={isProcessing}
-            className="w-full bg-[#1F1F1F] hover:bg-[#2A2A2A] text-[#8E8E93] hover:text-white font-medium py-2 sm:py-2.5 rounded-xl transition-colors text-xs cursor-pointer"
+            className="w-full bg-[#1F1F1F] hover:bg-[#2A2A2A] text-[#8E8E93] hover:text-white font-medium py-2 sm:py-2.5 rounded-xl transition-colors text-xs cursor-pointer min-h-[40px] touch-manipulation"
           >
             Cancel
           </button>

@@ -35,7 +35,7 @@ export function usePlanCheckout({
     targetPlanId: string,
     targetPlanName: string,
     amount?: number,
-    isAutoPay: boolean = false
+    isAutoPay: boolean = true
   ) => {
     try {
       setRenewingPlanId(targetPlanId);
@@ -55,7 +55,7 @@ export function usePlanCheckout({
         });
 
         if (!subResult.success) {
-          toast.error(subResult.error || "Failed to initiate AutoPay subscription.");
+          toast.error(subResult.error || "Failed to initiate payment gateway.");
           setRenewingPlanId(null);
           return;
         }
@@ -79,7 +79,7 @@ export function usePlanCheckout({
           key: subResult.keyId,
           subscription_id: subResult.subscriptionId,
           name: "GK-Gym Life",
-          description: `AutoPay Membership: ${targetPlanName}`,
+          description: `Membership Plan: ${targetPlanName}`,
           prefill: {
             name: subResult.customerName || customerName || "",
             email: subResult.customerEmail || customerEmail || "",
@@ -88,7 +88,7 @@ export function usePlanCheckout({
           theme: { color: "#D7FF00" },
           handler: async function (response: any) {
             try {
-              toast.loading("Verifying AutoPay authorization...", { id: "payment-verify" });
+              toast.loading("Verifying payment...", { id: "payment-verify" });
               const verifyResult = await verifyPaymentAndRenewPlan({
                 subscriptionId: response.razorpay_subscription_id,
                 paymentId: response.razorpay_payment_id,
@@ -100,13 +100,13 @@ export function usePlanCheckout({
               });
               if (verifyResult.success) {
                 clearSession();
-                toast.success(`AutoPay for "${targetPlanName}" activated successfully!`, { id: "payment-verify" });
+                toast.success(`Plan "${targetPlanName}" activated successfully!`, { id: "payment-verify" });
                 onSuccess();
               } else {
-                toast.error(verifyResult.error || "AutoPay verification failed.", { id: "payment-verify" });
+                toast.error(verifyResult.error || "Payment verification failed.", { id: "payment-verify" });
               }
             } catch {
-              toast.error("AutoPay verification failed on server.", { id: "payment-verify" });
+              toast.error("Payment verification failed on server.", { id: "payment-verify" });
             } finally {
               setRenewingPlanId(null);
             }
@@ -116,7 +116,7 @@ export function usePlanCheckout({
 
         const razorpayInstance = new (window as any).Razorpay(options);
         razorpayInstance.on("payment.failed", function (response: any) {
-          toast.error(response.error?.description || "AutoPay setup was cancelled.");
+          toast.error(response.error?.description || "Payment setup was cancelled.");
           setRenewingPlanId(null);
         });
         razorpayInstance.open();
