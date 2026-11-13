@@ -70,7 +70,7 @@ export function useTrainerCheckout({
 
         if (!subResult.success) {
           setIsProcessing(false);
-          toast.error(subResult.error || "Failed to initiate AutoPay subscription.");
+          toast.error(subResult.error || "Failed to initiate payment gateway.");
           return;
         }
 
@@ -78,7 +78,7 @@ export function useTrainerCheckout({
           key: subResult.keyId,
           subscription_id: subResult.subscriptionId,
           name: "GK-Gym Life",
-          description: `Personal Trainer AutoPay: ${trainerName}`,
+          description: `Personal Trainer: ${trainerName}`,
           prefill: {
             name: subResult.customerName || userName || "",
             email: subResult.customerEmail || userEmail || "",
@@ -87,7 +87,7 @@ export function useTrainerCheckout({
           theme: { color: "#D7FF00" },
           handler: async function (response: any) {
             try {
-              toast.loading("Verifying AutoPay authorization...", { id: "trainer-pay" });
+              toast.loading("Verifying payment...", { id: "trainer-pay" });
               const verifyRes = await verifyTrainerPaymentAndAssign({
                 subscriptionId: response.razorpay_subscription_id || subResult.subscriptionId,
                 paymentId: response.razorpay_payment_id,
@@ -102,7 +102,7 @@ export function useTrainerCheckout({
                 queryClient.invalidateQueries({ queryKey: ["individualCustomerPayments"] });
                 queryClient.invalidateQueries({ queryKey: ["individualCustomerTrainers"] });
                 queryClient.invalidateQueries({ queryKey: ["individualCustomerTrainerPayments"] });
-                toast.success(`AutoPay active with ${trainerName}!`, { id: "trainer-pay" });
+                toast.success(`Booking confirmed with ${trainerName}!`, { id: "trainer-pay" });
                 onSuccess?.();
                 onClose();
                 if (typeof window !== "undefined") {
@@ -111,10 +111,10 @@ export function useTrainerCheckout({
                   router.refresh();
                 }
               } else {
-                toast.error(verifyRes.error || "AutoPay verification failed.", { id: "trainer-pay" });
+                toast.error(verifyRes.error || "Payment verification failed.", { id: "trainer-pay" });
               }
             } catch {
-              toast.error("AutoPay confirmation failed on server.", { id: "trainer-pay" });
+              toast.error("Payment confirmation failed on server.", { id: "trainer-pay" });
             } finally {
               setIsProcessing(false);
             }
@@ -126,7 +126,7 @@ export function useTrainerCheckout({
 
         const razorpayInstance = new (window as any).Razorpay(options);
         razorpayInstance.on("payment.failed", function (response: any) {
-          toast.error(response.error?.description || "AutoPay setup was cancelled.");
+          toast.error(response.error?.description || "Payment was cancelled.");
           setIsProcessing(false);
         });
         razorpayInstance.open();

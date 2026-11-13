@@ -170,12 +170,12 @@ export default function CurrentPlanSection({
               Your gym owner initiated an upgrade. Complete payment below to activate your new tier!
             </p>
             <button
-              onClick={() => onRenew(currentPlan.pendingPlanId!, currentPlan.pendingPlan?.planName || "Upgraded Plan", undefined, isAutoPay)}
+              onClick={() => onRenew(currentPlan.pendingPlanId!, currentPlan.pendingPlan?.planName || "Upgraded Plan", undefined, true)}
               disabled={isRenewingThis}
-              className="w-full bg-[#D7FF00] hover:bg-[#cbf200] text-black font-bold text-xs py-3 px-4 rounded-xl mt-3 flex items-center justify-center transition-all active:scale-[0.99] cursor-pointer"
+              className="w-full bg-[#D7FF00] hover:bg-[#cbf200] text-black font-bold text-xs py-3 px-4 rounded-xl mt-3 flex items-center justify-center transition-all active:scale-[0.99] active:opacity-90 cursor-pointer min-h-[44px] touch-manipulation"
             >
               <span className="mr-1 uppercase tracking-wider">
-                COMPLETE UPGRADE PAYMENT {currentPlan.pendingAmount !== undefined && currentPlan.pendingAmount !== null ? `(₹${Number(currentPlan.pendingAmount)})` : ""} {isAutoPay ? "• AUTOPAY" : ""}
+                COMPLETE UPGRADE PAYMENT {currentPlan.pendingAmount !== undefined && currentPlan.pendingAmount !== null ? `(₹${Number(currentPlan.pendingAmount)})` : ""}
               </span>
               <CaretRight size={14} color="#000000" weight="bold" />
             </button>
@@ -185,17 +185,17 @@ export default function CurrentPlanSection({
         {isActive && !isExpired && !isPendingActivation ? (
           <button
             disabled={true}
-            className="w-full bg-[#27272A] text-[#8E8E93] py-3.5 px-5 rounded-2xl flex items-center justify-center mt-4 opacity-60 cursor-not-allowed"
+            className="w-full bg-[#27272A] text-[#8E8E93] py-3.5 px-4 sm:px-5 rounded-2xl flex items-center justify-center mt-4 opacity-60 cursor-not-allowed min-h-[46px]"
           >
-            <span className="text-xs font-bold tracking-wider uppercase">
+            <span className="text-xs font-bold tracking-wider uppercase text-center">
               Plan Active {remainingDays > 0 ? `(${remainingDays} Days Left)` : ""}
             </span>
           </button>
         ) : (
           <button
-            onClick={() => onRenew(targetPlanId!, planName, undefined, isAutoPay)}
+            onClick={() => onRenew(targetPlanId!, planName, undefined, true)}
             disabled={isRenewingThis || !targetPlanId}
-            className="w-full bg-[#D7FF00] hover:bg-[#cbf200] py-3.5 px-5 rounded-2xl flex items-center justify-center mt-4 transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+            className="w-full bg-[#D7FF00] hover:bg-[#cbf200] py-3.5 px-4 sm:px-5 rounded-2xl flex items-center justify-center mt-4 transition-all active:scale-[0.99] active:opacity-90 disabled:opacity-50 cursor-pointer min-h-[46px] touch-manipulation"
           >
             {isRenewingThis ? (
               <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
@@ -203,8 +203,8 @@ export default function CurrentPlanSection({
               <>
                 <span className="text-black text-xs font-bold tracking-wider mr-1 uppercase">
                   {isPendingActivation || (!isActive && !isExpired)
-                    ? (isAutoPay ? "ACTIVATE WITH AUTOPAY" : "ACTIVATE MEMBERSHIP (ONE-TIME)")
-                    : (isAutoPay ? "RENEW WITH AUTOPAY" : "RENEW PLAN (ONE-TIME)")}
+                    ? "ACTIVATE MEMBERSHIP"
+                    : "RENEW PLAN"}
                 </span>
                 <CaretRight size={15} color="#000000" weight="bold" />
               </>
