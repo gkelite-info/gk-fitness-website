@@ -5,6 +5,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useUser } from "@/app/context/UserContext";
 import { useGlobalTrainers } from "@/lib/hooks/globalTrainers/useGlobalTrainers";
 import { useTrainerCheckout } from "./useTrainerCheckout";
+import PaymentSuccessModal from "./PaymentSuccessModal";
 
 interface TrainerPaymentModalProps {
   trainerId?: string;
@@ -51,7 +52,7 @@ export default function TrainerPaymentModal({
       : Number(trainerPrice) || 499;
   const activeSpecialization = selectedTrainer?.specialization || specialization || "Fitness";
 
-  const { isProcessing, handlePayTrainer } = useTrainerCheckout({
+  const { isProcessing, handlePayTrainer, successInfo, handleSuccessClose } = useTrainerCheckout({
     userId: user?.id,
     userName: profile?.name || user?.user_metadata?.fullName,
     userEmail: user?.email,
@@ -184,6 +185,16 @@ export default function TrainerPaymentModal({
           </button>
         </div>
       </div>
+      {successInfo && (
+        <PaymentSuccessModal
+          isOpen={Boolean(successInfo)}
+          itemName={successInfo.itemName}
+          amount={successInfo.amount}
+          transactionId={successInfo.transactionId}
+          type="trainer"
+          onClose={handleSuccessClose}
+        />
+      )}
     </div>
   );
 }

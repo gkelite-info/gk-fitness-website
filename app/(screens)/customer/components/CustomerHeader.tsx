@@ -222,7 +222,7 @@ export default function CustomerHeader() {
           </a>
 
           <a
-            href="gk-fitness://workouts"
+            href="gk-fitness://workout"
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[#C0C0C6] hover:text-white hover:bg-[#1A1A1E] font-medium text-sm transition-all cursor-pointer"
           >
@@ -240,7 +240,7 @@ export default function CustomerHeader() {
           </a>
 
           <a
-            href="gk-fitness://weekly-progress"
+            href="gk-fitness://progress"
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[#C0C0C6] hover:text-white hover:bg-[#1A1A1E] font-medium text-sm transition-all cursor-pointer"
           >
@@ -251,7 +251,7 @@ export default function CustomerHeader() {
           <div className="my-2 border-t border-[#222226]" />
 
           <a
-            href="gk-fitness://"
+            href="gk-fitness://home"
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-[#D7FF00] bg-[#D7FF00]/10 hover:bg-[#D7FF00]/15 border border-[#D7FF00]/20 font-semibold text-sm transition-all cursor-pointer"
           >

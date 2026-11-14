@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { loadRazorpayScript } from "@/lib/helpers/razorpay/loadRazorpayScript";
 import { createRazorpayOrder } from "@/app/actions/customer/createRazorpayOrder";
 import { createRazorpaySubscription } from "@/app/actions/customer/createRazorpaySubscription";
 import { verifyPaymentAndRenewPlan } from "@/app/actions/customer/verifyPaymentAndRenewPlan";
 import { checkAndVerifyOrderStatus } from "@/app/actions/customer/checkAndVerifyOrderStatus";
+import { dismissRazorpay } from "@/lib/helpers/razorpay/dismissRazorpay";
 import { StoredPaymentSession } from "./usePaymentSession";
 
 interface UsePlanCheckoutParams {
@@ -30,7 +32,19 @@ export function usePlanCheckout({
   clearSession,
   onSuccess,
 }: UsePlanCheckoutParams) {
+  const router = useRouter();
   const [renewingPlanId, setRenewingPlanId] = useState<string | null>(null);
+  const [successInfo, setSuccessInfo] = useState<{
+    itemName: string;
+    amount: number;
+    transactionId?: string;
+  } | null>(null);
+
+  const handleSuccessClose = () => {
+    setSuccessInfo(null);
+    onSuccess();
+    router.refresh();
+  };
 
   const handleRenew = async (
     targetPlanId: string,
@@ -120,18 +134,17 @@ export function usePlanCheckout({
         document.removeEventListener("visibilitychange", handleVisibilityChange);
       };
 
-      const finishSuccess = () => {
+      const finishSuccess = (payId?: string) => {
         if (isCompleted) return;
         isCompleted = true;
         cleanupListeners();
         clearSession();
-        try {
-          if (razorpayInstance && typeof razorpayInstance.close === "function") {
-            razorpayInstance.close();
-          }
-        } catch {}
-        toast.success(`Plan "${targetPlanName}" activated successfully!`, { id: "payment-verify" });
-        onSuccess();
+        dismissRazorpay(razorpayInstance);
+        setSuccessInfo({
+          itemName: targetPlanName,
+          amount: Number(amount || 0),
+          transactionId: payId,
+        });
         setRenewingPlanId(null);
       };
 
@@ -145,7 +158,7 @@ export function usePlanCheckout({
             gymId: resolvedGymId,
           });
           if (res.success && res.status === "paid") {
-            finishSuccess();
+            finishSuccess(res.paymentId);
           }
         } catch {}
       };
@@ -186,7 +199,7 @@ export function usePlanCheckout({
             });
 
             if (verifyResult.success) {
-              finishSuccess();
+              finishSuccess(response.razorpay_payment_id);
             } else {
               await checkPaymentStatus();
             }
@@ -223,5 +236,5 @@ export function usePlanCheckout({
     }
   };
 
-  return { renewingPlanId, handleRenew };
+  return { renewingPlanId, handleRenew, successInfo, handleSuccessClose };
 }

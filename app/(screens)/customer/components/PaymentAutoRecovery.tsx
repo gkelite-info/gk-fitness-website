@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { checkAndVerifyOrderStatus } from "@/app/actions/customer/checkAndVerifyOrderStatus";
+import { dismissRazorpay } from "@/lib/helpers/razorpay/dismissRazorpay";
 import { usePaymentSession } from "./usePaymentSession";
 import PaymentRecoveryBanner from "./PaymentRecoveryBanner";
 
@@ -23,6 +24,7 @@ export default function PaymentAutoRecovery() {
       try {
         const res = await checkAndVerifyOrderStatus({});
         if (res.success && res.status === "paid") {
+          dismissRazorpay();
           toast.success(
             res.type === "trainer"
               ? `Payment verified! Trainer booking confirmed with ${res.trainerName || "Trainer"}.`
