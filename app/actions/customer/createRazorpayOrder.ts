@@ -225,6 +225,7 @@ export async function createRazorpayOrder({
           customerId: resolvedCustomerId,
           gymId: resolvedGymId || "",
           actionType,
+          isAutoPay: "true",
         },
       });
     } catch (orderErr: any) {
