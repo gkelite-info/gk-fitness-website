@@ -8,8 +8,11 @@ import { loadRazorpayScript } from "@/lib/helpers/razorpay/loadRazorpayScript";
 
 export interface StoredPaymentSession {
   orderId: string;
-  planId: string;
+  planId?: string;
   planName: string;
+  trainerId?: string;
+  trainerName?: string;
+  paymentType?: "membership" | "trainerfee";
   amount: number;
   currency: string;
   keyId: string;
@@ -56,14 +59,23 @@ export function usePaymentSession(onRenewSuccess: (planName: string) => void) {
         const result = await checkAndVerifyOrderStatus({
           orderId: session.orderId,
           planId: session.planId,
+          trainerId: session.trainerId,
+          paymentType: session.paymentType,
           customerId: session.customerId,
           gymId: session.gymId,
         });
 
         if (result.success && result.status === "paid") {
           clearSession();
-          toast.success(`Payment verified! Plan "${result.planName || session.planName}" activated successfully.`);
-          onRenewSuccess(result.planName || session.planName);
+          const displayName = result.type === "trainer"
+            ? (result.trainerName || session.trainerName || "Trainer")
+            : (result.planName || session.planName);
+          toast.success(
+            result.type === "trainer"
+              ? `Payment verified! Trainer booking confirmed with ${displayName}.`
+              : `Payment verified! Plan "${displayName}" activated successfully.`
+          );
+          onRenewSuccess(displayName);
           return true;
         }
 
@@ -117,7 +129,7 @@ export function usePaymentSession(onRenewSuccess: (planName: string) => void) {
             subscriptionId: isSubscription ? (response.razorpay_subscription_id || activeSession.orderId) : undefined,
             paymentId: response.razorpay_payment_id,
             signature: response.razorpay_signature,
-            planId: activeSession.planId,
+            planId: activeSession.planId || "",
             customerId: activeSession.customerId,
             gymId: activeSession.gymId,
             isAutoPay: isSubscription,
