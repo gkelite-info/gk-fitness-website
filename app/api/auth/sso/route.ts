@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
     'phone',
     'customerId',
     'gymId',
+    '_ts',
   ]);
   requestUrl.searchParams.forEach((value, key) => {
     if (!ssoInternalParams.has(key)) {
@@ -48,6 +49,11 @@ export async function GET(request: NextRequest) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   const response = NextResponse.redirect(redirectUrl);
+
+  // Set strict cache-control so iOS Safari and Android Chrome never cache the SSO redirect
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  response.headers.set('Pragma', 'no-cache');
+  response.headers.set('Expires', '0');
 
   let cookieStore: any = null;
   try {
@@ -98,31 +104,67 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Strategy 0: Check if the client already has an active session for this user
+  // Helper to completely purge any existing session cookies from the browser
+  const purgeExistingSession = async () => {
+    try {
+      const ssr = createSSR();
+      await ssr.auth.signOut({ scope: 'local' }).catch(() => {});
+    } catch {}
+
+    request.cookies.getAll().forEach((c) => {
+      if (c.name.includes('auth-token') || c.name.startsWith('sb-')) {
+        response.cookies.delete(c.name);
+        if (cookieStore) {
+          try {
+            cookieStore.delete(c.name);
+          } catch {}
+        }
+      }
+    });
+  };
+
+  // Strategy 0: Check if the browser already has an active session
   try {
     const existingSSR = createSSR();
     const { data: { user: existingUser } } = await existingSSR.auth.getUser();
     if (existingUser) {
-      const isIdMatch = !userIdParam || existingUser.id === userIdParam;
-      const isEmailMatch = !emailParam || existingUser.email?.toLowerCase() === emailParam.toLowerCase();
-      if (isIdMatch && isEmailMatch) {
-        console.log('[SSO] Existing session is valid for:', existingUser.email);
+      const isIdMatch = Boolean(userIdParam && existingUser.id === userIdParam);
+      const isEmailMatch = Boolean(emailParam && existingUser.email?.toLowerCase() === emailParam.toLowerCase());
+
+      // If the existing browser session strictly matches the requested user, we can keep it
+      if (isIdMatch || isEmailMatch) {
+        console.log('[SSO] Existing browser session is valid for requested user:', existingUser.email);
         return response;
       }
+
+      // Existing browser session belongs to an old/different user (e.g. 'kogot' vs current 'sajadid').
+      // Purge it immediately so old credentials/cookies never leak into the active session!
+      console.log(
+        `[SSO] Existing session (${existingUser.email} / ${existingUser.id}) does not match requested user (${userIdParam || emailParam}). Purging old session.`
+      );
+      await purgeExistingSession();
     }
   } catch (existingCheckErr) {
     console.warn('[SSO] Existing session check notice:', existingCheckErr);
   }
 
   let resolvedEmail: string | null = null;
+  let isTokenForTargetUser = false;
 
-  // Strategy 1: Validate provided access_token with admin client
+  // Strategy 1: Validate provided access_token with admin client (guarding against mismatched user tokens)
   if (accessToken && adminClient) {
     try {
       const { data: { user }, error: userError } = await adminClient.auth.getUser(accessToken);
       if (!userError && user?.email) {
-        resolvedEmail = user.email;
-        console.log('[SSO] Strategy 1 validated access_token for:', resolvedEmail);
+        if (userIdParam && user.id !== userIdParam) {
+          console.warn(`[SSO] Provided access_token user (${user.id}) does not match requested userIdParam (${userIdParam}). Discarding token.`);
+        } else if (emailParam && user.email.toLowerCase() !== emailParam.trim().toLowerCase()) {
+          console.warn(`[SSO] Provided access_token email (${user.email}) does not match requested emailParam (${emailParam}). Discarding token.`);
+        } else {
+          resolvedEmail = user.email;
+          isTokenForTargetUser = true;
+          console.log('[SSO] Strategy 1 validated access_token for requested user:', resolvedEmail);
+        }
       } else if (userError) {
         console.warn('[SSO] Strategy 1 token validation warning:', userError.message);
       }
@@ -230,6 +272,9 @@ export async function GET(request: NextRequest) {
   // If user email was identified (via Strategy 1 or 2), generate a magic link session
   if (resolvedEmail && adminClient) {
     try {
+      // First ensure old session cookies are thoroughly purged
+      await purgeExistingSession();
+
       const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
         type: 'magiclink',
         email: resolvedEmail,
@@ -256,9 +301,10 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Strategy 3: Fallback to setSession if refreshToken and accessToken are provided
-  if (accessToken && refreshToken) {
+  // Strategy 3: Fallback to setSession if refreshToken and accessToken are provided and match target user
+  if (accessToken && refreshToken && isTokenForTargetUser) {
     try {
+      await purgeExistingSession();
       const supabaseSSR = createSSR();
       const { data, error } = await supabaseSSR.auth.setSession({
         access_token: accessToken,
@@ -266,7 +312,7 @@ export async function GET(request: NextRequest) {
       });
 
       if (!error && data.session) {
-        console.log('[SSO] Strategy 3 setSession succeeded');
+        console.log('[SSO] Strategy 3 setSession succeeded for:', data.session.user?.email);
         return response;
       } else if (error) {
         console.warn('[SSO] Strategy 3 setSession warning:', error.message);
