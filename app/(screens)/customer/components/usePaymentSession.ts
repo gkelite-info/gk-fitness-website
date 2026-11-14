@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
 import { checkAndVerifyOrderStatus } from "@/app/actions/customer/checkAndVerifyOrderStatus";
 import { verifyPaymentAndRenewPlan } from "@/app/actions/customer/verifyPaymentAndRenewPlan";
@@ -27,6 +27,7 @@ const SESSION_EXPIRY_MS = 15 * 60 * 1000;
 export function usePaymentSession(onRenewSuccess: (planName: string) => void) {
   const [activeSession, setActiveSession] = useState<StoredPaymentSession | null>(null);
   const [isChecking, setIsChecking] = useState(false);
+  const isCheckingRef = useRef(false);
 
   const clearSession = useCallback(() => {
     try {
@@ -46,37 +47,43 @@ export function usePaymentSession(onRenewSuccess: (planName: string) => void) {
     setActiveSession(session);
   }, []);
 
-  const checkStatus = useCallback(async (session: StoredPaymentSession) => {
-    setIsChecking(true);
-    try {
-      const result = await checkAndVerifyOrderStatus({
-        orderId: session.orderId,
-        planId: session.planId,
-        customerId: session.customerId,
-        gymId: session.gymId,
-      });
+  const checkStatus = useCallback(
+    async (session: StoredPaymentSession) => {
+      if (isCheckingRef.current) return false;
+      isCheckingRef.current = true;
+      setIsChecking(true);
+      try {
+        const result = await checkAndVerifyOrderStatus({
+          orderId: session.orderId,
+          planId: session.planId,
+          customerId: session.customerId,
+          gymId: session.gymId,
+        });
 
-      if (result.success && result.status === "paid") {
-        clearSession();
-        toast.success(`Payment verified! Plan "${result.planName || session.planName}" renewed successfully.`);
-        onRenewSuccess(result.planName || session.planName);
-        return true;
-      }
+        if (result.success && result.status === "paid") {
+          clearSession();
+          toast.success(`Payment verified! Plan "${result.planName || session.planName}" activated successfully.`);
+          onRenewSuccess(result.planName || session.planName);
+          return true;
+        }
 
-      if (result.status === "failed") {
-        clearSession();
-        toast.error("Previous payment attempt failed. Please choose a plan to retry.");
+        if (result.status === "failed") {
+          clearSession();
+          toast.error("Previous payment attempt was cancelled or failed. Please retry.");
+          return false;
+        }
+
         return false;
+      } catch (err) {
+        console.error("Failed to check payment status:", err);
+        return false;
+      } finally {
+        isCheckingRef.current = false;
+        setIsChecking(false);
       }
-
-      return false;
-    } catch (err) {
-      console.error("Failed to check payment status:", err);
-      return false;
-    } finally {
-      setIsChecking(false);
-    }
-  }, [clearSession, onRenewSuccess]);
+    },
+    [clearSession, onRenewSuccess]
+  );
 
   const resumePayment = useCallback(async () => {
     if (!activeSession) return;
@@ -90,36 +97,35 @@ export function usePaymentSession(onRenewSuccess: (planName: string) => void) {
       return;
     }
 
-    const options = {
+    const isSubscription = activeSession.orderId.startsWith("sub_");
+
+    const options: any = {
       key: activeSession.keyId,
-      amount: Math.round(activeSession.amount * 100),
-      currency: activeSession.currency || "INR",
       name: "GK-Gym Life",
-      description: `Plan Renewal: ${activeSession.planName}`,
-      order_id: activeSession.orderId,
+      description: `Plan: ${activeSession.planName}`,
       prefill: {
         name: activeSession.customerName || "",
         email: activeSession.customerEmail || "",
         contact: activeSession.customerPhone || "",
       },
-      theme: {
-        color: "#D7FF00",
-      },
+      theme: { color: "#D7FF00" },
       handler: async function (response: any) {
         try {
           toast.loading("Verifying payment...", { id: "payment-verify" });
           const verifyResult = await verifyPaymentAndRenewPlan({
-            orderId: response.razorpay_order_id,
+            orderId: isSubscription ? undefined : (response.razorpay_order_id || activeSession.orderId),
+            subscriptionId: isSubscription ? (response.razorpay_subscription_id || activeSession.orderId) : undefined,
             paymentId: response.razorpay_payment_id,
             signature: response.razorpay_signature,
             planId: activeSession.planId,
             customerId: activeSession.customerId,
             gymId: activeSession.gymId,
+            isAutoPay: isSubscription,
           });
 
           if (verifyResult.success) {
             clearSession();
-            toast.success(`Plan "${activeSession.planName}" renewed successfully!`, { id: "payment-verify" });
+            toast.success(`Plan "${activeSession.planName}" activated successfully!`, { id: "payment-verify" });
             onRenewSuccess(activeSession.planName);
           } else {
             toast.error(verifyResult.error || "Payment verification failed.", { id: "payment-verify" });
@@ -130,9 +136,17 @@ export function usePaymentSession(onRenewSuccess: (planName: string) => void) {
         }
       },
       modal: {
-        ondismiss: function () { },
+        ondismiss: function () {},
       },
     };
+
+    if (isSubscription) {
+      options.subscription_id = activeSession.orderId;
+    } else {
+      options.order_id = activeSession.orderId;
+      options.amount = Math.round(activeSession.amount * 100);
+      options.currency = activeSession.currency || "INR";
+    }
 
     const razorpayInstance = new (window as any).Razorpay(options);
     razorpayInstance.on("payment.failed", function (response: any) {
@@ -143,23 +157,41 @@ export function usePaymentSession(onRenewSuccess: (planName: string) => void) {
   }, [activeSession, checkStatus, clearSession, onRenewSuccess]);
 
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
+    const inspectAndRecoverSession = () => {
+      try {
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
 
-      const parsed: StoredPaymentSession = JSON.parse(raw);
-      const isExpired = Date.now() - (parsed.timestamp || 0) > SESSION_EXPIRY_MS;
+        const parsed: StoredPaymentSession = JSON.parse(raw);
+        const isExpired = Date.now() - (parsed.timestamp || 0) > SESSION_EXPIRY_MS;
 
-      if (isExpired) {
-        sessionStorage.removeItem(STORAGE_KEY);
-        return;
+        if (isExpired) {
+          sessionStorage.removeItem(STORAGE_KEY);
+          return;
+        }
+
+        setActiveSession(parsed);
+        checkStatus(parsed);
+      } catch (e) {
+        console.error("Failed to parse payment session from storage:", e);
       }
+    };
 
-      setActiveSession(parsed);
-      checkStatus(parsed);
-    } catch (e) {
-      console.error("Failed to parse payment session from storage:", e);
-    }
+    inspectAndRecoverSession();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        inspectAndRecoverSession();
+      }
+    };
+
+    window.addEventListener("focus", inspectAndRecoverSession);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", inspectAndRecoverSession);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [checkStatus]);
 
   return {

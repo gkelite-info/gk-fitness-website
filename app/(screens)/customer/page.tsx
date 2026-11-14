@@ -7,6 +7,7 @@ import TodayWorkoutCard from "./components/TodayWorkoutCard";
 import StatsGrid from "./components/StatsGrid";
 import WeeklyProgressCard from "./components/WeeklyProgressCard";
 import MealPlanCard from "./components/MealPlanCard";
+import PaymentAutoRecovery from "./components/PaymentAutoRecovery";
 
 export default async function CustomerDashboard() {
   const [membership, trainerMembership] = await Promise.all([
@@ -16,6 +17,7 @@ export default async function CustomerDashboard() {
 
   return (
       <div className="flex flex-col">
+        <PaymentAutoRecovery />
         <div className="mb-5">
           <h1 className="text-white text-lg font-semibold mt-1">
             Every rep. Every step. <span className="text-[#D7FF00]">Better than yesterday.</span>
