@@ -12,6 +12,7 @@ import { getAvailablePlans } from "@/app/actions/customer/getAvailablePlans";
 import CurrentPlanSection from "./CurrentPlanSection";
 import AvailablePlansSection from "./AvailablePlansSection";
 import PaymentRecoveryBanner from "./PaymentRecoveryBanner";
+import PaymentSuccessModal from "./PaymentSuccessModal";
 import { usePaymentSession } from "./usePaymentSession";
 import { usePlanCheckout } from "./usePlanCheckout";
 import { calculateRemainingDays } from "@/lib/helpers/gymCustomerMembershipPlans/membershipPaymentLogic";
@@ -56,13 +57,7 @@ export default function UpgradePlanModal({
 
   const { data: customerPlans, isLoading: isLoadingCustomerPlans, refetch: refetchCustomerPlans } =
     useGymCustomerMembershipPlans(resolvedGymId, resolvedCustomerId);
-
-  const { data: subscriptionsData, isLoading: isLoadingSubscriptions } = useSubscriptions(
-    undefined,
-    "customer",
-    { enabled: isIndividual }
-  );
-
+  const { data: subscriptionsData, isLoading: isLoadingSubscriptions } = useSubscriptions(undefined, "customer", { enabled: isIndividual });
   const { data: gymPlansData, isLoading: isLoadingGymPlans } = useQuery({
     queryKey: ["gymAvailablePlans", resolvedGymId],
     queryFn: () => getAvailablePlans(resolvedGymId),
@@ -76,10 +71,8 @@ export default function UpgradePlanModal({
     onClose();
   }, [isIndividual, refetchIndivPlans, refetchCustomerPlans, router, onClose]);
 
-  const { activeSession, isChecking, saveSession, clearSession, resumePayment } =
-    usePaymentSession(handleRenewSuccess);
-
-  const { renewingPlanId, handleRenew } = usePlanCheckout({
+  const { activeSession, isChecking, saveSession, clearSession, resumePayment } = usePaymentSession(handleRenewSuccess);
+  const { renewingPlanId, handleRenew, successInfo, handleSuccessClose } = usePlanCheckout({
     resolvedCustomerId,
     resolvedGymId,
     customerName: profile?.name || user?.user_metadata?.fullName || user?.email?.split("@")[0] || "",
@@ -94,27 +87,11 @@ export default function UpgradePlanModal({
     if (isIndividual) {
       if (!subscriptionsData) return [];
       return subscriptionsData
-        .filter(
-          (sub: any) =>
-            !sub.is_deleted &&
-            sub.isActive !== false &&
-            (sub.planFor === "customer" || sub.planFor === "customers" || sub.planFor === "individual_customer")
-        )
-        .map((sub: any) => ({
-          planId: sub.subscriptionPlanId,
-          planName: sub.planName,
-          durationMonths: sub.durationMonths || 1,
-          price: Number(sub.price) || 0,
-        }));
+        .filter((sub: any) => !sub.is_deleted && sub.isActive !== false && (sub.planFor === "customer" || sub.planFor === "customers" || sub.planFor === "individual_customer"))
+        .map((sub: any) => ({ planId: sub.subscriptionPlanId, planName: sub.planName, durationMonths: sub.durationMonths || 1, price: Number(sub.price) || 0 }));
     }
-
     if (!gymPlansData) return [];
-    return gymPlansData.map((p: any) => ({
-      planId: p.planId,
-      planName: p.planName,
-      durationMonths: p.durationMonths || 1,
-      price: Number(p.price) || 0,
-    }));
+    return gymPlansData.map((p: any) => ({ planId: p.planId, planName: p.planName, durationMonths: p.durationMonths || 1, price: Number(p.price) || 0 }));
   }, [isIndividual, subscriptionsData, gymPlansData]);
 
   const currentPlan = useMemo(() => {
@@ -293,6 +270,16 @@ export default function UpgradePlanModal({
           </button>
         </div>
       </div>
+      {successInfo && (
+        <PaymentSuccessModal
+          isOpen={Boolean(successInfo)}
+          itemName={successInfo.itemName}
+          amount={successInfo.amount}
+          transactionId={successInfo.transactionId}
+          type="plan"
+          onClose={handleSuccessClose}
+        />
+      )}
     </div>
   );
 }

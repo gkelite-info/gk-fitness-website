@@ -44,9 +44,7 @@ export async function checkAndVerifyOrderStatus({
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://swzhxokkrolnxvhekrmj.supabase.co";
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const adminClient = serviceKey
-      ? createAdminClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
-      : null;
+    const adminClient = serviceKey ? createAdminClient(supabaseUrl, serviceKey, { auth: { persistSession: false } }) : null;
     const dbClient = adminClient || supabase;
 
     let isPaid = false;
@@ -61,23 +59,16 @@ export async function checkAndVerifyOrderStatus({
     if (orderId && orderId.startsWith("sub_")) {
       const sub = (await fetchRazorpaySubscription(orderId)) as any;
       const activeStatuses = ["active", "authenticated", "charged", "completed"];
-      isPaid =
-        sub &&
-        (activeStatuses.includes(sub.status) ||
-          (typeof sub.paid_count === "number" && sub.paid_count > 0));
-
+      isPaid = sub && (activeStatuses.includes(sub.status) || (typeof sub.paid_count === "number" && sub.paid_count > 0));
       if (sub?.notes?.trainerId) {
         detectedTrainerId = String(sub.notes.trainerId);
         isTrainer = true;
       }
-
       if (sub) {
         paymentId = `pay_sub_${sub.id}`;
         try {
           const invoices = (await rzpClient.invoices.all({ subscription_id: orderId })) as any;
-          const successfulInvoice = invoices?.items?.find(
-            (inv: any) => inv.status === "paid" || Boolean(inv.payment_id)
-          );
+          const successfulInvoice = invoices?.items?.find((inv: any) => inv.status === "paid" || Boolean(inv.payment_id));
           if (successfulInvoice?.payment_id) {
             paymentId = successfulInvoice.payment_id;
             const pay = (await rzpClient.payments.fetch(paymentId)) as any;
@@ -99,9 +90,7 @@ export async function checkAndVerifyOrderStatus({
       }
       const paymentsData = await fetchRazorpayOrderPayments(orderId);
       const items = (paymentsData?.items || []) as any[];
-      const successfulPayment = items.find(
-        (p) => p.status === "captured" || p.status === "authorized"
-      );
+      const successfulPayment = items.find((p) => p.status === "captured" || p.status === "authorized");
       isPaid = order?.status === "paid" || !!successfulPayment;
       if (successfulPayment) {
         paymentId = successfulPayment.id;
@@ -128,17 +117,11 @@ export async function checkAndVerifyOrderStatus({
         const matchingPayment = (recentPayments?.items || []).find((p: any) => {
           const isStatusOk = p.status === "captured" || p.status === "authorized";
           if (!isStatusOk) return false;
-
           const notesUserId = p.notes?.userId || p.notes?.customerId;
           const matchesUser = notesUserId === user.id;
-          const matchesEmail = Boolean(
-            p.email && user.email && p.email.toLowerCase() === user.email.toLowerCase()
-          );
-          const matchesPhone = Boolean(
-            p.contact && user.phone && p.contact.replace(/\D/g, "") === user.phone.replace(/\D/g, "")
-          );
+          const matchesEmail = Boolean(p.email && user.email && p.email.toLowerCase() === user.email.toLowerCase());
+          const matchesPhone = Boolean(p.contact && user.phone && p.contact.replace(/\D/g, "") === user.phone.replace(/\D/g, ""));
           const isRecent = p.created_at * 1000 > Date.now() - 3 * 60 * 60 * 1000;
-
           return isRecent && (matchesUser || matchesEmail || matchesPhone);
         });
 
@@ -147,18 +130,10 @@ export async function checkAndVerifyOrderStatus({
           paymentId = matchingPayment.id;
           paymentMethod = matchingPayment.method || "upi";
           paymentAmount = matchingPayment.amount;
-
-          if (
-            matchingPayment.notes?.trainerId ||
-            matchingPayment.notes?.paymentType === "trainerfee" ||
-            matchingPayment.description?.toLowerCase().includes("trainer")
-          ) {
+          if (matchingPayment.notes?.trainerId || matchingPayment.notes?.paymentType === "trainerfee" || matchingPayment.description?.toLowerCase().includes("trainer")) {
             isTrainer = true;
-            if (matchingPayment.notes?.trainerId) {
-              detectedTrainerId = String(matchingPayment.notes.trainerId);
-            }
+            if (matchingPayment.notes?.trainerId) detectedTrainerId = String(matchingPayment.notes.trainerId);
           }
-
           if (matchingPayment.status === "authorized" && typeof matchingPayment.amount === "number") {
             try {
               await rzpClient.payments.capture(matchingPayment.id, matchingPayment.amount, matchingPayment.currency || "INR");

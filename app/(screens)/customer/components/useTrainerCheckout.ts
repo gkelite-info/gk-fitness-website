@@ -9,6 +9,7 @@ import { createTrainerRazorpayOrder } from "@/app/actions/customer/createTrainer
 import { createTrainerRazorpaySubscription } from "@/app/actions/customer/createTrainerRazorpaySubscription";
 import { verifyTrainerPaymentAndAssign } from "@/app/actions/customer/verifyTrainerPaymentAndAssign";
 import { checkAndVerifyOrderStatus } from "@/app/actions/customer/checkAndVerifyOrderStatus";
+import { dismissRazorpay } from "@/lib/helpers/razorpay/dismissRazorpay";
 
 interface UseTrainerCheckoutParams {
   userId?: string;
@@ -37,6 +38,22 @@ export function useTrainerCheckout({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [successInfo, setSuccessInfo] = useState<{
+    itemName: string;
+    amount: number;
+    transactionId?: string;
+  } | null>(null);
+
+  const handleSuccessClose = () => {
+    setSuccessInfo(null);
+    queryClient.invalidateQueries({ queryKey: ["individualCustomerPayments"] });
+    queryClient.invalidateQueries({ queryKey: ["individualCustomerTrainers"] });
+    queryClient.invalidateQueries({ queryKey: ["individualCustomerTrainerPayments"] });
+    queryClient.invalidateQueries({ queryKey: ["activeGlobalTrainer"] });
+    onSuccess?.();
+    onClose();
+    router.refresh();
+  };
 
   const handlePayTrainer = async ({
     trainerId,
@@ -133,27 +150,26 @@ export function useTrainerCheckout({
         document.removeEventListener("visibilitychange", handleVisibilityChange);
       };
 
-      const finishSuccess = () => {
+      const finishSuccess = (payId?: string) => {
         if (isCompleted) return;
         isCompleted = true;
         cleanupListeners();
+        dismissRazorpay(razorpayInstance);
         try {
           sessionStorage.removeItem("gk_active_payment_session");
-        } catch {}
-        try {
-          if (razorpayInstance && typeof razorpayInstance.close === "function") {
-            razorpayInstance.close();
-          }
         } catch {}
 
         queryClient.invalidateQueries({ queryKey: ["individualCustomerPayments"] });
         queryClient.invalidateQueries({ queryKey: ["individualCustomerTrainers"] });
         queryClient.invalidateQueries({ queryKey: ["individualCustomerTrainerPayments"] });
-        toast.success(`Booking confirmed with ${trainerName}!`, { id: "trainer-pay" });
-        onSuccess?.();
-        onClose();
+        queryClient.invalidateQueries({ queryKey: ["activeGlobalTrainer"] });
+
+        setSuccessInfo({
+          itemName: trainerName,
+          amount,
+          transactionId: payId,
+        });
         setIsProcessing(false);
-        router.refresh();
       };
 
       const checkPaymentStatus = async () => {
@@ -165,7 +181,7 @@ export function useTrainerCheckout({
             paymentType: "trainerfee",
           });
           if (res.success && res.status === "paid") {
-            finishSuccess();
+            finishSuccess(res.paymentId);
           }
         } catch {}
       };
@@ -206,7 +222,7 @@ export function useTrainerCheckout({
             });
 
             if (verifyRes.success) {
-              finishSuccess();
+              finishSuccess(response.razorpay_payment_id);
             } else {
               await checkPaymentStatus();
             }
@@ -243,5 +259,5 @@ export function useTrainerCheckout({
     }
   };
 
-  return { isProcessing, handlePayTrainer };
+  return { isProcessing, handlePayTrainer, successInfo, handleSuccessClose };
 }
