@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { calculatePlanExpiryDate } from "@/lib/planCalculations";
 import { processIndividualPlanPayment } from "@/lib/helpers/individual/membership/individualPlanPaymentProcessor";
+import { processTrainerPaymentSuccess } from "@/lib/helpers/individual/customer-trainer/trainerPaymentSuccessProcessor";
 import { executeMembershipPaymentSuccess } from "@/lib/helpers/gymCustomerMembershipPlans/membershipPaymentLogic";
 import { normalizeIndividualPaymentMode } from "@/lib/helpers/individual/individualCustomerPayments";
 
@@ -61,60 +62,15 @@ export async function POST(req: NextRequest) {
       });
 
       if (isTrainerFee && trainerId) {
-        const { data: trainerAssignment } = await supabase
-          .from("individual_customer_trainers")
-          .select("individualCustomerTrainerId, expiryOn, renewalOn")
-          .eq("userId", customerId)
-          .eq("globalTrainerId", trainerId)
-          .eq("is_deleted", false)
-          .order("createdAt", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        const now = new Date();
-        const baseDate = trainerAssignment?.expiryOn
-          ? new Date(trainerAssignment.expiryOn)
-          : now;
-        const nextExpiry = new Date(baseDate.getTime() > now.getTime() ? baseDate : now);
-        nextExpiry.setMonth(nextExpiry.getMonth() + 1);
-        const nextExpiryIso = nextExpiry.toISOString();
-        const nowIso = now.toISOString();
-
-        if (trainerAssignment?.individualCustomerTrainerId) {
-          await supabase
-            .from("individual_customer_trainers")
-            .update({
-              expiryOn: nextExpiryIso,
-              renewalOn: nextExpiryIso,
-              isActive: true,
-              status: "approved",
-              updatedAt: nowIso,
-            })
-            .eq("individualCustomerTrainerId", trainerAssignment.individualCustomerTrainerId);
-        }
-
-        const amountPaid = paymentEntity?.amount
-          ? paymentEntity.amount / 100
-          : Number(notes?.price || 0);
-
-        const { error: webhookPayErr } = await supabase
-          .from("individual_customer_trainer_payments")
-          .insert([{
-            individualCustomerPaymentId: crypto.randomUUID(),
-            userId: customerId,
-            globalTrainerId: trainerId,
-            paymentMode: "upi",
-            amountPaid: amountPaid,
-            transactionId: paymentId || subscriptionId,
-            status: "successful",
-            deletedAt: null,
-            createdAt: nowIso,
-            updatedAt: nowIso,
-          }]);
-
-        if (webhookPayErr) {
-          console.error("[Razorpay Webhook] Trainer payment record note:", webhookPayErr.message);
-        }
+        await processTrainerPaymentSuccess({
+          db: supabase,
+          userId: customerId,
+          trainerId,
+          amount: paymentEntity?.amount ? paymentEntity.amount / 100 : Number(notes?.price || 0),
+          paymentId,
+          subscriptionId,
+          paymentMode: paymentEntity?.method || "upi",
+        });
 
         return NextResponse.json({ status: "ok", type: "trainer_fee_processed" });
       }

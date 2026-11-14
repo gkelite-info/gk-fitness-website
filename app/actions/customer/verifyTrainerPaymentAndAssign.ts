@@ -9,6 +9,7 @@ import {
   getRazorpayClient,
 } from "@/lib/helpers/razorpay/razorpayServer";
 import { normalizeIndividualPaymentMode } from "@/lib/helpers/individual/individualCustomerPayments";
+import { processTrainerPaymentSuccess } from "@/lib/helpers/individual/customer-trainer/trainerPaymentSuccessProcessor";
 
 export interface VerifyTrainerPaymentParams {
   orderId?: string | null;
@@ -122,123 +123,19 @@ export async function verifyTrainerPaymentAndAssign({
     return { success: false, error: "User session expired" };
   }
 
-  const { data: trainer } = await db
-    .from("global_trainers")
-    .select("globalTrainerId, fullName, price")
-    .eq("globalTrainerId", trainerId)
-    .maybeSingle();
-
-  const finalAmount = rzpPayment?.amount
-    ? Number(rzpPayment.amount) / 100
-    : Number(amount) > 0
-    ? Number(amount)
-    : Number(trainer?.price) || 0;
-
-  const now = new Date();
-  const nowIso = now.toISOString();
-
-  const oneMonthLater = new Date(now);
-  oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
-  const expiryIso = oneMonthLater.toISOString();
-
-  const normalizedPaymentMode = normalizeIndividualPaymentMode(
-    detectedPaymentMode || rzpPayment?.method,
-    {
-      method: rzpPayment?.method,
-      bank: rzpPayment?.bank || rzpPayment?.acquirer_data?.bank_transaction_id,
-      vpa: rzpPayment?.vpa,
-      card_id: rzpPayment?.card_id,
-      wallet: rzpPayment?.wallet,
-    }
-  );
-
-  const paymentRecord: Record<string, any> = {
-    individualCustomerPaymentId: crypto.randomUUID(),
+  const result = await processTrainerPaymentSuccess({
+    db,
     userId: targetUserId,
-    globalTrainerId: trainerId,
-    paymentMode: normalizedPaymentMode,
-    amountPaid: finalAmount,
-    transactionId: subscriptionId || paymentId,
-    status: "successful",
-    deletedAt: null,
-    createdAt: nowIso,
-    updatedAt: nowIso,
-  };
-
-  const { error: insertPayErr } = await db
-    .from("individual_customer_trainer_payments")
-    .insert([paymentRecord]);
-
-  if (insertPayErr) {
-    console.error("[verifyTrainerPayment] Error inserting individual_customer_trainer_payments:", insertPayErr.message);
-    if (insertPayErr.message?.includes("enum") || insertPayErr.message?.includes("check")) {
-      paymentRecord.paymentMode = "upi";
-      const { error: fallbackPayErr } = await db
-        .from("individual_customer_trainer_payments")
-        .insert([paymentRecord]);
-      if (fallbackPayErr) {
-        console.error("[verifyTrainerPayment] Fallback insert with upi failed:", fallbackPayErr.message);
-      }
-    }
-  }
-
-  const { data: existingAssignment } = await db
-    .from("individual_customer_trainers")
-    .select("individualCustomerTrainerId, weekDays, timings")
-    .eq("userId", targetUserId)
-    .eq("globalTrainerId", trainerId)
-    .eq("is_deleted", false)
-    .maybeSingle();
-
-  if (existingAssignment?.individualCustomerTrainerId) {
-    const { error: updateErr } = await db
-      .from("individual_customer_trainers")
-      .update({
-        assignedOn: nowIso,
-        renewalOn: expiryIso,
-        expiryOn: expiryIso,
-        status: "approved",
-        isActive: true,
-        updatedAt: nowIso,
-      })
-      .eq("individualCustomerTrainerId", existingAssignment.individualCustomerTrainerId);
-
-    if (updateErr) {
-      console.error("[verifyTrainerPayment] Error updating assignment:", updateErr);
-      return { success: false, error: updateErr.message };
-    }
-  } else {
-    const { error: insertErr } = await db
-      .from("individual_customer_trainers")
-      .insert([{
-        individualCustomerTrainerId: crypto.randomUUID(),
-        userId: targetUserId,
-        globalTrainerId: trainerId,
-        assignedOn: nowIso,
-        renewalOn: expiryIso,
-        expiryOn: expiryIso,
-        status: "approved",
-        isActive: true,
-        is_deleted: false,
-        weekDays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        timings: "Flexible Schedule",
-        createdAt: nowIso,
-        updatedAt: nowIso,
-      }]);
-
-    if (insertErr) {
-      console.error("[verifyTrainerPayment] Error creating assignment:", insertErr);
-      return { success: false, error: insertErr.message };
-    }
-  }
+    trainerId,
+    amount: rzpPayment?.amount ? Number(rzpPayment.amount) / 100 : amount,
+    paymentId,
+    subscriptionId,
+    paymentMode: detectedPaymentMode || rzpPayment?.method || "upi",
+  });
 
   revalidatePath("/customer");
   revalidatePath("/trainer");
   revalidatePath("/globaltrainer");
 
-  return {
-    success: true,
-    trainerName: trainer?.fullName || "Trainer",
-    paymentId,
-  };
+  return result;
 }

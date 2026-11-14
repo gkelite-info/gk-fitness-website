@@ -4,7 +4,9 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { loadRazorpayScript } from "@/lib/helpers/razorpay/loadRazorpayScript";
 import { createRazorpayOrder } from "@/app/actions/customer/createRazorpayOrder";
+import { createRazorpaySubscription } from "@/app/actions/customer/createRazorpaySubscription";
 import { verifyPaymentAndRenewPlan } from "@/app/actions/customer/verifyPaymentAndRenewPlan";
+import { checkAndVerifyOrderStatus } from "@/app/actions/customer/checkAndVerifyOrderStatus";
 import { StoredPaymentSession } from "./usePaymentSession";
 
 interface UsePlanCheckoutParams {
@@ -33,7 +35,8 @@ export function usePlanCheckout({
   const handleRenew = async (
     targetPlanId: string,
     targetPlanName: string,
-    amount?: number
+    amount?: number,
+    isAutoPay: boolean = true
   ) => {
     try {
       setRenewingPlanId(targetPlanId);
@@ -44,52 +47,136 @@ export function usePlanCheckout({
         return;
       }
 
-      const orderResult = await createRazorpayOrder({
-        planId: targetPlanId,
-        customerId: resolvedCustomerId,
-        gymId: resolvedGymId,
-        amount,
-      });
+      let orderId = "";
+      let subscriptionId: string | undefined = undefined;
+      let keyId = "";
+      let resolvedName = customerName || "";
+      let resolvedEmail = customerEmail || "";
+      let resolvedPhone = customerPhone || "";
 
-      if (!orderResult.success) {
-        toast.error(orderResult.error || "Failed to initiate payment gateway.");
-        setRenewingPlanId(null);
-        return;
+      if (isAutoPay) {
+        const subResult = await createRazorpaySubscription({
+          planId: targetPlanId,
+          customerId: resolvedCustomerId,
+          gymId: resolvedGymId,
+          amount,
+        });
+
+        if (!subResult.success) {
+          toast.error(subResult.error || "Failed to initiate payment gateway.");
+          setRenewingPlanId(null);
+          return;
+        }
+
+        subscriptionId = subResult.subscriptionId;
+        orderId = subResult.subscriptionId || "";
+        keyId = subResult.keyId || "";
+        resolvedName = subResult.customerName || resolvedName;
+        resolvedEmail = subResult.customerEmail || resolvedEmail;
+        resolvedPhone = subResult.customerPhone || resolvedPhone;
+      } else {
+        const orderResult = await createRazorpayOrder({
+          planId: targetPlanId,
+          customerId: resolvedCustomerId,
+          gymId: resolvedGymId,
+          amount,
+        });
+
+        if (!orderResult.success) {
+          toast.error(orderResult.error || "Failed to initiate payment gateway.");
+          setRenewingPlanId(null);
+          return;
+        }
+
+        orderId = orderResult.orderId || "";
+        keyId = orderResult.keyId || "";
+        resolvedName = orderResult.customerName || resolvedName;
+        resolvedEmail = orderResult.customerEmail || resolvedEmail;
+        resolvedPhone = orderResult.customerPhone || resolvedPhone;
       }
 
       saveSession({
-        orderId: orderResult.orderId || "",
+        orderId,
         planId: targetPlanId,
         planName: targetPlanName,
-        amount: Number(orderResult.amount) / 100,
-        currency: orderResult.currency || "INR",
-        keyId: orderResult.keyId || "",
+        amount: Number(amount || 0),
+        currency: "INR",
+        keyId,
         customerId: resolvedCustomerId,
         gymId: resolvedGymId,
-        customerName: orderResult.customerName || customerName || "",
-        customerEmail: orderResult.customerEmail || customerEmail || "",
-        customerPhone: orderResult.customerPhone || customerPhone || "",
+        customerName: resolvedName,
+        customerEmail: resolvedEmail,
+        customerPhone: resolvedPhone,
         timestamp: Date.now(),
       });
 
+      let pollerInterval: any = null;
+      let isCompleted = false;
+      let razorpayInstance: any = null;
+
+      const cleanupListeners = () => {
+        if (pollerInterval) clearInterval(pollerInterval);
+        window.removeEventListener("focus", checkPaymentStatus);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      };
+
+      const finishSuccess = () => {
+        if (isCompleted) return;
+        isCompleted = true;
+        cleanupListeners();
+        clearSession();
+        try {
+          if (razorpayInstance && typeof razorpayInstance.close === "function") {
+            razorpayInstance.close();
+          }
+        } catch {}
+        toast.success(`Plan "${targetPlanName}" activated successfully!`, { id: "payment-verify" });
+        onSuccess();
+        setRenewingPlanId(null);
+      };
+
+      const checkPaymentStatus = async () => {
+        if (isCompleted) return;
+        try {
+          const res = await checkAndVerifyOrderStatus({
+            orderId,
+            planId: targetPlanId,
+            customerId: resolvedCustomerId,
+            gymId: resolvedGymId,
+          });
+          if (res.success && res.status === "paid") {
+            finishSuccess();
+          }
+        } catch {}
+      };
+
+      pollerInterval = setInterval(checkPaymentStatus, 2000);
+
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === "visible") {
+          checkPaymentStatus();
+        }
+      };
+
+      window.addEventListener("focus", checkPaymentStatus);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+
       const options: any = {
-        key: orderResult.keyId,
-        amount: orderResult.amount,
-        currency: orderResult.currency,
+        key: keyId,
         name: "GK-Gym Life",
-        description: `Plan: ${targetPlanName}`,
-        order_id: orderResult.orderId,
+        description: `Membership Plan: ${targetPlanName}`,
         prefill: {
-          name: orderResult.customerName || customerName || "",
-          email: orderResult.customerEmail || customerEmail || "",
-          contact: orderResult.customerPhone || customerPhone || "",
+          name: resolvedName,
+          email: resolvedEmail,
+          contact: resolvedPhone,
         },
         theme: { color: "#D7FF00" },
         handler: async function (response: any) {
           try {
             toast.loading("Verifying payment...", { id: "payment-verify" });
             const verifyResult = await verifyPaymentAndRenewPlan({
-              orderId: response.razorpay_order_id || orderResult.orderId,
+              orderId: response.razorpay_order_id || (subscriptionId ? undefined : orderId),
+              subscriptionId: response.razorpay_subscription_id || subscriptionId,
               paymentId: response.razorpay_payment_id,
               signature: response.razorpay_signature,
               planId: targetPlanId,
@@ -97,30 +184,38 @@ export function usePlanCheckout({
               gymId: resolvedGymId,
               isAutoPay: true,
             });
+
             if (verifyResult.success) {
-              clearSession();
-              toast.success(`Plan "${targetPlanName}" activated successfully!`, { id: "payment-verify" });
-              onSuccess();
+              finishSuccess();
             } else {
-              toast.error(verifyResult.error || "Payment verification failed.", { id: "payment-verify" });
+              await checkPaymentStatus();
             }
           } catch {
-            toast.error("Payment verification failed on server.", { id: "payment-verify" });
-          } finally {
-            setRenewingPlanId(null);
+            await checkPaymentStatus();
           }
         },
         modal: {
-          ondismiss: () => setRenewingPlanId(null),
+          ondismiss: async () => {
+            await checkPaymentStatus();
+            cleanupListeners();
+            setRenewingPlanId(null);
+          },
         },
       };
 
-      const razorpayInstance = new (window as any).Razorpay(options);
-      razorpayInstance.on("payment.failed", function (response: any) {
-        console.error("Payment failed:", response.error);
-        toast.error(response.error?.description || "Payment failed or was cancelled.");
-        setRenewingPlanId(null);
+      if (subscriptionId) {
+        options.subscription_id = subscriptionId;
+      } else {
+        options.order_id = orderId;
+        options.amount = Math.round(Number(amount || 0) * 100);
+        options.currency = "INR";
+      }
+
+      razorpayInstance = new (window as any).Razorpay(options);
+      razorpayInstance.on("payment.failed", async function () {
+        await checkPaymentStatus();
       });
+
       razorpayInstance.open();
     } catch {
       toast.error("An error occurred while connecting to Razorpay.");

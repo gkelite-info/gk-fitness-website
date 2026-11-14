@@ -62,6 +62,27 @@ export function useAssignedGlobalTrainersByUser(
   });
 }
 
+export function useActiveTrainerByUser(
+  userId?: string | null,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: ['activeGlobalTrainer', 'user', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const assignments = await fetchAssignedGlobalTrainersByUser(userId);
+      const active = assignments.find((a) => {
+        const isAct = a.isActive !== false;
+        const isNotExp = a.expiryOn ? new Date(a.expiryOn).getTime() > Date.now() : true;
+        return isAct && isNotExp && a.status === 'approved';
+      });
+      return active || null;
+    },
+    enabled: options?.enabled !== undefined ? options.enabled : !!userId,
+    ...options,
+  });
+}
+
 export function useIndividualCustomerTrainersPaginated(
   page = 1,
   limit = 10,

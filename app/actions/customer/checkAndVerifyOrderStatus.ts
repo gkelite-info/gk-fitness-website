@@ -12,26 +12,23 @@ import {
 } from "@/lib/helpers/razorpay/razorpayServer";
 import { executeMembershipPaymentSuccess } from "@/lib/helpers/gymCustomerMembershipPlans/membershipPaymentLogic";
 import { processIndividualPlanPayment } from "@/lib/helpers/individual/membership/individualPlanPaymentProcessor";
+import { processTrainerPaymentSuccess } from "@/lib/helpers/individual/customer-trainer/trainerPaymentSuccessProcessor";
 import { normalizeIndividualPaymentMode } from "@/lib/helpers/individual/individualCustomerPayments";
 
 export interface CheckOrderStatusParams {
-  orderId: string;
-  planId: string;
+  orderId?: string;
+  planId?: string;
+  trainerId?: string;
+  paymentType?: "membership" | "trainerfee";
   customerId?: string;
   gymId?: string;
 }
 
-interface RazorpayOrderItem {
-  id?: string;
-  status?: string;
-  amount?: number;
-  method?: string;
-  vpa?: string | null;
-}
-
 export async function checkAndVerifyOrderStatus({
-  orderId,
+  orderId = "",
   planId,
+  trainerId,
+  paymentType,
   customerId,
   gymId,
 }: CheckOrderStatusParams) {
@@ -56,9 +53,12 @@ export async function checkAndVerifyOrderStatus({
     let paymentId = "";
     let paymentMethod = "upi";
     let paymentAmount: number | undefined = undefined;
-    let paymentVpa: string | null = null;
+    let detectedTrainerId = trainerId;
+    let isTrainer = paymentType === "trainerfee" || Boolean(trainerId);
 
-    if (orderId.startsWith("sub_")) {
+    const rzpClient = getRazorpayClient();
+
+    if (orderId && orderId.startsWith("sub_")) {
       const sub = (await fetchRazorpaySubscription(orderId)) as any;
       const activeStatuses = ["active", "authenticated", "charged", "completed"];
       isPaid =
@@ -66,10 +66,14 @@ export async function checkAndVerifyOrderStatus({
         (activeStatuses.includes(sub.status) ||
           (typeof sub.paid_count === "number" && sub.paid_count > 0));
 
+      if (sub?.notes?.trainerId) {
+        detectedTrainerId = String(sub.notes.trainerId);
+        isTrainer = true;
+      }
+
       if (sub) {
         paymentId = `pay_sub_${sub.id}`;
         try {
-          const rzpClient = getRazorpayClient();
           const invoices = (await rzpClient.invoices.all({ subscription_id: orderId })) as any;
           const successfulInvoice = invoices?.items?.find(
             (inv: any) => inv.status === "paid" || Boolean(inv.payment_id)
@@ -81,143 +85,145 @@ export async function checkAndVerifyOrderStatus({
               isPaid = true;
               if (pay?.method) paymentMethod = pay.method;
               if (pay?.amount) paymentAmount = pay.amount;
-              if (pay?.vpa) paymentVpa = pay.vpa;
             }
           }
         } catch (subPayErr) {
           console.warn("[checkAndVerifyOrderStatus] Invoice lookup note:", subPayErr);
         }
       }
-
-      if (!isPaid) {
-        try {
-          const rzpClient = getRazorpayClient();
-          const recentPayments = (await rzpClient.payments.all({ count: 10 })) as any;
-          const matchingPayment = (recentPayments?.items || []).find((p: any) => {
-            const isStatusOk = p.status === "captured" || p.status === "authorized";
-            if (!isStatusOk) return false;
-            const matchesNotes =
-              p.notes?.customerId === user.id ||
-              p.notes?.userId === user.id ||
-              p.notes?.planId === planId;
-            const matchesEmail = Boolean(
-              p.email && user.email && p.email.toLowerCase() === user.email.toLowerCase()
-            );
-            const isRecent = p.created_at * 1000 > Date.now() - 2 * 60 * 60 * 1000;
-            return isRecent && (matchesNotes || matchesEmail);
-          });
-
-          if (matchingPayment) {
-            isPaid = true;
-            paymentId = matchingPayment.id;
-            paymentMethod = matchingPayment.method || "upi";
-            paymentAmount = matchingPayment.amount;
-            paymentVpa = matchingPayment.vpa || null;
-            if (matchingPayment.status === "authorized" && typeof matchingPayment.amount === "number") {
-              try {
-                await rzpClient.payments.capture(matchingPayment.id, matchingPayment.amount, matchingPayment.currency || "INR");
-              } catch {}
-            }
-          }
-        } catch (recentErr) {
-          console.warn("[checkAndVerifyOrderStatus] Recent payments lookup note:", recentErr);
-        }
-      }
-
-      if (!isPaid) {
-        const failedStatuses = ["cancelled", "halted", "expired"];
-        const isFailed = sub ? failedStatuses.includes(sub.status) : false;
-        return {
-          success: true,
-          status: isFailed ? "failed" : "pending",
-          orderId,
-          keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID,
-        };
-      }
-    } else if (orderId.startsWith("pay_")) {
-      const pay = (await fetchRazorpayPayment(orderId)) as any;
-      if (!pay) {
-        return { success: false, status: "not_found", error: "Payment not found" };
-      }
-      isPaid = pay.status === "captured" || pay.status === "authorized";
-      if (!isPaid) {
-        return {
-          success: true,
-          status: pay.status === "failed" ? "failed" : "pending",
-          orderId,
-          keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID,
-        };
-      }
-      paymentId = pay.id;
-      paymentMethod = pay.method || "upi";
-      paymentAmount = pay.amount;
-      paymentVpa = pay.vpa || null;
-    } else {
+    } else if (orderId && orderId.startsWith("order_")) {
       const order = await fetchRazorpayOrder(orderId);
-      if (!order) {
-        return { success: false, status: "not_found", error: "Order not found" };
+      if (order?.notes?.trainerId) {
+        detectedTrainerId = String(order.notes.trainerId);
+        isTrainer = true;
       }
-
       const paymentsData = await fetchRazorpayOrderPayments(orderId);
-      const items = (paymentsData?.items || []) as RazorpayOrderItem[];
+      const items = (paymentsData?.items || []) as any[];
       const successfulPayment = items.find(
         (p) => p.status === "captured" || p.status === "authorized"
       );
-
-      isPaid = order.status === "paid" || !!successfulPayment;
-
-      if (!isPaid) {
-        try {
-          const rzpClient = getRazorpayClient();
-          const recentPayments = (await rzpClient.payments.all({ count: 10 })) as any;
-          const matchingPayment = (recentPayments?.items || []).find((p: any) => {
-            const isStatusOk = p.status === "captured" || p.status === "authorized";
-            if (!isStatusOk) return false;
-            const matchesNotes =
-              p.notes?.customerId === user.id ||
-              p.notes?.userId === user.id ||
-              p.notes?.planId === planId;
-            const matchesEmail = Boolean(
-              p.email && user.email && p.email.toLowerCase() === user.email.toLowerCase()
-            );
-            const isRecent = p.created_at * 1000 > Date.now() - 2 * 60 * 60 * 1000;
-            return isRecent && (matchesNotes || matchesEmail);
-          });
-
-          if (matchingPayment) {
-            isPaid = true;
-            paymentId = matchingPayment.id;
-            paymentMethod = matchingPayment.method || "upi";
-            paymentAmount = matchingPayment.amount;
-            paymentVpa = matchingPayment.vpa || null;
-            if (matchingPayment.status === "authorized" && typeof matchingPayment.amount === "number") {
-              try {
-                await rzpClient.payments.capture(matchingPayment.id, matchingPayment.amount, matchingPayment.currency || "INR");
-              } catch {}
-            }
-          }
-        } catch (recentErr) {
-          console.warn("[checkAndVerifyOrderStatus] Recent order payments fallback note:", recentErr);
+      isPaid = order?.status === "paid" || !!successfulPayment;
+      if (successfulPayment) {
+        paymentId = successfulPayment.id;
+        paymentMethod = successfulPayment.method || "upi";
+        paymentAmount = successfulPayment.amount;
+      }
+    } else if (orderId && orderId.startsWith("pay_")) {
+      const pay = (await fetchRazorpayPayment(orderId)) as any;
+      isPaid = pay?.status === "captured" || pay?.status === "authorized";
+      if (isPaid) {
+        paymentId = pay.id;
+        paymentMethod = pay.method || "upi";
+        paymentAmount = pay.amount;
+        if (pay?.notes?.trainerId) {
+          detectedTrainerId = String(pay.notes.trainerId);
+          isTrainer = true;
         }
       }
+    }
 
-      if (!isPaid) {
-        const isFailed = items.some((p) => p.status === "failed");
-        return {
-          success: true,
-          status: isFailed ? "failed" : "pending",
-          orderId: order.id,
-          amount: order.amount,
-          currency: order.currency,
-          keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID,
-        };
+    if (!isPaid) {
+      try {
+        const recentPayments = (await rzpClient.payments.all({ count: 15 })) as any;
+        const matchingPayment = (recentPayments?.items || []).find((p: any) => {
+          const isStatusOk = p.status === "captured" || p.status === "authorized";
+          if (!isStatusOk) return false;
+
+          const notesUserId = p.notes?.userId || p.notes?.customerId;
+          const matchesUser = notesUserId === user.id;
+          const matchesEmail = Boolean(
+            p.email && user.email && p.email.toLowerCase() === user.email.toLowerCase()
+          );
+          const matchesPhone = Boolean(
+            p.contact && user.phone && p.contact.replace(/\D/g, "") === user.phone.replace(/\D/g, "")
+          );
+          const isRecent = p.created_at * 1000 > Date.now() - 3 * 60 * 60 * 1000;
+
+          return isRecent && (matchesUser || matchesEmail || matchesPhone);
+        });
+
+        if (matchingPayment) {
+          isPaid = true;
+          paymentId = matchingPayment.id;
+          paymentMethod = matchingPayment.method || "upi";
+          paymentAmount = matchingPayment.amount;
+
+          if (
+            matchingPayment.notes?.trainerId ||
+            matchingPayment.notes?.paymentType === "trainerfee" ||
+            matchingPayment.description?.toLowerCase().includes("trainer")
+          ) {
+            isTrainer = true;
+            if (matchingPayment.notes?.trainerId) {
+              detectedTrainerId = String(matchingPayment.notes.trainerId);
+            }
+          }
+
+          if (matchingPayment.status === "authorized" && typeof matchingPayment.amount === "number") {
+            try {
+              await rzpClient.payments.capture(matchingPayment.id, matchingPayment.amount, matchingPayment.currency || "INR");
+            } catch {}
+          }
+        }
+      } catch (recentErr) {
+        console.warn("[checkAndVerifyOrderStatus] Recent payments lookup note:", recentErr);
+      }
+    }
+
+    if (!isPaid) {
+      return {
+        success: true,
+        status: "pending",
+        orderId,
+        keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID,
+      };
+    }
+
+    if (isTrainer) {
+      let resolvedTrainerId = detectedTrainerId;
+      if (!resolvedTrainerId) {
+        const { data: trainerAssignment } = await dbClient
+          .from("individual_customer_trainers")
+          .select("globalTrainerId")
+          .eq("userId", user.id)
+          .eq("is_deleted", false)
+          .order("createdAt", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        resolvedTrainerId = trainerAssignment?.globalTrainerId;
       }
 
-      if (!paymentId) {
-        paymentId = successfulPayment?.id || `pay_${order.id}`;
-        paymentMethod = successfulPayment?.method || "other";
-        paymentAmount = successfulPayment?.amount;
-        paymentVpa = successfulPayment?.vpa || null;
+      if (!resolvedTrainerId) {
+        const { data: anyTrainer } = await dbClient
+          .from("global_trainers")
+          .select("globalTrainerId")
+          .eq("isActive", true)
+          .eq("is_deleted", false)
+          .limit(1)
+          .maybeSingle();
+        resolvedTrainerId = anyTrainer?.globalTrainerId;
+      }
+
+      if (resolvedTrainerId) {
+        const trainerResult = await processTrainerPaymentSuccess({
+          db: dbClient,
+          userId: user.id,
+          trainerId: resolvedTrainerId,
+          amount: paymentAmount ? Number(paymentAmount) / 100 : undefined,
+          paymentId,
+          subscriptionId: orderId.startsWith("sub_") ? orderId : undefined,
+          paymentMode: paymentMethod,
+        });
+
+        revalidatePath("/customer");
+        return {
+          success: true,
+          status: "paid",
+          type: "trainer",
+          trainerName: trainerResult.trainerName,
+          paymentId,
+        };
       }
     }
 
@@ -227,20 +233,21 @@ export async function checkAndVerifyOrderStatus({
       .eq("userId", user.id)
       .maybeSingle();
 
+    const resolvedPlanId = planId || "";
     const { data: subPlan } = await dbClient
       .from("subscriptions")
       .select("subscriptionPlanId")
-      .eq("subscriptionPlanId", planId)
+      .eq("subscriptionPlanId", resolvedPlanId)
       .maybeSingle();
 
     const isIndividual = userRec?.role === "individual" || Boolean(subPlan) || !gymId;
 
-    if (isIndividual) {
+    if (isIndividual && (resolvedPlanId || subPlan)) {
       const normalizedMode = normalizeIndividualPaymentMode(paymentMethod);
       const result = await processIndividualPlanPayment({
         dbClient,
         userId: user.id,
-        planId,
+        planId: resolvedPlanId,
         paymentId,
         rzpPaymentAmount: paymentAmount,
         normalizedMode,
@@ -277,32 +284,35 @@ export async function checkAndVerifyOrderStatus({
       }
     }
 
-    if (!resolvedCustomerId || !resolvedGymId) {
-      return { success: false, status: "error", error: "Customer record not found" };
+    if (resolvedCustomerId && resolvedGymId && resolvedPlanId) {
+      const result = await executeMembershipPaymentSuccess({
+        supabase: dbClient,
+        customerId: resolvedCustomerId,
+        gymId: resolvedGymId,
+        planId: resolvedPlanId,
+        customerUserId: user.id,
+        gatewayPaymentId: paymentId,
+        gatewayOrderId: orderId,
+        paymentMethod,
+        amountPaidOverride: paymentAmount ? Number(paymentAmount) / 100 : undefined,
+      });
+
+      revalidatePath("/customer");
+      revalidatePath("/owner");
+      revalidatePath("/owner/payments");
+      revalidatePath("/owner/finance");
+
+      return {
+        success: true,
+        status: "paid",
+        planName: result.planName,
+        paymentId,
+      };
     }
-
-    const result = await executeMembershipPaymentSuccess({
-      supabase: dbClient,
-      customerId: resolvedCustomerId,
-      gymId: resolvedGymId,
-      planId,
-      customerUserId: user.id,
-      gatewayPaymentId: paymentId,
-      gatewayOrderId: orderId,
-      paymentMethod,
-      upiId: paymentVpa,
-      amountPaidOverride: paymentAmount ? Number(paymentAmount) / 100 : undefined,
-    });
-
-    revalidatePath("/customer");
-    revalidatePath("/owner");
-    revalidatePath("/owner/payments");
-    revalidatePath("/owner/finance");
 
     return {
       success: true,
       status: "paid",
-      planName: result.planName,
       paymentId,
     };
   } catch (err: unknown) {
