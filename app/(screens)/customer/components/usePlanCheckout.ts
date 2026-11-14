@@ -90,7 +90,7 @@ export function usePlanCheckout({
             try {
               toast.loading("Verifying payment...", { id: "payment-verify" });
               const verifyResult = await verifyPaymentAndRenewPlan({
-                subscriptionId: response.razorpay_subscription_id,
+                subscriptionId: response.razorpay_subscription_id || subResult.subscriptionId,
                 paymentId: response.razorpay_payment_id,
                 signature: response.razorpay_signature,
                 planId: targetPlanId,
@@ -167,7 +167,7 @@ export function usePlanCheckout({
           try {
             toast.loading("Verifying payment...", { id: "payment-verify" });
             const verifyResult = await verifyPaymentAndRenewPlan({
-              orderId: response.razorpay_order_id,
+              orderId: response.razorpay_order_id || orderResult.orderId,
               paymentId: response.razorpay_payment_id,
               signature: response.razorpay_signature,
               planId: targetPlanId,

@@ -96,6 +96,37 @@ export async function verifyPaymentAndRenewPlan({
     }
   }
 
+  if (!isVerified && subscriptionId) {
+    try {
+      const rzpClient = getRazorpayClient();
+      const sub = (await rzpClient.subscriptions.fetch(subscriptionId)) as any;
+      if (sub) {
+        const activeStatuses = ["active", "authenticated", "charged", "completed"];
+        if (
+          activeStatuses.includes(sub.status) ||
+          (typeof sub.paid_count === "number" && sub.paid_count > 0)
+        ) {
+          isVerified = true;
+          try {
+            const invoices = (await rzpClient.invoices.all({ subscription_id: subscriptionId })) as any;
+            const latestInv = invoices?.items?.[0];
+            if (latestInv?.payment_id) {
+              const freshPayment = (await rzpClient.payments.fetch(latestInv.payment_id)) as RazorpayPaymentInfo;
+              if (freshPayment) {
+                rzpPayment = freshPayment;
+                if (freshPayment.method) detectedPaymentMethod = freshPayment.method;
+              }
+            }
+          } catch (invErr) {
+            console.warn("[verifyPaymentAndRenewPlan] Subscription invoice fetch note:", invErr);
+          }
+        }
+      }
+    } catch (subErr) {
+      console.warn("[verifyPaymentAndRenewPlan] Direct subscription verification note:", subErr);
+    }
+  }
+
   if (!detectedPaymentMethod && orderId) {
     try {
       const rzpClient = getRazorpayClient();
@@ -113,6 +144,8 @@ export async function verifyPaymentAndRenewPlan({
   }
 
   if (!isVerified) return { success: false, error: verificationError };
+
+  const resolvedPaymentId = paymentId || rzpPayment?.id || (subscriptionId ? `pay_sub_${subscriptionId}` : `pay_${Date.now()}`);
 
   const serverClient = await createClient();
   const { data: { user } } = await serverClient.auth.getUser();
@@ -147,7 +180,7 @@ export async function verifyPaymentAndRenewPlan({
         dbClient,
         userId: user.id,
         planId,
-        paymentId,
+        paymentId: resolvedPaymentId,
         rzpPaymentAmount: rzpPayment?.amount,
         normalizedMode,
         subscriptionId,
@@ -182,7 +215,7 @@ export async function verifyPaymentAndRenewPlan({
       gymId: resolvedGymId,
       planId,
       customerUserId: user.id,
-      gatewayPaymentId: paymentId,
+      gatewayPaymentId: resolvedPaymentId,
       gatewayOrderId: subscriptionId || orderId,
       paymentMethod: isAutoPay
         ? `${paymentMethod || detectedPaymentMethod || rzpPayment?.method || "upi"} (AutoPay)`
