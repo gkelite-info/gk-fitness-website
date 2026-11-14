@@ -6,7 +6,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { loadRazorpayScript } from "@/lib/helpers/razorpay/loadRazorpayScript";
 import { createTrainerRazorpayOrder } from "@/app/actions/customer/createTrainerRazorpayOrder";
-import { createTrainerRazorpaySubscription } from "@/app/actions/customer/createTrainerRazorpaySubscription";
 import { verifyTrainerPaymentAndAssign } from "@/app/actions/customer/verifyTrainerPaymentAndAssign";
 
 interface UseTrainerCheckoutParams {
@@ -22,7 +21,7 @@ interface PayTrainerArgs {
   trainerId: string;
   trainerName: string;
   amount: number;
-  isAutoPay: boolean;
+  isAutoPay?: boolean;
 }
 
 export function useTrainerCheckout({
@@ -41,7 +40,6 @@ export function useTrainerCheckout({
     trainerId,
     trainerName,
     amount,
-    isAutoPay,
   }: PayTrainerArgs) => {
     if (!trainerId) {
       toast.error("Please select a trainer to continue.");
@@ -58,78 +56,6 @@ export function useTrainerCheckout({
       if (!isScriptLoaded) {
         setIsProcessing(false);
         toast.error("Failed to load Razorpay payment gateway SDK.");
-        return;
-      }
-
-      if (isAutoPay) {
-        const subResult = await createTrainerRazorpaySubscription({
-          trainerId,
-          amount,
-          trainerName,
-        });
-
-        if (!subResult.success) {
-          setIsProcessing(false);
-          toast.error(subResult.error || "Failed to initiate payment gateway.");
-          return;
-        }
-
-        const options: any = {
-          key: subResult.keyId,
-          subscription_id: subResult.subscriptionId,
-          name: "GK-Gym Life",
-          description: `Personal Trainer: ${trainerName}`,
-          prefill: {
-            name: subResult.customerName || userName || "",
-            email: subResult.customerEmail || userEmail || "",
-            contact: subResult.customerPhone || userPhone || "",
-          },
-          theme: { color: "#D7FF00" },
-          handler: async function (response: any) {
-            try {
-              toast.loading("Verifying payment...", { id: "trainer-pay" });
-              const verifyRes = await verifyTrainerPaymentAndAssign({
-                subscriptionId: response.razorpay_subscription_id || subResult.subscriptionId,
-                paymentId: response.razorpay_payment_id,
-                signature: response.razorpay_signature,
-                trainerId,
-                amount,
-                isAutoPay: true,
-                userId,
-              });
-
-              if (verifyRes.success) {
-                queryClient.invalidateQueries({ queryKey: ["individualCustomerPayments"] });
-                queryClient.invalidateQueries({ queryKey: ["individualCustomerTrainers"] });
-                queryClient.invalidateQueries({ queryKey: ["individualCustomerTrainerPayments"] });
-                toast.success(`Booking confirmed with ${trainerName}!`, { id: "trainer-pay" });
-                onSuccess?.();
-                onClose();
-                if (typeof window !== "undefined") {
-                  window.location.href = "/customer";
-                } else {
-                  router.refresh();
-                }
-              } else {
-                toast.error(verifyRes.error || "Payment verification failed.", { id: "trainer-pay" });
-              }
-            } catch {
-              toast.error("Payment confirmation failed on server.", { id: "trainer-pay" });
-            } finally {
-              setIsProcessing(false);
-            }
-          },
-          modal: {
-            ondismiss: () => setIsProcessing(false),
-          },
-        };
-
-        const razorpayInstance = new (window as any).Razorpay(options);
-        razorpayInstance.on("payment.failed", function (response: any) {
-          toast.error(response.error?.description || "Payment was cancelled.");
-          setIsProcessing(false);
-        });
-        razorpayInstance.open();
         return;
       }
 
@@ -151,6 +77,7 @@ export function useTrainerCheckout({
         currency: orderResult.currency || "INR",
         name: "GK-Gym Life",
         description: `Personal Trainer Plan: ${trainerName}`,
+        order_id: orderResult.orderId,
         prefill: {
           name: orderResult.customerName || userName || "",
           email: orderResult.customerEmail || userEmail || "",
@@ -166,7 +93,7 @@ export function useTrainerCheckout({
               signature: response?.razorpay_signature || "",
               trainerId,
               amount,
-              isAutoPay: false,
+              isAutoPay: true,
               userId,
             });
 
@@ -195,10 +122,6 @@ export function useTrainerCheckout({
           ondismiss: () => setIsProcessing(false),
         },
       };
-
-      if (orderResult.orderId) {
-        options.order_id = orderResult.orderId;
-      }
 
       const razorpayInstance = new (window as any).Razorpay(options);
       razorpayInstance.on("payment.failed", function (response: any) {
